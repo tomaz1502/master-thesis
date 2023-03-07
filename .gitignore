@@ -2,3 +2,7 @@ Diretrizes.pdf
 *.out
 *.log
 *.lol
+*.lof
+*.aux
+*.lot
+*.toc
