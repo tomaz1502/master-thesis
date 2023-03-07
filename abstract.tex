@@ -6,9 +6,9 @@ Discharging some of these goals via automatic theorem provers, such as
 satisfiability modulo theories (SMT) solvers, is a known way of improving the
 usability of ITPs.
 %
-This paper describes the early stages of a novel integration between the ITP
+This thesis describes a novel integration between the ITP
 Lean 4 and the SMT solver cvc5.
-%
+
 Assuming an encoding of the Lean goal as an SMT problem and that cvc5
 generates a proof for the encoded problem, we show how to lift this proof into
 a proof of the original Lean goal.
@@ -16,6 +16,10 @@ a proof of the original Lean goal.
 This requires proving the correctness, inside Lean, of the steps taken by the
 solver, as well as decoding the terms in the proof into the original Lean
 ones. Thus Lean can accept the SMT proof as a proof of the original goal.
-%
-Once complete, this tool can be used to implement a tactic in Lean that
-automatically discharges goals via cvc5.
+
+This tool is part of the joint project Lean-SMT, which aims to create a
+tactic in Lean that implements the whole pipeline, that is, from a goal in
+Lean, translate it into a query in SMT-Lib format, try to prove it using
+a SMT solver and, in case it is successful, lift the proof produced,
+closing the original goal in Lean (which is done by our tool).
+All the other steps of the pipeline are in an advanced stage of development.
