@@ -1,3 +1,21 @@
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+Despite their expressivity and robustness, interactive theorem pro\-vers (ITPs)
+can be quite costly to use in large-scale formalizations due to the burden of
+interactively proving goals.
+%
+Discharging some of these goals via automatic theorem provers, such as
+satisfiability modulo theories (SMT) solvers, is a known way of improving the
+usability of ITPs.
+%
+This paper describes the early stages of a novel integration between the ITP
+Lean 4 and the SMT solver cvc5.
+%
+Assuming an encoding of the Lean goal as an SMT problem and that cvc5
+generates a proof for the encoded problem, we show how to lift this proof into
+a proof of the original Lean goal.
+%
+This requires proving the correctness, inside Lean, of the steps taken by the
+solver, as well as decoding the terms in the proof into the original Lean
+ones. Thus Lean can accept the SMT proof as a proof of the original goal.
+%
+Once complete, this tool can be used to implement a tactic in Lean that
+automatically discharges goals via cvc5.

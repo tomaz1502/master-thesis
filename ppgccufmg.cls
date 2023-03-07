@@ -78,11 +78,11 @@
 
 %% Parâmetros ppgcc =========================
 \define@key{ppgcc}{autor}{\defautor{#1}}
-\define@key{ppgcc}{titulopt}{\deftitulopt{#1}} %% Título em português
+% \define@key{ppgcc}{titulopt}{\deftitulopt{#1}} %% Título em português
 \define@key{ppgcc}{tituloen}{\deftituloen{#1}} %% Título em inglês
 \define@key{ppgcc}{cidade}{\defcidade{#1}}
 \define@key{ppgcc}{ano}{\defano{#1}}
-\define@key{ppgcc}{versaopt}{\defversaopt{#1}} %% Versão do documento em português
+% \define@key{ppgcc}{versaopt}{\defversaopt{#1}} %% Versão do documento em português
 \define@key{ppgcc}{versaoen}{\defversaoen{#1}} %% Versão do documento em português
 \define@key{ppgcc}{orientador}{\deforientador{#1}}
 \define@key{ppgcc}{orientadora}{\deforientadora{#1}}
@@ -92,7 +92,7 @@
 \define@key{ppgcc}{folhadeaprovacao}{\deffolhadeaprovacao{#1}}
 \define@key{ppgcc}{resumo}{\defresumo{#1}}
 \define@key{ppgcc}{abstracten}{\defabstracten{#1}}
-\define@key{ppgcc}{palavraschave}{\defpalavraschave{#1}} %% Palavras-chave do resumo em português
+% \define@key{ppgcc}{palavraschave}{\defpalavraschave{#1}} %% Palavras-chave do resumo em português
 \define@key{ppgcc}{keywords}{\defkeywords{#1}} %% Palavras-chave do abstract em inglês
 \define@key{ppgcc}{epigrafe}{\defepigrafe{#1}} %% Texto do epígrafe
 \define@key{ppgcc}{epigrafeautor}{\defepigrafeautor{#1}} %% Autor do epígrafe
@@ -105,11 +105,11 @@
 
 %% Definições dos parâmetros ppgcc
 \newcommand{\defautor}[1]{\def\autor{#1}}
-\newcommand{\deftitulopt}[1]{\def\titulopt{#1}}
+% \newcommand{\deftitulopt}[1]{\def\titulopt{#1}}
 \newcommand{\deftituloen}[1]{\def\tituloen{#1}}
 \newcommand{\defcidade}[1]{\def\cidade{#1}}
 \newcommand{\defano}[1]{\def\ano{#1}}
-\newcommand{\defversaopt}[1]{\def\versaopt{#1}}
+% \newcommand{\defversaopt}[1]{\def\versaopt{#1}}
 \newcommand{\defversaoen}[1]{\def\versaoen{#1}}
 \newcommand{\deforientador}[1]{\def\orientador{#1}}
 \newcommand{\deforientadora}[1]{\def\orientadora{#1}}
@@ -119,7 +119,7 @@
 \newcommand{\deffolhadeaprovacao}[1]{\def\folhadeaprovacao{#1}}
 \newcommand{\defresumo}[1]{\def\resumo{#1}}
 \newcommand{\defabstracten}[1]{\def\abstracten{#1}}
-\newcommand{\defpalavraschave}[1]{\def\palavraschave{#1}}
+% \newcommand{\defpalavraschave}[1]{\def\palavraschave{#1}}
 \newcommand{\defkeywords}[1]{\def\keywords{#1}}
 \newcommand{\defepigrafe}[1]{\def\epigrafe{#1}}
 \newcommand{\defepigrafeautor}[1]{\def\epigrafeautor{#1}}
@@ -161,7 +161,7 @@
 	
 	\vspace{4cm}
 	
-	\textbf{\titulopt}
+	\textbf{\tituloen}
 	
 	\vfill
 	
@@ -180,20 +180,12 @@
 	
 	\vspace{6cm}
 	
-	\IfStrEq{#1}{pt}{%
-		\textbf{\titulopt}
-	}{%
-		\textbf{\tituloen}	
-	}
-	
+	\textbf{\tituloen}
+
 	\vspace{2cm}
 	
 	\begin{recuoesquerdaoitocm}
-		\IfStrEq{#1}{pt}{%
-			\textbf{Versão} \textbf{\versaopt}
-		}{%
-			\textbf{\versaoen} \textbf{Version}	
-		}
+			\textbf{\versaoen} \textbf{Version}
 	\end{recuoesquerdaoitocm}
 
 	\vspace{3cm}
@@ -332,17 +324,17 @@
 }
 
 %% Resumo. O primeiro parâmetro deve ser o nome do arquivo com a extensão .tex contendo o resumo, e o segundo parâmetro uma lista com as palavras-chave.
-\newcommand{\fazresumo}[1]{
-	\begingroup
-		\resetaplain
-		\chapter*{Resumo}
-		\input{#1}
-		
-		\vspace{1cm}
-		\noindent\textbf{Palavras-chave:} \palavraschave
-		\clearpage
-	\endgroup
-}
+% \newcommand{\fazresumo}[1]{
+% 	\begingroup
+% 		\resetaplain
+% 		\chapter*{Resumo}
+% 		\input{#1}
+
+% 		\vspace{1cm}
+% 		\noindent\textbf{Palavras-chave:} \palavraschave
+% 		\clearpage
+% 	\endgroup
+% }
 
 %% Abstract. O primeiro parâmetro deve ser o nome do arquivo com a extensão .tex contendo o abstract, e o segundo parâmetro uma lista com as palavras-chave.
 \newcommand{\fazabstracten}[1]{
@@ -370,9 +362,9 @@
 	\fi
 	
 	%% Verifica se o título em português foi definido
-	\ifx\titulopt\undefined
-		\ClassError{ppgccufmg}{Título em português não definido}{Defina o título em português}
-	\fi
+	% \ifx\titulopt\undefined
+	% 	\ClassError{ppgccufmg}{Título em português não definido}{Defina o título em português}
+	% \fi
 	
 	%% Verifica se a cidade foi definida
 	\ifx\cidade\undefined
@@ -385,9 +377,9 @@
 	\fi
 	
 	%% Verifica se a versão em português foi definida
-	\ifx\versaopt\undefined
-		\ClassError{ppgccufmg}{Versão em português não definida}{Defina a versão em português}
-	\fi
+	% \ifx\versaopt\undefined
+	% 	\ClassError{ppgccufmg}{Versão em português não definida}{Defina a versão em português}
+	% \fi
 	
 	%% Verifica se o resumo em português foi passado
 	\ifx\resumo\undefined
@@ -400,9 +392,9 @@
 	\fi	
 	
 	%% Verifica se as palavras-chave em português foram definidas
-	\ifx\palavraschave\undefined
-		\ClassError{ppgccufmg}{Palavras-chave do resumo em português não definidas}{Defina as palavras-chave}
-	\fi
+	% \ifx\palavraschave\undefined
+	% 	\ClassError{ppgccufmg}{Palavras-chave do resumo em português não definidas}{Defina as palavras-chave}
+	% \fi
 	
 	%% Verifica se as palavras-chave em português foram definidas
 	\ifx\keywords\undefined
@@ -451,12 +443,9 @@
 	\cleardoublepage
 	\setcounter{page}{1}
 	
-	\folhaderosto{pt} %% Folha de rosto em português
 
-	\ifx\idiomaen\undefined\else
-		\folhaderosto{en} %% Folha de rosto em inglês
-	\fi
-	
+	\folhaderosto{en} %% Folha de rosto em inglês
+
 	\ifx\fichacatalografica\undefined\else
 		\fazfichacatalografica{\fichacatalografica}
 	\fi
@@ -480,7 +469,7 @@
 		\fazepigrafe{\epigrafe}{\epigrafeautor}
 	\fi
 	
-	\fazresumo{\resumo}
+	% \fazresumo{\resumo}
 	
 	\fazabstracten{\abstracten}
 	
