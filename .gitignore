@@ -6,3 +6,4 @@ Diretrizes.pdf
 *.aux
 *.lot
 *.toc
+.auctex-auto
