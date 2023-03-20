@@ -1,3 +1,39 @@
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Apesar de sua expressividade e robustez, assistentes
+de demonstra\c{c}\~ao podem ser proibitivamente custosos
+para serem usados em formaliza\c{c}\~oes de grande escala,
+dada a dificuldade de produzir as demonstra\c{c}\~oes
+interativamente.
+%
+Atribuir a responsabilidade de demonstrar algumas das
+proposi\c{c}\~oes a provadores autom\'aticos de teoremas,
+como solucionadores de satisfatibilidade modulo teorias (SMT),
+\'e um jeito reconhecido de melhorar a usabilidade de
+assistentes de demonstra\c{c}\~ao.
+%
+Essa disserta\c{c}\~ao descreve uma nova integra\c{c}\~ao
+entre o assistente de demonstra\c{c}\~ao Lean 4 e o
+solucionador SMT cvc5.
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+Dada uma codifica\c{c}\~ao de um teorema declarado em Lean como um
+problema de SMT e uma demonstra\c{c}\~ao provida pelo cvc5 para
+o problema codificado, n\'os mostramos como traduzir essa
+demonstra\c{c}\~ao para uma que certifique o teorema original em
+Lean.
+%
+Para isso \'e necess\'ario demonstrar a corretude, em Lean, dos
+passos l\'ogicos tomados pelo solucionador. Desse modo, o
+verificador de demonstra\c{c}\~oes de Lean aceitar\'a a
+demonstra\c{c}\~ao em SMT do teorema original, caso o processo
+seja bem sucedido.
+
+Essa ferramenta \'e parte do projeto em conjunto Lean-SMT,
+que tem como objetivo criar uma t\'atica em Lean que implemente
+o processo completo, isto \'e, a p\'artir de um teorema em Lean,
+traduzi-lo para um problema formulado na linguagem SMT-Lib,
+invocar um solucinador SMT para tentar resolv\^e-lo e produzir
+uma demonstra\c{c}\~ao, e, caso ele seja bem-sucedido,
+traduzi-la para certificar o teorema original em Lean (o que
+\'e feito por nossa ferramenta).
+%
+Todas as etapas desse processo est\~ao em estado
+avan\c{c}ado de desenvolvimento.
