@@ -1,113 +1,240 @@
-@string{CVPR = {Proceedings of the {IEEE} Conference on Computer Vision and Pattern Recognition ({CVPR})}}
 
-@string{ICCV = {Proceedings of the {IEEE} International Conference on Computer Vision ({ICCV})}}
+@string{cade   = "Proc. Conference on Automated Deduction (CADE)"}
+@string{cav    = "Computer Aided Verification (CAV)"}
+@string{ijcar1  = "International Joint Conference on Automated Reasoning
+                 (IJCAR), Part I"}
+@string{ijcar2  = "International Joint Conference on Automated Reasoning
+                 (IJCAR), Part II"}
+@string{ijcar  = "International Joint Conference on Automated Reasoning
+                 (IJCAR)"}
 
-@article{sweeney2002k,
-	title={k-anonymity: A model for protecting privacy},
-	author={Sweeney, Latanya},
-	journal={International Journal of Uncertainty, Fuzziness and Knowledge-Based Systems},
-	volume={10},
-	number={05},
-	pages={557--570},
-	year={2002},
-	publisher={World Scientific}
+@string{lncs   = "Lecture Notes in Computer Science"}
+
+@TECHREPORT{smtlib,
+  author = {Clark Barrett and Pascal Fontaine and Cesare Tinelli},
+  title = {{The SMT-LIB Standard: Version 2.6}},
+  institution = {Department of Computer Science, The University of Iowa},
+  year = 2017,
+  note = {Available at {www.SMT-LIB.org}}
+}
+
+@InProceedings{cvc5,
+  author    = "Barbosa, Haniel
+  and others",
+  editor    = "Fisman, Dana
+  and Rosu, Grigore",
+  title     = "cvc5: A Versatile and Industrial-Strength SMT Solver",
+  booktitle = "Tools and Algorithms for the Construction and Analysis of Systems",
+  year      = "2022",
+  publisher = "Springer International Publishing",
+  address   = "Cham",
+  pages     = "415--442",
+  isbn      = "978-3-030-99524-9"
+}
+
+@article{hammering,
+title   = {Hammering towards QED},
+year    = {2016},
+month   = {Jan.},
+volume  = {9},
+url     = {https://jfr.unibo.it/article/view/4593},
+DOI     = {10.6092/issn.1972-5787/4593},
+number  = {1},
+journal = {Journal of Formalized Reasoning},
+author  = {Blanchette, Jasmin C. and Kaliszyk, Cezary and Paulson, Lawrence C. and Urban, Josef},
+pages   = {101-148}
+}
+
+@InProceedings{smtcoq,
+author    = "Ekici, Burak
+and Mebsout, Alain
+and Tinelli, Cesare
+and Keller, Chantal
+and Katz, Guy
+and Reynolds, Andrew
+and Barrett, Clark",
+editor    = "Majumdar, Rupak
+and Kun{\v{c}}ak, Viktor",
+title     = "SMTCoq: A Plug-In for Integrating SMT Solvers into Coq",
+booktitle = "Computer Aided Verification",
+year      = "2017",
+publisher = "Springer International Publishing",
+address   = "Cham",
+pages     = "126--133",
+isbn      = "978-3-319-63390-9"
+}
+
+@InProceedings{sledgehammer,
+author    = "Blanchette, Jasmin Christian
+and B{\"o}hme, Sascha
+and Paulson, Lawrence C.",
+editor    = "Bj{\o}rner, Nikolaj
+and Sofronie-Stokkermans, Viorica",
+title     = "Extending Sledgehammer with SMT Solvers",
+booktitle = "Automated Deduction -- CADE-23",
+year      = "2011",
+publisher = "Springer Berlin Heidelberg",
+address   = "Berlin, Heidelberg",
+pages     = "116--130",
+isbn      = "978-3-642-22438-6"
+}
+
+@article{scholze,
+author  = {Castelvecchi, Davide},
+year    = {2021},
+month   = {06},
+pages   = {},
+title   = {Mathematicians welcome computer-assisted proof in ``grand unification'' theory},
+volume  = {595},
+journal = {Nature},
+doi     = {10.1038/d41586-021-01627-2}
+}
+
+@InProceedings{lean,
+author="de Moura, Leonardo
+and Kong, Soonho
+and Avigad, Jeremy
+and van Doorn, Floris
+and von Raumer, Jakob",
+editor="Felty, Amy P.
+and Middeldorp, Aart",
+title="The Lean Theorem Prover (System Description)",
+booktitle="Automated Deduction - CADE-25",
+year="2015",
+publisher="Springer International Publishing",
+address="Cham",
+pages="378--388",
+isbn="978-3-319-21401-6"
+}
+
+@incollection{Barrett2018,
+  author    = {Clark W. Barrett and
+               Cesare Tinelli},
+  title     = {Satisfiability Modulo Theories},
+  booktitle = {Handbook of Model Checking.},
+  pages     = {305--343},
+  year      = {2018},
+  url       = {https://doi.org/10.1007/978-3-319-10575-8\_11},
+  doi       = {10.1007/978-3-319-10575-8\_11},
+  timestamp = {Mon, 24 Jun 2019 15:54:17 +0200},
+  biburl    = {https://dblp.org/rec/bib/reference/mc/BarrettT18},
+  bibsource = {dblp computer science bibliography, https://dblp.org},
+  editor    = {Edmund M. Clarke and
+               Thomas A. Henzinger and
+               Helmut Veith and
+               Roderick Bloem},
+  publisher = {Springer},
+}
+
+@book{Bertot2004,
+  author    = {Yves Bertot and
+               Pierre Cast{\'{e}}ran},
+  title     = {Interactive Theorem Proving and Program Development - Coq'Art: The
+               Calculus of Inductive Constructions},
+  series    = {Texts in Theoretical Computer Science. An {EATCS} Series},
+  publisher = {Springer},
+  year      = {2004},
+  doi       = {10.1007/978-3-662-07964-5},
+  isbn      = {978-3-642-05880-6},
+  timestamp = {Tue, 16 May 2017 14:24:38 +0200},
+  biburl    = {https://dblp.org/rec/series/txtcs/BertotC04.bib},
+}
+
+@inproceedings{Bouton2009,
+  author    = {Thomas Bouton and
+               Diego Caminha B. de Oliveira and
+               David D{\'{e}}harbe and
+               Pascal Fontaine},
+  title     = {{veriT}: {A}n {O}pen, {T}rustable and {E}fficient {SMT-S}olver},
+  booktitle = cade,
+  pages     = {151--156},
+  year      = {2009},
+  url       = {http://dx.doi.org/10.1007/978-3-642-02959-2_12},
+  doi       = {10.1007/978-3-642-02959-2_12},
+  editor    = {Renate A. Schmidt},
+  series    = lncs,
+  volume    = {5663},
+  publisher = {Springer},
+}
+
+@inproceedings{Barrett2011,
+author="Barrett, Clark
+and Conway, Christopher L.
+and Deters, Morgan
+and Hadarean, Liana
+and Jovanovi{\'{c}}, Dejan
+and King, Tim
+and Reynolds, Andrew
+and Tinelli, Cesare",
+editor="Gopalakrishnan, Ganesh
+and Qadeer, Shaz",
+title={{CVC4}},
+booktitle=cav,
+year="2011",
+publisher="Springer",
+pages="171--177",
+doi="10.1007/978-3-642-22110-1_14",
+url="http://dx.doi.org/10.1007/978-3-642-22110-1_14"
+}
+
+@book{Nipkow2002,
+  author    = {Tobias Nipkow and
+               Lawrence C. Paulson and
+               Markus Wenzel},
+  title     = {Isabelle/HOL: {A} Proof Assistant for Higher-Order Logic},
+  series    = {LNCS},
+  volume    = {2283},
+  publisher = {Springer},
+  year      = {2002}
+}
+
+@inproceedings{Barbosa2022,
+  author    = {Haniel Barbosa and Andrew Reynolds and Gereon Kremer and Hanna
+                                Lachnitt and Aina Niemetz and Andres Notzli and Alex
+                                Ozdemir and Mathias Preiner and Arjun Viswanathan and Scott
+                                Viteri and Yoni Zohar and Cesare Tinelli and Clark Barrett},
+  editor    = {Jasmin Blanchette and Laura Kovacs and Dirk Pattinson},
+  title     = {Flexible Proof Production in an Industrial-Strength SMT Solver},
+  booktitle = ijcar,
+  series    = lncs,
+  publisher = {Springer},
+  year      = {2022},
 }
 
 
-@inproceedings{dwork2006calibrating,
-	title={Calibrating noise to sensitivity in private data analysis},
-	author={Dwork, Cynthia and McSherry, Frank and Nissim, Kobbi and Smith, Adam},
-	booktitle={Theory of cryptography conference},
-	pages={265--284},
-	year={2006},
-	organization={Springer}
+@inproceedings{mathlib,
+author    = {The mathlib Community},
+title     = {The Lean Mathematical Library},
+year      = {2020},
+isbn      = {9781450370974},
+publisher = {Association for Computing Machinery},
+address   = {New York, NY, USA},
+doi       = {10.1145/3372885.3373824},
+booktitle = {Proceedings of the 9th ACM SIGPLAN International Conference on Certified Programs and Proofs},
+pages     = {367-381},
+numpages  = {15},
+keywords  = {formal proof, formal library, mathlib, Lean},
+location  = {New Orleans, LA, USA},
+series    = {CPP 2020}
 }
 
-@inproceedings{bichsel92simple,
-	author = {M. Bichsel and Alex P. Pentland},
-	title = {A Simple Algorithm For Shape From Shading},
-	booktitle = CVPR,
-	year = {1992},
-	pages = {459--465},
-	url = {citeseer.csail.mit.edu/bichsel92simple.html},
-}
+@article{snipe,
+  doi = {10.4204/eptcs.336.3},
 
-@inproceedings{dror01statistics,
-	author = {Ron O. Dror and Thomas K. Leung and Edward H. Adelson and Alan S. Willsky},
-	title = {Statistics of Real-World Illumination},
-	booktitle = CVPR,
-	year = {2001},
-	month = {December},
-}
+  url = {https://doi.org/10.4204%2Feptcs.336.3},
 
-@inproceedings{guisser92new,
-	title={A new 3-D surface measurement system using a structured light},
-	author={Guisser, Latifa and Payrissat, Ren{\'e} and Castan, Serge},
-	booktitle={Proceedings 1992 IEEE Computer Society Conference on Computer Vision and Pattern Recognition},
-	pages={784--785},
-	year={1992},
-	organization={IEEE Computer Society}
-}
+  year = 2021,
+  month = {jul},
 
+  publisher = {Open Publishing Association},
 
-@book{horn86robot,
-	title = {Robot Vision},
-	publisher = {McGraw-Hill Book Company, Cambridge, Massachusetts},
-	year = {1986},
-	author = {Berthold Klaus Paul Horn},
-	note = {MIT Electrical Engineering and Computer Science Series},
-}
+  volume = {336},
 
-@inproceedings{hougen93estimation,
-	author = {Darrel R. Hougen and Narendra Ahuja},
-	title = {Estimation Of The Light Source Distribution And Its Use In Integrated Shape Recovery From Stereo And Shading},
-	booktitle = ICCV,
-	year = {1993},
-	pages = {148--155},
-}
+  pages = {24--39},
 
-@inproceedings{samaras99coupled,
-	author = {Dimitris Samaras and Dimitris Metaxas},
-	title = {Coupled Lighting Direction and Shape Estimation from Single Images},
-	booktitle = ICCV,
-	year = {1999},
-	pages = {868--874},
-}
+  author = {Valentin Blot and Louise Dubois de Prisque and Chantal Keller and Pierre Vial},
 
-@inproceedings{sato01stability,
-	author = {Imari Sato and Yoichi Sato and Katsushi Ikeuchi},
-	title = {Stability Issues in Recovering Illumination Distribution from Brightness in Shadows},
-	booktitle = CVPR,
-	year = {2001},
-	pages = {400--407},
-	month = {December},
-}
+  title = {General Automation in Coq through Modular Transformations},
 
-@inproceedings{sato99illumination2,
-	author = {Imari Sato and Yoichi Sato and Katsushi Ikeuchi},
-	title = {Illumination Distribution from Brightness in Shadows: Adaptive Estimation of Illumination Distribution with Unknown Reflectance Properties in Shadow Regions},
-	booktitle = ICCV,
-	year = {1999},
-	pages = {875--882},
-	month = {September},
-	citeseerurl = {http://citeseer.lcs.mit.edu/sato99illumination.html},
-}
-
-@inproceedings{sato99illumination1,
-	author = {Imari Sato and Yoichi Sato and Katsushi Ikeuchi},
-	title = {Illumination Distribution from Shadows},
-	booktitle = CVPR,
-	year = {1999},
-	pages = {306--312},
-	month = {June},
-}
-
-@article{shashua97photometric,
-	author = {Amnon Shashua},
-	title = {On Photometric Issues in {3D} Visual Recognition from a Single {2D} Image},
-	journal = {International Journal of Computer Vision ({IJCV})},
-	year = {1997},
-	volume = {21},
-	pages = {99--122},
-	number = {1/2},
+  journal = {Electronic Proceedings in Theoretical Computer Science}
 }

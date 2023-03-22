@@ -1,0 +1,16 @@
+As previously mentioned, there have been efforts towards integrating SMT solvers
+with other proof assistants.
+
+For instance, the ITP Coq~\cite{Bertot2004} has the SMTCoq~\cite{smtcoq}
+plug-in, which can be used as a tactic to prove theorems via their encoding into
+SMT and by lifting proofs produced by the SMT solvers veriT~\cite{Bouton2009}
+and CVC4~\cite{Barrett2011}. The tool relies on a preprocessor written in OCaml
+to transform proof witnesses coming from different solvers into certificates in
+the Coq language. The system has a set of checkers for each theory in SMT, each
+one of them consisting of theorems asserting the validity of certain transformations
+in the SMT terms. All those checkers are connected by the main checker, that
+is essentially a theorem stating that if all the transformations resulted in an
+empty clause, then the lifting of the original term is false, for any instantiation
+of its free variables. This kind of reasoning is known as proof by computational
+reflection which is an instance of Certified Transformations, described in the
+previous section.

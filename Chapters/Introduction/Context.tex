@@ -1,0 +1,41 @@
+The process of generating mechanized proofs, for example for the
+correctness of a given program according to a specification, can be divided into
+two categories: interactive and automatic.
+
+Interactive theorem provers (ITPs) are mainly represented by proof assistants, in which, after defining
+a theorem, the user attempts to manually write a proof for it,
+relying on the tool to organize the set of hypothesis and
+how the goal changed step-wisely through the proof, as well as to ensure the
+correctness of each step according to a small, trusted kernel.
+%
+Each logic step must be explicitly stated by the user, which makes the tool
+costly to be used.
+
+Automatic theorem provers (ATPs), on the other hand,
+only require the user to define a conjecture, proceeding automatically to
+determine whether there exists a proof for it, or possibly providing a
+counter-example if there is one.
+%
+Although they are easier to use, ATPs require a large
+codebase to implement all the algorithms necessary to execute the search for a proof,
+making them more susceptible to errors and harder to be trusted, since the
+larger is the codebase, the more susceptible it is to bugs and the more complicated it is
+to verify it. Besides that, once it is verified, it's development becomes freezed
+(otherwise it would have to be verified again).
+
+A common approach to address the trust issue for ATPs is to have them provide a
+proof to support their results, so that it can be independently verified whether
+it indeed proves the theorem in question.
+%
+Via these proofs the automatic proving performed by ATPs can be
+leveraged by ITPs, since their requirement to accepting a proof, i.e.\ that each
+step is correct according to its internal logic, can be applied to the ATP
+proof.
+%
+By connecting these systems, the user could have all the freedom to use its own
+creativity and expertise in writting proofs that the ITPs offer, while delegating
+the burden of proofs that are long and monotonous to ATPs. Indeed, this
+connection is so important that there are projects like Hammering Towards QED~\cite{hammering}
+that outline all the efforts that were already made in order to integrate
+interactive and automatic theorem provers.
+

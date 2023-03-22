@@ -55,7 +55,7 @@
 		dedicatoria={dedicatoria.tex}, %% Arquivo .tex contendo a dedicatória
 		agradecimentos={agradecimentos.tex},
 		epigrafe={S\'o quem sonha acordado v\^e o sol nascer.},
-		epigrafeautor={Unkown},
+		epigrafeautor={Unknown},
 		listadefiguras={sim}, %% Remova (ou comente) este parâmetro para remover a lista de figuras
 		listadetabelas={sim}, %% Remova (ou comente) este parâmetro para remover a lista de tabelas
 		listascustomizadas={\listadealgoritmos} %% Lista customizada (e.g., lista de algoritmos). 
@@ -63,7 +63,14 @@
 
 	\chapter{Introduction}
 	  \section{Context}
+	    \input{Chapters/Introduction/Context}
+	  \section{Related Work}
+	    \subsection{SMTCoq}
+			\input{Chapters/Introduction/RelatedWork/Coq}
+		\subsection{Sledgehammer}
+			\input{Chapters/Introduction/RelatedWork/Sledgehammer}
 	  \section{Contributions}
+	    \input{Chapters/Introduction/Contributions}
 	\chapter{Formal Preliminaries}
 	  \section{Satisfiability Modulo Theories}
 	  \section{Lean's Type Theory}
@@ -133,8 +140,8 @@
 	% 		Citações aleatórias para fazer com que as referências bibliográficas ocupem	mais de uma página: \cite{bichsel92simple, dror01statistics, guisser92new, dwork2006calibrating, sweeney2002k}.
 
 		%% Referências
-		% \bibliographystyle{plain}
-		% \bibliography{referencias}
+		\bibliographystyle{plain}
+		\bibliography{referencias}
 
 		% \begin{apendices}
 		% 	\chapter{Um apêndice}
