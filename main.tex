@@ -56,9 +56,9 @@
 		agradecimentos={agradecimentos.tex},
 		epigrafe={S\'o quem sonha acordado v\^e o sol nascer.},
 		epigrafeautor={Unknown},
-		listadefiguras={sim}, %% Remova (ou comente) este parâmetro para remover a lista de figuras
-		listadetabelas={sim}, %% Remova (ou comente) este parâmetro para remover a lista de tabelas
-		listascustomizadas={\listadealgoritmos} %% Lista customizada (e.g., lista de algoritmos). 
+		% listadefiguras={sim}, %% Remova (ou comente) este parâmetro para remover a lista de figuras
+		% listadetabelas={sim}, %% Remova (ou comente) este parâmetro para remover a lista de tabelas
+		% listascustomizadas={\listadealgoritmos} %% Lista customizada (e.g., lista de algoritmos).
 	}
 
 	\chapter{Introduction}
@@ -66,17 +66,30 @@
 	    \input{Chapters/Introduction/Context}
 	  \section{Related Work}
 	    \subsection{SMTCoq}
+           \label{sec:smtcoq}
 			\input{Chapters/Introduction/RelatedWork/Coq}
 		\subsection{Sledgehammer}
+           \label{sec:sledgehammer}
 			\input{Chapters/Introduction/RelatedWork/Sledgehammer}
+	    \subsection{Hammering Towards QED}
+           \label{sec:hammering}
+			\input{Chapters/Introduction/RelatedWork/HammeringTowards}
 	  \section{Contributions}
 	    \input{Chapters/Introduction/Contributions}
+	  \section{Organization of this document}
+	    \input{Chapters/Introduction/Organization}
 	\chapter{Formal Preliminaries}
 	  \section{Satisfiability Modulo Theories}
 	  \section{Lean's Type Theory}
+	    \begin{itemize}
+	      \item Falar sobre porque eh facil confiar no proof assistant
+		  \item Explicar que taticas extendem a linguagem mas nao aumentam o trusted core
+	    \end{itemize}
 	  \section{Lean's Framework for Metaprogramming}
 	\chapter{Certifying Reconstruction of SMT Proofs in Lean}
 	  \section{Certified vs Certifying}
+      \label{sec:certifiedVsCertifying}
+	  \section{Classical vs Intuitionist (?)}
 	  \section{Tactics}
 	  \section{The Complete Architecture}
 	  \section{Skipping the Parser}

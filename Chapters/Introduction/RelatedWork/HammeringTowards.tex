@@ -1,0 +1,37 @@
+As previously mentioned, Hammering Towards QED is a project
+that aims to describe all the tools, which the paper calls ``hammers'',
+that were created with the purpose of connecting automatic and interactive
+theorem provers. Besides that, this document also outlines
+the main components that such tools usually have. They are
+the following:
+
+\begin{itemize}
+  \item The premiss selector, that is a module that identifies
+        a subset of the facts previously demonstrated in the
+        ITP that are more likely to be useful in order to
+        prove the given goal, to be dispatched to the ATP.\@
+  \item The translation module, that builds a problem in the language of the
+        ATP that corresponds to the original goal from the ITP.\@
+  \item The proof reconstruction module, that lifts the proof produced
+        by the ATP into a proof that is accepted by the ITP.\@
+\end{itemize}
+
+Moreover, the main strategies used to reconstruct the proof produced
+by the automatic system inside the interactive one are also reported.
+We give a brief description of them:
+
+\begin{itemize}
+  \item Parsing each step of the proof into predefined lemmas or tactics
+        from the ITP and replay them inside the system.
+  \item Use the ITP to verify a deeply embedded version of the proof received,
+        and, in case it is succesful, reflect this proof inside it's checker
+        to prove the original goal.
+  \item Compile the proof into the ITP's source code. This implies generating
+        an actual script in the native language of the interactive system
+        that corresponds to the proof received. This method, as opposed
+        to the previous two, has the advantage of not requiring access to
+        the ATP every time the proof is checked, but only on the first time.
+
+\end{itemize}
+
+

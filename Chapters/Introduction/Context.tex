@@ -16,11 +16,14 @@ only require the user to define a conjecture, proceeding automatically to
 determine whether there exists a proof for it, or possibly providing a
 counter-example if there is one.
 %
+For our setting, the most relevant kind of ATP are the satisfiability
+modulo theories (SMT)\cite{Barrett2018} solvers.
+%
 Although they are easier to use, ATPs require a large
 codebase to implement all the algorithms necessary to execute the search for a proof,
 making them more susceptible to errors and harder to be trusted, since the
-larger is the codebase, the more susceptible it is to bugs and the more complicated it is
-to verify it. Besides that, once it is verified, it's development becomes freezed
+larger is the codebase, the more complicated it is
+to verify it, and, also, once it is verified, it's development becomes freezed
 (otherwise it would have to be verified again).
 
 A common approach to address the trust issue for ATPs is to have them provide a
