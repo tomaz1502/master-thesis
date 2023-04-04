@@ -5,7 +5,7 @@ dada a dificuldade de produzir as demonstra\c{c}\~oes
 interativamente.
 %
 Atribuir a responsabilidade de demonstrar algumas das
-proposi\c{c}\~oes a provadores autom\'aticos de teoremas,
+proposi\c{c}\~oes a demonstradores autom\'aticos de teoremas,
 como solucionadores de satisfatibilidade modulo teorias (SMT),
 \'e um jeito reconhecido de melhorar a usabilidade de
 assistentes de demonstra\c{c}\~ao.
@@ -26,14 +26,11 @@ verificador de demonstra\c{c}\~oes de Lean aceitar\'a a
 demonstra\c{c}\~ao em SMT do teorema original, caso o processo
 seja bem sucedido.
 
-Essa ferramenta \'e parte do projeto em conjunto Lean-SMT,
+Essas t\'ecnicas s\~ao integradas no projeto Lean-SMT,
 que tem como objetivo criar uma t\'atica em Lean que implemente
-o processo completo, isto \'e, a p\'artir de um teorema em Lean,
-traduzi-lo para um problema formulado na linguagem SMT-Lib,
-invocar um solucinador SMT para tentar resolv\^e-lo e produzir
+o processo completo, isto \'e, a partir de um teorema em Lean,
+traduzi-lo para um problema formulado na linguagem do solucionador,
+invocar um solucinador para tentar resolv\^e-lo e produzir
 uma demonstra\c{c}\~ao, e, caso ele seja bem-sucedido,
 traduzi-la para certificar o teorema original em Lean (o que
-\'e feito por nossa ferramenta).
-%
-Todas as etapas desse processo est\~ao em estado
-avan\c{c}ado de desenvolvimento.
+\'e feito pelas t\'ecnias apresentadas aqui).

@@ -16,10 +16,8 @@ of the original goal.
 This requires proving the correctness, inside Lean, of the steps taken by the
 solver. Thus Lean's proof checker will accept the SMT proof as a proof of the original goal, in case this process is successful.
 
-This tool is part of the joint project Lean-SMT, which aims to create a
+This set of techniques is part of the joint project Lean-SMT, which aims to create a
 tactic in Lean that implements the whole pipeline, that is, from a goal in
-Lean, translate it into a query in SMT-Lib format, try to prove it using
-a SMT solver and, in case it is successful, lift the proof produced,
-closing the original goal in Lean (which is done by our tool).
-%
-All the steps of the pipeline are in an advanced stage of development.
+Lean, translate it into a query in the solver's language, try to prove it using
+a solver and produce a proof and, in case it is successful, lift the proof produced,
+closing the original goal in Lean (which is done by the techniques presented here).
