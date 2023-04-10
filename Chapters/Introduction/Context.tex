@@ -1,5 +1,8 @@
-The process of generating mechanized proofs, for example for the
-correctness of a given program according to a specification, can be divided into
+A mechanized proof is a proof, written in some language recognized by a computer, that had its validity checked by a trusted verifier. One of the main applications of these artifacts are formalizing mathematical theories. Indeed, for the former, there are well-known examples of successful formalizations. One of them is the mechanization of the proof of a theorem regarding Perfectoid Spaces\cite{scholze}, performed by the fields-medal mathematician Peter Scholze, together with the community of a system called Lean\cite{lean}. Scholze proved the theorem using pen and paper, but was unsure of the result due to its complexity. Once he translated the theorem and the proof to the language of Lean, the system could point out some mistakes he made, and, after fixing them, he could be sure of the correctness of the proof.
+
+Another application of mechanized proofs is verifying the correctness of mission-critical software. Given a specification of the behavior of some program, the program is said to be correct if it respects the specification for any input it is given. There are a variety of techniques to obtain correctness evidence for a software. The most common one is the development of tests. Besides being easy to write an efficient set of tests, there are many types of bugs that can be discovered with its execution. In fact, this approach is enough for a large amount of problems that are solved by software engineering. However, tests can’t guarantee that a program doesn’t have flaws, since the number of valid inputs is almost always exceedingly large, or infinite. This kind of guarantee is extremely important for mission-critical software, that is, systems that have critical responsibilities, such as the control of airplanes or medical equipment. In this context, one promising alternative is to use a mechanized proof of the correctness of the software to guarantee its safety.
+
+The process of generating mechanized proofs can be divided into
 two categories: interactive and automatic.
 
 Interactive theorem provers (ITPs) are mainly represented by proof assistants, in which, after defining
@@ -14,16 +17,13 @@ costly to be used.
 Automatic theorem provers (ATPs), on the other hand,
 only require the user to define a conjecture, proceeding automatically to
 determine whether there exists a proof for it, or possibly providing a
-counter-example if there is one.
-%
-For our setting, the most relevant kind of ATP are the satisfiability
-modulo theories (SMT)\cite{Barrett2018} solvers.
+counter-example if it can find one.
 %
 Although they are easier to use, ATPs require a large
 codebase to implement all the algorithms necessary to execute the search for a proof,
 making them more susceptible to errors and harder to be trusted, since the
 larger is the codebase, the more complicated it is
-to verify it, and, also, once it is verified, it's development becomes freezed
+to verify it, and, also, once it is verified, its development becomes freezed
 (otherwise it would have to be verified again).
 
 A common approach to address the trust issue for ATPs is to have them provide a
@@ -35,10 +35,8 @@ leveraged by ITPs, since their requirement to accepting a proof, i.e.\ that each
 step is correct according to its internal logic, can be applied to the ATP
 proof.
 %
-By connecting these systems, the user could have all the freedom to use its own
-creativity and expertise in writting proofs that the ITPs offer, while delegating
-the burden of proofs that are long and monotonous to ATPs. Indeed, this
+By connecting these systems, it would be possible for the user to focus on more complex steps of the proof, such as defining an induction hypothesis, while delegating the burden of other long and straightforward steps to the ATP. Indeed, this
 connection is so important that there are projects like Hammering Towards QED~\cite{hammering}
 that outline all the efforts that were already made in order to integrate
-interactive and automatic theorem provers.
+interactive and automatic theorem provers. In this paper, the authors describe in detail each component that a system that creates a connection between ATPs and ITPs has to implement, as well as the main issues that they have to solve, based on existing programs that were successful in this task. Besides that, they show their potential through several large benchmarks. 
 
