@@ -1,6 +1,6 @@
-A mechanized proof is a proof, written in some language recognized by a computer, that had its validity checked by a trusted verifier. One of the main applications of these artifacts are formalizing mathematical theories. Indeed, for the former, there are well-known examples of successful formalizations. One of them is the mechanization of the proof of a theorem regarding Perfectoid Spaces\cite{scholze}, performed by the fields-medal mathematician Peter Scholze, together with the community of a system called Lean\cite{lean}. Scholze proved the theorem using pen and paper, but was unsure of the result due to its complexity. Once he translated the theorem and the proof to the language of Lean, the system could point out some mistakes he made, and, after fixing them, he could be sure of the correctness of the proof.
+A mechanized proof is a proof, written in some language recognized by a computer, that had its validity checked by a trusted verifier. One of the main applications of these artifacts are formalizing mathematical theories. Indeed, there are well-known examples of successful formalizations. One of them is the mechanization of the proof of a theorem regarding Perfectoid Spaces\cite{scholze}, done by the fields-medalist mathematician Peter Scholze, together with the community of a system called Lean\cite{lean}. Scholze proved the theorem using pen and paper, but was unsure of the result due to its complexity. Once he translated the theorem and the proof to the language of Lean, the system could point out some mistakes he made, and, after fixing them, he could be sure of the correctness of the proof.
 
-Another application of mechanized proofs is verifying the correctness of mission-critical software. Given a specification of the behavior of some program, the program is said to be correct if it respects the specification for any input it is given. There are a variety of techniques to obtain correctness evidence for a software. The most common one is the development of tests. Besides being easy to write an efficient set of tests, there are many types of bugs that can be discovered with its execution. In fact, this approach is enough for a large amount of problems that are solved by software engineering. However, tests can’t guarantee that a program doesn’t have flaws, since the number of valid inputs is almost always exceedingly large, or infinite. This kind of guarantee is extremely important for mission-critical software, that is, systems that have critical responsibilities, such as the control of airplanes or medical equipment. In this context, one promising alternative is to use a mechanized proof of the correctness of the software to guarantee its safety.
+Another application of mechanized proofs is verifying the correctness of mission-critical software. Given a specification of the behavior of some program, the program is said to be correct if it respects the specification for any input it is given. For instance, one could specify that a sorting routine must always produce the sorted permutation of it's input list. In this case, a given sorting routine is said to be correct if it indeed produces the desired permutation, regardless of which list it receives. There are a variety of techniques to obtain correctness evidence for a software. The most common one is the development of tests. Besides being easy to write an efficient set of tests, there are many types of bugs that can be discovered with its execution. In fact, this approach is enough for a large amount of problems that are solved by software engineering. However, tests can’t guarantee that a program doesn’t have flaws, since the number of valid inputs is almost always exceedingly large, or infinite. This kind of guarantee is extremely important for mission-critical software, that is, systems that have critical responsibilities, such as the control of airplanes or medical equipment. In this context, one promising alternative is to use a mechanized proof of the correctness of the software as an evidence for its safety.
 
 The process of generating mechanized proofs can be divided into
 two categories: interactive and automatic.
@@ -9,10 +9,12 @@ Interactive theorem provers (ITPs) are mainly represented by proof assistants, i
 a theorem, the user attempts to manually write a proof for it,
 relying on the tool to organize the set of hypothesis and
 how the goal changed step-wisely through the proof, as well as to ensure the
-correctness of each step according to a small, trusted kernel.
+correctness of each step according to a trusted kernel.
 %
-Each logic step must be explicitly stated by the user, which makes the tool
-costly to be used.
+In order to keep the kernel simple and small (and, therefore, easy to be trusted), it's implementation usually just straightforwardly checks the logic rules from the logic implemented by the ITP.\ Because of this, each step must be explicitly stated by the user, making the tool costly to be used.
+% %
+% Each logic step must be explicitly stated by the user, which makes the tool
+% costly to be used.
 
 Automatic theorem provers (ATPs), on the other hand,
 only require the user to define a conjecture, proceeding automatically to
@@ -21,21 +23,26 @@ counter-example if it can find one.
 %
 Although they are easier to use, ATPs require a large
 codebase to implement all the algorithms necessary to execute the search for a proof,
-making them more susceptible to errors and harder to be trusted, since the
-larger is the codebase, the more complicated it is
-to verify it, and, also, once it is verified, its development becomes freezed
-(otherwise it would have to be verified again).
+making them more susceptible to errors and harder to be trusted.
+One possible way to overcome this trust issue is to produce
+a mechanized proof verifying the correctness of the ATP, however,
+besides being a very complex task, once the proof is done the
+development of the ATP becomes freezed, otherwise it would
+have to be verified again.
 
-A common approach to address the trust issue for ATPs is to have them provide a
+Another approach to increase the confidence in ATPs is to have them provide a
 proof to support their results, so that it can be independently verified whether
-it indeed proves the theorem in question.
+it indeed proves the theorem in question. This has the downside of creating a need
+for allocating resources to verify the proof of every single theorem that is proved.
+On the other hand, as long as the proof format doesn't change, the implementation
+of the solver can be modified without requiring a modification in the checkers. Also,
+it is important to consider that it is often simpler to verify proofs than to verify
+the tool itself.
+
+Another important advantage of the second approach is that it allows the ITPs to leverage the automatic proving performed by the ATPs by using the proofs they produce, since the requirement for accepting a proof, i.e.\ that each step is correct to its internal logic,
+can be applied to the ATP proof.
 %
-Via these proofs the automatic proving performed by ATPs can be
-leveraged by ITPs, since their requirement to accepting a proof, i.e.\ that each
-step is correct according to its internal logic, can be applied to the ATP
-proof.
-%
-By connecting these systems, it would be possible for the user to focus on more complex steps of the proof, such as defining an induction hypothesis, while delegating the burden of other long and straightforward steps to the ATP. Indeed, this
+By connecting these systems, it would be possible for the user of the ITP to focus on more complex steps of the proof, such as defining an induction hypothesis, while delegating the burden of other long and straightforward steps to the ATP.\ Indeed, this
 connection is so important that there are projects like Hammering Towards QED~\cite{hammering}
 that outline all the efforts that were already made in order to integrate
 interactive and automatic theorem provers. In this paper, the authors describe in detail each component that a system that creates a connection between ATPs and ITPs has to implement, as well as the main issues that they have to solve, based on existing programs that were successful in this task. Besides that, they show their potential through several large benchmarks. 

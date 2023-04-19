@@ -1,4 +1,4 @@
-Given this context, we present a tool that would be an essential
+Given this context, we present a set of tools that would be an essential
 part of the integration between the ITP Lean 4~\cite{lean} and the SMT solver cvc5~\cite{cvc5}.
 %
 Specifically, we aim to build a system that takes proofs of the unsatisfiability of
@@ -9,16 +9,22 @@ emerging as a promising programming language and proof assistant and being
 widely used by mathematicians in large-scale
 formalizations~\cite{mathlib, scholze}, there is currently no way to
 interact with SMT solvers from it, even though these systems have been
-central in previous developments of proof automation in ITPs, as seen in Sections~\ref{sec:smtcoq}
+central in previous developments of proof automation in ITPs, as we will show in Sections~\ref{sec:smtcoq}
 and~\ref{sec:sledgehammer}. The contribution of the present work
 would enable a faster development of this kind of project using Lean.
 
 We use the cvc5 solver because it already has a module for exporting proofs as
 Lean scripts~\cite{Barbosa2022}, using a representation of the SMT terms\footnote{For more details
 about the SMT term language, see SMT-LIB~\cite{smtlib}.} as an inductive type in Lean.
+However, these proofs are not fully verified by Lean's checker. Instead, a set of
+axioms are declared in Lean, representing all the logical rules that cvc5 uses to prove
+theorems, and the ITP only checks whether the rules were applied correctly and whether
+the end result of applying all the rules in the proof is, indeed, the required one.
+Our main contributions are to eliminate the need of increasing the trusted base by introducing
+axioms and to make the proofs operate over native Lean terms, as opposed to terms
+of the inductive type that represents SMT terms.
 
-Note that, as opposed to SMTCoq and Sledgehammer that implements all the three modules
-of a hammer (as described in Section~\ref{sec:hammering}), our system only implements
-the third module for now, despite the end goal of this project being to implement the
-complete integration. Also, the reconstruction technique that we use is the first one
-listed in Section~\ref{sec:hammering}, as we will describe in the next sections.
+Note that we do not intend to implement a tool that performs the full integration
+between Lean and cvc5. For instance, we do not implement a module for translating
+Lean goals into an equivalent SMT problem. However, our set of tools is being used
+as part of the project Lean-SMT, that

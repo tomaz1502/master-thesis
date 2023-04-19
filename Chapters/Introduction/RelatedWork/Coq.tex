@@ -6,7 +6,15 @@ and CVC4~\cite{Barrett2011}. The tool relies on a preprocessor written in OCaml
 to transform proof witnesses coming from different solvers into certificates in
 the Coq language. The system has a set of checkers for each theory in SMT, each
 one of them consisting of theorems asserting the validity of certain transformations
-in the SMT terms. All those checkers are connected by the main checker, that
+in the SMT terms.
+
+% more details to be understandable
+% be more high level. 'clause' has not been defined
+% or for a term to be false and so on
+% explain certified transformations
+%  (maybe not necessary as we are citing hammering first)
+
+All those checkers are connected by the main checker, that
 is essentially a theorem stating that if all the transformations resulted in an
 empty clause, then the lifting of the original term is false, for any instantiation
 of its free variables. This kind of reasoning is known as proof by computational
