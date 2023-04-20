@@ -36,6 +36,9 @@
 %% **** Caso não haja nenhuma lista adicional, os comandos acima podem ser apagados. ****
 %% ===============================================
 
+\newcommand{\yell}[1]{{\color{blue} [#1]}}
+\newcommand{\tom}[1]{\yell{#1 --tom}}
+
 \begin{document}
 	\ppgccufmg{
 		autor={Tomaz Gomes Mascarenhas}, %% Autor(a)
@@ -81,6 +84,7 @@
 	\chapter{Formal Preliminaries}
 	  \section{Satisfiability Modulo Theories}
 	  \section{Lean's Type Theory}
+	    take a look at chapter 2 of smtcoq
 	    \begin{itemize}
 	      \item Falar sobre porque eh facil confiar no proof assistant
 		  \item Explicar que taticas extendem a linguagem mas nao aumentam o trusted core

@@ -251,3 +251,30 @@ series    = {CPP 2020}
 
   journal = {Electronic Proceedings in Theoretical Computer Science}
 }
+
+@InProceedings{proof_production,
+author="Barbosa, Haniel
+and Reynolds, Andrew
+and Kremer, Gereon
+and Lachnitt, Hanna
+and Niemetz, Aina
+and N{\"o}tzli, Andres
+and Ozdemir, Alex
+and Preiner, Mathias
+and Viswanathan, Arjun
+and Viteri, Scott
+and Zohar, Yoni
+and Tinelli, Cesare
+and Barrett, Clark",
+editor="Blanchette, Jasmin
+and Kov{\'a}cs, Laura
+and Pattinson, Dirk",
+title="Flexible Proof Production in an Industrial-Strength SMT Solver",
+booktitle="Automated Reasoning",
+year="2022",
+publisher="Springer International Publishing",
+address="Cham",
+pages="15--35",
+abstract="Proof production for SMT solvers is paramount to ensure their correctness independently from implementations, which are often prohibitively difficult to verify. Historically, however, SMT proof production has struggled with performance and coverage issues, resulting in the disabling of many crucial solving techniques and in coarse-grained (and thus hard to check) proofs. We present a flexible proof-production architecture designed to handle the complexity of versatile, industrial-strength SMT solvers and show how we leverage it to produce detailed proofs, including for components previously unsupported by any solver. The architecture allows proofs to be produced modularly, lazily, and with numerous safeguards for correctness. This architecture has been implemented in the state-of-the-art SMT solver cvc5. We evaluate its proofs for SMT-LIB benchmarks and show that the new architecture produces better coverage than previous approaches, has acceptable performance overhead, and supports detailed proofs for most solving components.",
+isbn="978-3-031-10769-6"
+}
