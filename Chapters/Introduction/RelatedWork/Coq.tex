@@ -2,21 +2,25 @@ One notable example of hammer is SMTCoq~\cite{smtcoq}.
 It is a plugin for the proof assistant Coq~\cite{Bertot2004} that
 can be used as a tactic to prove theorems via their encoding into
 SMT and by lifting proofs produced by the SMT solvers veriT~\cite{Bouton2009}
-and CVC4~\cite{Barrett2011}. The tool relies on a preprocessor written in OCaml
-to transform proof witnesses coming from different solvers into certificates in
-the Coq language. The system has a set of checkers for each theory in SMT, each
-one of them consisting of theorems asserting the validity of certain transformations
-in the SMT terms.
+and CVC4~\cite{Barrett2011}. The tool can support multiple solvers
+due to a preprocessor written in OCaml, that is able to turn the different
+proof formats they emmit into an unified certificate in the Coq language,
+that will be further elaborated inside the plugin. It differs from our tool,
+which can only work with cvc5 as it was designed to support directly the proof
+format of the solver.
 
-% more details to be understandable
-% be more high level. 'clause' has not been defined
-% or for a term to be false and so on
-% explain certified transformations
-%  (maybe not necessary as we are citing hammering first)
+The hammer follows directly the Certified transformations approach, described in
+the previous section. It has a set of certified functions representing the transformations
+that can be done in the theory of Equality and Uninterpreted Functions and
+Linear Integer Arithmetic, as well as resolution chains. The way that SMT solvers prove
+that some proposition is true is by showing that it's negation is unsatisfiable
+\tom{it's okay to use unsatisfiable without defining it first?}. Therefore, a proof
+produced by it in SMTCoq is parsed into a sequence of applications of certified
+functions, which have to transform the negation of the original goal into a
+term that will be lifted to the \textit{False} proposition in Coq. Once the
+ITP verifies that the sequence of steps produced by the solver indeed
+have the expected behavior, the original theorem can be automatically closed,
+as we described in the previous section.
 
-All those checkers are connected by the main checker, that
-is essentially a theorem stating that if all the transformations resulted in an
-empty clause, then the lifting of the original term is false, for any instantiation
-of its free variables. This kind of reasoning is known as proof by computational
-reflection~\cite{reflection} which is an instance of Certified Transformations, which will be described
-in Section~\ref{sec:certifiedVsCertifying}.
+SMTCoq also differs from our work as it implements a translation module, but
+it doesn't implement a premiss selection module.
