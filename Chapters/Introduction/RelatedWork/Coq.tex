@@ -5,21 +5,21 @@ SMT and by lifting proofs produced by the SMT solvers veriT~\cite{Bouton2009}
 and CVC4~\cite{Barrett2011}. The tool can support multiple solvers
 due to a preprocessor written in OCaml, that is able to turn the different
 proof formats they emmit into an unified certificate in the Coq language,
-that will be further elaborated inside the plugin. It differs from our tool,
-which can only work with cvc5 as it was designed to support directly the proof
-format of the solver.
+that will be used as input for the plugin. Our tool explores one specific
+format of cvc5, therefore, for now, it only supports this solver and is
+less flexible in this aspect then SMTCoq.
 
-The hammer follows directly the Certified transformations approach, described in
+The Coq hammer follows directly the Certified transformations approach, described in
 the previous section. It has a set of certified functions representing the transformations
 that can be done in the theory of Equality and Uninterpreted Functions and
 Linear Integer Arithmetic, as well as resolution chains. The way that SMT solvers prove
-that some proposition is true is by showing that it's negation is unsatisfiable
-\tom{it's okay to use unsatisfiable without defining it first?}. Therefore, a proof
-produced by it in SMTCoq is parsed into a sequence of applications of certified
-functions, which have to transform the negation of the original goal into a
+that a proposition is true is by showing that it's negation is unsatisfiable
+\tom{it's okay to use unsatisfiable without defining it first?}. This kind of proof
+is parsed in SMTCoq into a sequence of applications of certified functions, which have
+to transform the negation of the original goal into a
 term that will be lifted to the \textit{False} proposition in Coq. Once the
 ITP verifies that the sequence of steps produced by the solver indeed
-have the expected behavior, the original theorem can be automatically closed,
+produces \textit{False}, the original theorem can be automatically closed,
 as we described in the previous section.
 
 SMTCoq also differs from our work as it implements a translation module, but

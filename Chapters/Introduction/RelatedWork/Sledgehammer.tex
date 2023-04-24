@@ -1,9 +1,15 @@
 The ITP Isabelle/HOL~\cite{Nipkow2002} has a similar tool,
-namely, Sledgehammer~\cite{sledgehammer}. This system achieves its goal by
-invoking several SMT solvers in parallel to prove a given goal and collecting
-their output to determine which lemmas must be applied in order to prove the theorem
-inside Isabelle. In a way, this approach is very similar to the one we're using in this project, as the proof is produced on
-the fly (known as the Certifying approach, which will also be described in Section~\ref{sec:certifiedVsCertifying}) as opposed
-to having a single theorem that establishes once and for all
-that, if all steps performed by the solver were successful,
-then the original goal is valid, as is done by SMTCoq.
+namely, Sledgehammer~\cite{sledgehammer}. This system have multiple
+strategies for building a proof for a theorem using ATPs. One of them
+is to invoke several ATPs in parallel with the given goal as their query
+and parse their output into a sequence of applications of Isabelle's
+predefined lemmas and tactics that could, in thesis, prove the original
+goal. This falls into the second category of strategies for proof
+reconstruction presented in Section~\ref{sec:hammering}.
+
+Another technique used by Sledgehammer is to use the proof found
+by the ATP's only to scan which lemmas were used, and then discard
+it and build a whole new proof, feeding the lemmas found into existing
+plugins for Isabelle that already perform automatic theorem proving for
+the ITP.\ In this case, Sledgehammer works as a premiss selector
+(described in Section~\ref{sec:hammering}) for the other plugins.
