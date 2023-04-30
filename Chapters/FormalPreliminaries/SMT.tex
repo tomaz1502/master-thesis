@@ -1,22 +1,39 @@
 
 \subsection{Description of the Problem}
 
-Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of the Boolean
-Satisfiability Problem (SAT). In this version, the underlying logic is First Order Logic
-instead of Propositional Logic, that is, the input formula for some instance of the
-problem can contain quantifiers binding variables which will affect the satisfiability of
-that instance. Another addition is the inclusion of a set of theories that allows the
-problem to refer to
-variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of operations (for instance, addition and comparison operations) can be applied to those variables.
+The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic containing free variables, find a function that assigns each free variable to a boolean value, in a way that the formula we get by replacing the variables in the original formula by their values provided by the function results in a tautology, or determine that such function does not exist. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise.
 
-TODO:
-\begin{itemize}
-  \item give examples to make it more clear
-  \item motivate
-  \item define MSFOL like bohme?
-\end{itemize}
+Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL)~\cite{many_sorted}.
 
+For instance, let $x$ and $y$ be integer variables and the symbols $+$ and $<$ have their usual meaning of addition and comparison of integers. Then, consider the formula:
+
+\begin{center}
+  $0 < x \land x < 2 \land (\forall z . (y < z) \lor x + y < 1 + y)$
+\end{center}
+
+By the first two propositions we can derive that $x = 1$. But if $x = 1$ then $x + y$ can't be lesser than $1 + y$. Also, it is impossible to choose a value for $y$ such that $\forall z . (y < z)$. Therefore, there is no value for $x$ and $y$ that would satisfy the whole formula. Hence, it is unsatisfiable. On the other hand, the following formula is satisfied by assigning, for instance, $x = 0$ and $y = 3$:
+
+\begin{center}
+  $-1 < x \land x < 1 \land (\forall z . (y < z) \lor x + y < 1 + y)$
+\end{center}
+
+Some of the most relevant theories in SMT include Linear Integer Arithmetic (LIA), Linear Real Arithmetic (LRA), Bitvectors (BV) and Equality and Uninterpreted Functions (EUF).
+
+
+% tem que falar o que eh uma demonstracao nesse contexto antes de falar isso
+% In this work, we will focus on reconstructing proofs from LIA, LRA, EUF and regular SAT proofs of unsatisfiability.
+
+\subsection{Motivation ?}
+
+\subsection{SMT Solvers}
 
 \subsection{SMT-LIB ?}
 
-\subsection{SMT Solvers}
+
+% TODO:
+% \begin{itemize}
+%   \item give examples to make it more clear
+%   \item motivate
+%   \item define MSFOL like bohme?
+% \end{itemize}
+
