@@ -21,6 +21,9 @@
 	citecolor=red, %% Cor dos links das citações      
 	urlcolor=magenta, %% Cor das urls
 ]{hyperref}
+\usepackage{minted}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 %% Exemplo de lista customizada ==================
 %% Para criar uma lista customizada (como Lista de Algoritmos, Lista de Exemplos) que ficará juntamente com as Lista de Figuras e Lista de Tabelas, execute os 3 comandos abaixo substituindo "algoritmos" pelo tipo de lista que estará criando. Para adicionar a lista ao documento, deverá passar o seguinte parâmetro no comando \ppgccufmg:
@@ -28,10 +31,10 @@
 %% 		...
 %% 		listacustomizada={\listadealgoritmos}
 %% }
-\newfloat[chapter]{algoritmo}{lol}{Algoritmo}
-\newcommand{\listaalgoritmosname}{Lista de Algoritmos} %% Título da lista
-\newlistof{listadealgoritmos}{lol}{\listaalgoritmosname} %% O primeiro parâmetro é o nome da lista, e este deverá ser passado no parâmetro listacustomizada={\nomedalista}
-\newlistentry{algoritmo}{lol}{0} %% Nome do ambiente de cada algoritmo, e.g., \begin{algoritmo} ... \end{algoritmo}
+% \newfloat[chapter]{algoritmo}{lol}{Algoritmo}
+% \newcommand{\listaalgoritmosname}{Lista de Algoritmos} %% Título da lista
+% \newlistof{listadealgoritmos}{lol}{\listaalgoritmosname} %% O primeiro parâmetro é o nome da lista, e este deverá ser passado no parâmetro listacustomizada={\nomedalista}
+% \newlistentry{algoritmo}{lol}{0} %% Nome do ambiente de cada algoritmo, e.g., \begin{algoritmo} ... \end{algoritmo}
 
 %% **** Caso não haja nenhuma lista adicional, os comandos acima podem ser apagados. ****
 %% ===============================================

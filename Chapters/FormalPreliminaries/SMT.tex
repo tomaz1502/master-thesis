@@ -1,4 +1,3 @@
-
 \subsection{Description of the Problem}
 
 The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic containing free variables, find a function that assigns each free variable to a boolean value, in a way that the formula we get by replacing the variables in the original formula by their values provided by the function results in a tautology, or determine that such function does not exist. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise.
@@ -11,29 +10,77 @@ For instance, let $x$ and $y$ be integer variables and the symbols $+$ and $<$ h
   $0 < x \land x < 2 \land (\forall z . (y < z) \lor x + y < 1 + y)$
 \end{center}
 
-By the first two propositions we can derive that $x = 1$. But if $x = 1$ then $x + y$ can't be lesser than $1 + y$. Also, it is impossible to choose a value for $y$ such that $\forall z . (y < z)$. Therefore, there is no value for $x$ and $y$ that would satisfy the whole formula. Hence, it is unsatisfiable. On the other hand, the following formula is satisfied by assigning, for instance, $x = 0$ and $y = 3$:
+By the first two propositions we can derive that $x = 1$. But if $x = 1$ then $x + y$ can't be lesser than $1 + y$. Also, it is impossible to choose a value for $y$ such that $\forall z . (y < z)$. Therefore, there is no value for $x$ and $y$ that would satisfy the whole formula. In other words, it is unsatisfiable. On the other hand, the following formula is satisfied by assigning, for instance, $x = 0$ and $y = 3$:
 
 \begin{center}
   $-1 < x \land x < 1 \land (\forall z . (y < z) \lor x + y < 1 + y)$
 \end{center}
 
-Some of the most relevant theories in SMT include Linear Integer Arithmetic (LIA), Linear Real Arithmetic (LRA), Bitvectors (BV) and Equality and Uninterpreted Functions (EUF).
-
 
 % tem que falar o que eh uma demonstracao nesse contexto antes de falar isso
+% Some of the most relevant theories in SMT are Linear Integer Arithmetic (LIA), Linear Real Arithmetic (LRA), Bitvectors (BV) and Equality and Uninterpreted Functions (EUF).
 % In this work, we will focus on reconstructing proofs from LIA, LRA, EUF and regular SAT proofs of unsatisfiability.
 
-\subsection{Motivation ?}
+\subsection{Applications}
+
+Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
+
+\begin{algorithm}
+\caption{Original Absolute Function}
+\begin{algorithmic}
+\Function{abs}{x}
+  \If {$x < 0$}
+    \State \Return $-x$
+  \Else
+    \State \Return $x$
+  \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which doesn't have branches:
+
+\begin{algorithm}
+\caption{Branchless Absolute Function}
+\begin{algorithmic}
+\Function{abs'}{x}
+  \State $y \gets x >> 31$
+  \State \Return $(x \bigoplus y) - y$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input.
+
+\begin{minted}{text}
+(set-logic QF_BV)
+(set-info :smt-lib-version 2.0)
+(declare-fun x () (_ BitVec 32))
+(declare-fun result1 () (_ BitVec 32))
+(assert (= result1 (ite (bvslt x #x00000000) (bvneg x) x)))
+(declare-fun y () (_ BitVec 32))
+(declare-fun result2 () (_ BitVec 32))
+(assert (= y ( bvashr x (_ bv31 32))))
+(assert (= result2 (bvsub ( bvxor x y) y)))
+(assert (distinct result1 result2))
+(check-sat)
+\end{minted}
+
+% Given that we have very efficient systems to solve such problems, which will be introduced later, the possibility of formally verifying programs using this technology is quite promising. Indeed, \tom{pegar referencias do paper do leonardo (https://fm.csl.sri.com/SSFT14/smt-application-chapter.pdf)}
+
+\begin{itemize}
+  \item revolucao sat
+  \item representar propriedades de programas como problemas smt
+  \item geracao de casos de teste
+  \item geracao de programas
+  \item F*, Dafny
+\end{itemize}
+
+
+\subsection{Proofs}
 
 \subsection{SMT Solvers}
 
-\subsection{SMT-LIB ?}
-
 
 % TODO:
-% \begin{itemize}
-%   \item give examples to make it more clear
-%   \item motivate
-%   \item define MSFOL like bohme?
-% \end{itemize}
-
+% define MSFOL like bohme?
