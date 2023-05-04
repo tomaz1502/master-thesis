@@ -1,8 +1,8 @@
 \subsection{Description of the Problem}
 
-The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic containing free variables, find a function that assigns each free variable to a boolean value, in a way that the formula we get by replacing the variables in the original formula by their values provided by the function results in a tautology, or determine that such function does not exist. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise.
+The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic containing free variables, find a function that assigns each free variable to a boolean value, in a way that the formula we get by replacing the variables in the original formula by their values provided by the function is a tautology, or determine that such function does not exist. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise.
 
-Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL)~\cite{many_sorted}.
+Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). Note that SMT problems are allowed to use multiple theories in the same instance. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL)~\cite{many_sorted}.
 
 For instance, let $x$ and $y$ be integer variables and the symbols $+$ and $<$ have their usual meaning of addition and comparison of integers. Then, consider the formula:
 
@@ -23,17 +23,17 @@ By the first two propositions we can derive that $x = 1$. But if $x = 1$ then $x
 
 \subsection{Applications}
 
-Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
+Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
 
 \begin{algorithm}
-\caption{Original Absolute Function}
+\caption{Original Absolute Function}~\label{originalAbs}
 \begin{algorithmic}
 \Function{abs}{x}
-  \If {$x < 0$}
-    \State \Return $-x$
-  \Else
-    \State \Return $x$
-  \EndIf
+\If{$x < 0$}
+  \State\Return$-x$
+\Else
+  \State\Return$x$
+\EndIf
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
@@ -41,7 +41,7 @@ Given a program and a formal specification of some property related to the progr
 In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which doesn't have branches:
 
 \begin{algorithm}
-\caption{Branchless Absolute Function}
+\caption{Branchless Absolute Function}~\label{branchlessAbs}
 \begin{algorithmic}
 \Function{abs'}{x}
   \State $y \gets x >> 31$
@@ -50,23 +50,27 @@ In program analysis, it is quite useful to eliminate branches from programs sinc
 \end{algorithmic}
 \end{algorithm}
 
-Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input.
+Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input. We present the instance written in SMT-LIB~\cite{smtlib}, a standardized syntax for representing SMT problems:
 
-\begin{minted}{text}
+\begin{minted}[linenos]{smtlib2.py -x}
 (set-logic QF_BV)
-(set-info :smt-lib-version 2.0)
-(declare-fun x () (_ BitVec 32))
-(declare-fun result1 () (_ BitVec 32))
+(declare-const x (_ BitVec 32))
+(declare-const result1 (_ BitVec 32))
 (assert (= result1 (ite (bvslt x #x00000000) (bvneg x) x)))
-(declare-fun y () (_ BitVec 32))
-(declare-fun result2 () (_ BitVec 32))
+(declare-const y (_ BitVec 32))
+(declare-const result2 (_ BitVec 32))
 (assert (= y ( bvashr x (_ bv31 32))))
-(assert (= result2 (bvsub ( bvxor x y) y)))
+(assert (= result2 (bvsub (bvxor x y) y)))
 (assert (distinct result1 result2))
 (check-sat)
 \end{minted}
 
+First, we set the combination of theories that will be used in this problem. In our case, we will be using \textit{QF\_BV}, which stands for quantifier free bitvectors. This means that this instance of the problem is not allowed to use quantifiers and is allowed to declare and use variables living in the Bitvector sort, as well as operations over this sort. Bitvectors are fixed-length arrays of bits. They are useful for representing machine integers, as they can simulate their semantics.
+
+Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitVec 32} (arrays of 32 bits): \textit{x} and \textit{result1}. The first one represents the input value from the original \textit{abs} function, and the second one, the result produced by that function. We then have to add an assertion in line 4 to make sure that \textit{result1} have, indeed, the value calculated by the \textit{abs} function. This will be encoded as a regular implication from SAT, where the premiss is the assertion we just made and the conclusion is the rest of the problem, which still needs to be defined. In lines 5 to 8 we repeat the process to define \textit{y} and \textit{result2}, which corresponds to the result of the branchless \textit{abs} function. Finally, we assert that \textit{result1} and \textit{result2} must be different in line 9. If this problem is satisfiable, then there is a value for \textit{x} which produces different values in each function. If it is unsatisfiable, then we can be sure that not such value exists, therefore, both functions are equivalent. Note that we are not verifying that the actual code of the function is equivalent, just an abstraction over it's implementation.
+
 % Given that we have very efficient systems to solve such problems, which will be introduced later, the possibility of formally verifying programs using this technology is quite promising. Indeed, \tom{pegar referencias do paper do leonardo (https://fm.csl.sri.com/SSFT14/smt-application-chapter.pdf)}
+%
 
 \begin{itemize}
   \item revolucao sat
