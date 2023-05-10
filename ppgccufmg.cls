@@ -507,7 +507,7 @@
 	
 	\begin{KeepFromToc}
 		\addtocontents{toc}{\protect\thispagestyle{empty}}
-		\tableofcontents* %% Sumário
+		% \tableofcontents* %% Sumário
 	\end{KeepFromToc}
 	\endgroup
 }

@@ -24,6 +24,9 @@
 \usepackage{minted}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage[toc]{glossaries}
+\usepackage{glossaries-extra}
+\usepackage{bm}
 
 %% Exemplo de lista customizada ==================
 %% Para criar uma lista customizada (como Lista de Algoritmos, Lista de Exemplos) que ficará juntamente com as Lista de Figuras e Lista de Tabelas, execute os 3 comandos abaixo substituindo "algoritmos" pelo tipo de lista que estará criando. Para adicionar a lista ao documento, deverá passar o seguinte parâmetro no comando \ppgccufmg:
@@ -42,6 +45,31 @@
 \newcommand{\yell}[1]{{\color{blue} [#1]}}
 \newcommand{\tom}[1]{\yell{#1 --tom}}
 
+\newglossarystyle{mystyle}{%
+  \glossarystyle{long}%
+  \renewenvironment{theglossary}%
+     {\begin{longtable}{p{3cm}p{\glsdescwidth}}}%
+     {\end{longtable}}%
+}
+
+\newglossary{symbols}{sym}{sbl}{List of Symbols}
+\makeglossaries
+\newglossaryentry{NegLit}
+{
+    name = {$\bm{\overline x}$},
+    description={Negation of the literal $x$}
+}
+\newglossaryentry{IncVar}
+{
+  name = {$\bm{x \in C}$},
+  description={Variable $x$ is present in the clause $C$}
+}
+\newglossaryentry{RemVar}
+{
+  name = {$\bm{C \setminus x}$},
+  description={Clause $C$ without variable $x$}
+}
+
 \begin{document}
 	\ppgccufmg{
 		autor={Tomaz Gomes Mascarenhas}, %% Autor(a)
@@ -52,20 +80,26 @@
 		versaopt={Final},
 		versaoen={Final}, %% Palavra que acompanhará 'Version' na folha de rosto em inglẽs
 		orientador={Haniel Barbosa}, %% Para masculino
-		fichacatalografica={fichacatalografica.pdf},
-		folhadeaprovacao={folhadeaprovacao.pdf},
+		% fichacatalografica={fichacatalografica.pdf},
+		% folhadeaprovacao={folhadeaprovacao.pdf},
 		resumo={resumo.tex}, %% Resumo em português
 		palavraschave={Verifica\c{c}\~ao Formal, Lean, SMT},
 		abstracten={abstract.tex}, %% Abstract em inglês
 		keywords={Formal Verification, Lean, SMT}, %% Palavras-chave do abstract
-		dedicatoria={dedicatoria.tex}, %% Arquivo .tex contendo a dedicatória
-		agradecimentos={agradecimentos.tex},
+		% dedicatoria={dedicatoria.tex}, %% Arquivo .tex contendo a dedicatória
+		% agradecimentos={agradecimentos.tex},
 		epigrafe={S\'o quem sonha acordado v\^e o sol nascer.},
 		epigrafeautor={Unknown},
 		% listadefiguras={sim}, %% Remova (ou comente) este parâmetro para remover a lista de figuras
 		% listadetabelas={sim}, %% Remova (ou comente) este parâmetro para remover a lista de tabelas
 		% listascustomizadas={\listadealgoritmos} %% Lista customizada (e.g., lista de algoritmos).
 	}
+
+    \printunsrtglossary[style=mystyle]
+
+	\newpage
+
+	\tableofcontents
 
 	\chapter{Introduction}
 	  \section{Context}
@@ -87,7 +121,7 @@
 	\chapter{Formal Preliminaries}
 	  \section{Satisfiability Modulo Theories}
 	    \input{Chapters/FormalPreliminaries/SMT}
-	  \section{Lean's Type Theory}
+	  \section{Lean}
 	    take a look at chapter 2 of smtcoq
 	    \begin{itemize}
 	      \item Falar sobre porque eh facil confiar no proof assistant
