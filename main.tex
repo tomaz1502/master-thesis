@@ -42,6 +42,8 @@
 %% **** Caso não haja nenhuma lista adicional, os comandos acima podem ser apagados. ****
 %% ===============================================
 
+\newtheorem{theorem}{Theorem}
+
 \newcommand{\yell}[1]{{\color{blue} [#1]}}
 \newcommand{\tom}[1]{\yell{#1 --tom}}
 
@@ -56,18 +58,33 @@
 \makeglossaries
 \newglossaryentry{NegLit}
 {
-    name = {$\bm{\overline x}$},
+    name = {$\bm{\overline x}$ },
     description={Negation of the literal $x$}
 }
 \newglossaryentry{IncVar}
 {
-  name = {$\bm{x \in C}$},
+  name = {$\bm{x \in C}$ },
   description={Variable $x$ is present in the clause $C$}
 }
 \newglossaryentry{RemVar}
 {
-  name = {$\bm{C \setminus x}$},
+  name = {$\bm{C \setminus x}$ },
   description={Clause $C$ without variable $x$}
+}
+\newglossaryentry{FormulaVars}
+{
+  name = {$\bm{Vars(\psi)}$ },
+  description={Set of all variables in the formula $\psi$}
+}
+\newglossaryentry{Resolution}
+{
+  name = {\bm{$C_{1} \diamond_{x} C_{2}$} },
+  description={Clause resulting from applying resolution with $C_{1}$ and $C_{2}$ using $x$ as a pivot}
+}
+\newglossaryentry{VarAssign}
+{
+  name = {$\bm{\psi_{\{x \gets val\}}$} },
+  description = {Formula resulting of assigning the variable $x$ to the boolean value $val$ in $\psi$}
 }
 
 \begin{document}
@@ -95,7 +112,7 @@
 		% listascustomizadas={\listadealgoritmos} %% Lista customizada (e.g., lista de algoritmos).
 	}
 
-    \printunsrtglossary[style=mystyle]
+    \printunsrtglossary %[style=mystyle]
 
 	\newpage
 

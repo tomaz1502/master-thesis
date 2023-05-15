@@ -1,6 +1,6 @@
 \subsection{Description of the Problem}
 
-The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic containing free variables, find a function that assigns each free variable to a boolean value, in a way that the formula we get by replacing the variables in the original formula by their values provided by the function is a tautology, or determine that such function does not exist. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise.
+The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic (PL) containing free variables, determine whether exists a function that assigns each variable to a boolean value, in a way that, after replacing the variables by their values provided by the function, the formula is evaluated to \textit{true}. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise. In this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in which the input formula always comes in Conjuctive Normal Form, that is, a conjunction of disjunctions. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will use the name \textit{clause} to refer to one of the disjunctions in some input formula for SAT.
 
 Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). Note that SMT problems are allowed to use multiple theories in the same instance. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic is given in detail in~\cite{many_sorted}. In the next section we give a brief overview of it.
 
@@ -97,19 +97,42 @@ A SMT solver is a piece of software whose main goal is to solve the SMT problem.
 
 \subsubsection{DPLL}
 
-% \glsadd{IncVar}
-% \glsadd{NegLit}
-%
+First, let’s explore how SAT is solved. Although MSFOL is not decidable, Propositional Logic is, therefore, it is possible to design a decision procedure for SAT.\@ Indeed, one simple way to check whether a formula in PL with $n$ variables is satisfiable or not is to simply test each one of the $2^{n}$ functions assigning truth values to those variables.
 
+A more efficient alternative of a decision procedure for PL is the DPLL algorithm~\cite{dpll}. DPLL is based on the \textit{Resolution} theorem:
 
-\newtheorem{theorem}{Theorem}
 \begin{theorem}[Resolution]
 Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\overline x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \overline x)$.
-
 \end{theorem}
+
+More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more specific version of Resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\overline x\}$. We present it's pseudocode:
+
+\begin{algorithm}[H]
+\caption{DPLL Algorithm}~\label{dpllAlgo}
+    \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in CNF \\
+    \hspace*{\algorithmicindent} \textbf{Output} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+\begin{algorithmic}
+\Function{DPLL}{$\psi$}
+\If{$\exists C \in \psi .\, C = \{\bot\}$}
+  \State~\Return~\textit{false}
+\ElsIf{$\forall C \in \psi .\, \top \in C$}
+  \State~\Return~\textit{true}
+\Else
+  \If{$\exists x \in Vars(\psi) \,$ such that $x$ is a target for UR}
+    \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$} \Comment{Clauses suitable for applying UR with $x$}
+    \State~\Return~DPLL($\psi \cup C_{1} \diamond C_{2}$)
+  \Else
+    \State~Let $x$ be an unassinged variable in $\psi$
+    \State~\Return~\Call{DPLL}{$\psi_{\{x \gets \top\}}$} $\vee$ \Call{DPLL}{$\psi_{\{x \gets \bot\}}$}
+  \EndIf
+\EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The algorithm works as follows: first, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it can't, the procedure finds as many variables in which it can apply Unit Resolution as possible. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to simply return the disjunction between the two return values.
 
 \subsubsection{Congruence}
 
 
 \subsection{Proofs in cvc5}
-
