@@ -2,7 +2,7 @@
 
 The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic (PL) containing free variables, determine whether exists a function that assigns each variable to a boolean value, in a way that, after replacing the variables by their values provided by the function, the formula is evaluated to \textit{true}. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise. In this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in which the input formula always comes in Conjuctive Normal Form, that is, a conjunction of disjunctions. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will use the name \textit{clause} to refer to one of the disjunctions in some input formula for SAT.
 
-Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). Note that SMT problems are allowed to use multiple theories in the same instance. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic is given in detail in~\cite{many_sorted}. In the next section we give a brief overview of it.
+Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). SMT problems are allowed to use multiple theories in the same instance. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic is given in detail in~\cite{many_sorted}. In Section~\ref{sec:msfolHere} we give a brief overview of it.
 
 % EXAMPLE -- remove?
 
@@ -23,6 +23,15 @@ Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ The
 % tem que falar o que eh uma demonstracao nesse contexto antes de falar isso
 % Some of the most relevant theories in SMT are Linear Integer Arithmetic (LIA), Linear Real Arithmetic (LRA), Bitvectors (BV) and Equality and Uninterpreted Functions (EUF).
 % In this work, we will focus on reconstructing proofs from LIA, LRA, EUF and regular SAT proofs of unsatisfiability.
+
+
+\subsection{Many-Sorted First Order Logic}\label{sec:msfolHere}
+
+define formarly many sorted first order logic
+
+talk about fixing the meaning of some theories to improve performance
+
+skipping this for now, I will write the rest of the thesis so I have a better understanding of what needs to go here
 
 \subsection{Applications}
 
@@ -83,13 +92,6 @@ Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitV
 %   \item F*, Dafny
 % \end{itemize}
 
-\subsection{Many-Sorted First Order Logic}
-
-define formarly many sorted first order logic
-
-talk about fixing the meaning of some theories to improve performance
-
-skipping this for now, I will write the rest of the thesis so I have a better understanding of what needs to go here
 
 \subsection{SMT Solvers}
 
@@ -105,12 +107,12 @@ A more efficient alternative of a decision procedure for PL is the DPLL algorith
 Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\overline x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \overline x)$.
 \end{theorem}
 
-More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more specific version of Resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\overline x\}$. We present it's pseudocode:
+More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more specific version of Resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\overline x\}$. We present DPLL's pseudocode and a brief explanation over it:
 
 \begin{algorithm}[H]
 \caption{DPLL Algorithm}~\label{dpllAlgo}
     \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in CNF \\
-    \hspace*{\algorithmicindent} \textbf{Output} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+    \hspace*{\algorithmicindent} \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}
 \Function{DPLL}{$\psi$}
 \If{$\exists C \in \psi .\, C = \{\bot\}$}
@@ -119,8 +121,8 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
   \State~\Return~\textit{true}
 \Else
   \If{$\exists x \in Vars(\psi) \,$ such that $x$ is a target for UR}
-    \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$} \Comment{Clauses suitable for applying UR with $x$}
-    \State~\Return~DPLL($\psi \cup C_{1} \diamond C_{2}$)
+    \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$, $\psi$} \Comment{Clauses suitable for applying UR with $x$}
+    \State~\Return~DPLL($\psi \cup C_{1} \diamond_{x} C_{2}$)
   \Else
     \State~Let $x$ be an unassinged variable in $\psi$
     \State~\Return~\Call{DPLL}{$\psi_{\{x \gets \top\}}$} $\vee$ \Call{DPLL}{$\psi_{\{x \gets \bot\}}$}
@@ -130,9 +132,34 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \end{algorithmic}
 \end{algorithm}
 
-The algorithm works as follows: first, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it can't, the procedure finds as many variables in which it can apply Unit Resolution as possible. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to simply return the disjunction between the two return values.
+The algorithm works as follows: first, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it can't, the procedure finds as many variables in which it can apply Unit Resolution as possible, calling itself recursively with each new application found. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
 
-\subsubsection{Congruence}
+The actual algorithm used by most SMT solvers is a refinement over DPLL, called CDCL~\cite{cdcl}.\ Since this refinement is not relevant for this work, we will not present it here.
+
+\subsubsection{DPLL(T)}
+
+DPLL(T) is a framework based on the DPLL algorithm that is used as a basis for solving the SMT problem. This is the solution that most SMT solvers actually implement for solving the problem. Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind DPLL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each atom in it for a fresh boolean variable. We can then use the previously described DPLL algorithm to determine whether $\psi'$ is satisfiable. If it is unsatisfiable, then $\psi$ is also unsatisfiable. Otherwise, we can find a model $M$ for $\psi'$. Although $M$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. The only possible model for this formula is the one that assigns both $p$ and $q$ to $\top$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller than $-2$. If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (p \wedge q)$.
+
+
+\begin{algorithm}[H]
+\caption{DPLL(T) Algorithm}~\label{dpllTAlgo}
+    \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
+    \hspace*{\algorithmicindent} \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+\begin{algorithmic}
+\Function{DPLL(T)}{$\psi$}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Congruence Closure}
+
+\begin{itemize}
+  \item Dar a definicao formal de EUF
+  \item Explicar o que eh o congruence closure
+  \item Explicar o algoritmo com union find pra resolver
+\end{itemize}
+
+\subsubsection{Linear Arithmetic}
 
 
 \subsection{Proofs in cvc5}
