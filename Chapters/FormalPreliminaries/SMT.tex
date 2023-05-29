@@ -146,19 +146,18 @@ DPLL(T) is an abstract framework based on the DPLL algorithm that is used as a b
 
 \begin{algorithm}[H]
 \caption{DPLL(T) Algorithm}~\label{dpllTAlgo}
-    \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
-    \hspace*{\algorithmicindent} \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+\textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
+\textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}
 \Function{SolveMSFOL}{$\psi$}
-
-\State $\psi' \gets \Call{Convert}{\psi}$
+\State $\psi' \gets \Call{Convert}{\psi}$ \Comment{Get PL formula from MSFOL formula}
 \If{$\Call{SolvePL}{\psi'}$}
   \State $M \gets \Call{GetModel}{\psi'}$
-  \State $L \gets \Call{TheorySolver}{M, \psi}$
-  \If{$L = \varnothing$}
+  \If{$\Call{TheorySolver}{M, \psi}$} \Comment{Check if $M$ is compatible with $\psi$}
     \State~\Return \textit{true}
   \Else
-    \State~\Return $\Call{SolveMSFOL}{\psi \cup L}$
+    \State $L \gets \Call{GetConflictingLemma}{M, \psi}$
+    \State~\Return $\Call{SolveMSFOL}{\psi \wedge L}$
   \EndIf
 \Else
   \State~\Return \textit{false}
