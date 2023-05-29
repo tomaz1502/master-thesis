@@ -111,21 +111,24 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 
 \begin{algorithm}[H]
 \caption{DPLL Algorithm}~\label{dpllAlgo}
-    \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in CNF \\
-    \hspace*{\algorithmicindent} \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+% \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in CNF \\
+% \hspace*{\algorithmicindent} \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+\textbf{Input:} $\psi$, a PL formula\\
+\textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}
-\Function{DPLL}{$\psi$}
+\Function{SolvePL}{$\psi$}
+\State $\psi \gets \Call{ConvertCNF}{\psi}$
 \If{$\exists C \in \psi .\, C = \{\bot\}$}
-  \State~\Return~\textit{false}
+  \State \Return~\textit{false}
 \ElsIf{$\forall C \in \psi .\, \top \in C$}
-  \State~\Return~\textit{true}
+  \State \Return~\textit{true}
 \Else
   \If{$\exists x \in Vars(\psi) \,$ such that $x$ is a target for UR}
     \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$, $\psi$} \Comment{Clauses suitable for applying UR with $x$}
-    \State~\Return~DPLL($\psi \cup C_{1} \diamond_{x} C_{2}$)
+    \State~\Return~\Call{SolvePL}{$\psi \cup C_{1} \diamond_{x} C_{2}$}
   \Else
     \State~Let $x$ be an unassinged variable in $\psi$
-    \State~\Return~\Call{DPLL}{$\psi_{\{x \gets \top\}}$} $\vee$ \Call{DPLL}{$\psi_{\{x \gets \bot\}}$}
+    \State~\Return~\Call{SolvePL}{$\psi_{\{x \gets \top\}}$} $\vee$ \Call{SolvePL}{$\psi_{\{x \gets \bot\}}$}
   \EndIf
 \EndIf
 \EndFunction
@@ -138,7 +141,7 @@ The actual algorithm used by most SMT solvers is a refinement over DPLL, called 
 
 \subsubsection{DPLL(T)}
 
-DPLL(T) is a framework based on the DPLL algorithm that is used as a basis for solving the SMT problem. This is the solution that most SMT solvers actually implement for solving the problem. Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind DPLL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each atom in it for a fresh boolean variable. We can then use the previously described DPLL algorithm to determine whether $\psi'$ is satisfiable. If it is unsatisfiable, then $\psi$ is also unsatisfiable. Otherwise, we can find a model $M$ for $\psi'$. Although $M$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. The only possible model for this formula is the one that assigns both $p$ and $q$ to $\top$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller than $-2$. If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (p \wedge q)$.
+DPLL(T) is an abstract framework based on the DPLL algorithm that is used as a basis for solving the SMT problem. This is the solution that most SMT solvers actually implement for solving the problem. Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind DPLL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each atom in it for a fresh boolean variable. We can then use the previously described DPLL algorithm to determine whether $\psi'$ is satisfiable. If it is unsatisfiable, then $\psi$ is also unsatisfiable. Otherwise, we can find a model $M$ for $\psi'$. Although $M$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. The only possible model for this formula is the one that assigns both $p$ and $q$ to $\top$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller than $-2$. If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$.
 
 
 \begin{algorithm}[H]
@@ -146,7 +149,22 @@ DPLL(T) is a framework based on the DPLL algorithm that is used as a basis for s
     \hspace*{\algorithmicindent} \textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
     \hspace*{\algorithmicindent} \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}
-\Function{DPLL(T)}{$\psi$}
+\Function{SolveMSFOL}{$\psi$}
+
+\State $\psi' \gets \Call{Convert}{\psi}$
+\If{$\Call{SolvePL}{\psi'}$}
+  \State $M \gets \Call{GetModel}{\psi'}$
+  \State $L \gets \Call{TheorySolver}{M, \psi}$
+  \If{$L = \varnothing$}
+    \State~\Return \textit{true}
+  \Else
+    \State~\Return $\Call{SolveMSFOL}{\psi \cup L}$
+  \EndIf
+\Else
+  \State~\Return \textit{false}
+\EndIf
+
+
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
