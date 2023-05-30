@@ -1,8 +1,11 @@
+
+In this section we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and giving an intuition over how it is solved, we focus on showing how proofs are structured in a SMT solver.
+
 \subsection{Description of the Problem}
 
 The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic (PL) containing free variables, determine whether exists a function that assigns each variable to a boolean value, in a way that, after replacing the variables by their values provided by the function, the formula is evaluated to \textit{true}. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise. In this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in which the input formula always comes in Conjuctive Normal Form, that is, a conjunction of disjunctions. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will use the name \textit{clause} to refer to one of the disjunctions in some input formula for SAT.
 
-Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). SMT problems are allowed to use multiple theories in the same instance. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic is given in detail in~\cite{many_sorted}. In Section~\ref{sec:msfolHere} we give a brief overview of it.
+Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations). SMT problems are allowed to use multiple theories in the same instance. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic are given in detail in~\cite{many_sorted}. In Section~\ref{sec:msfolHere} we give a brief overview of it.
 
 % EXAMPLE -- remove?
 
@@ -27,17 +30,34 @@ Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ The
 
 \subsection{Many-Sorted First Order Logic}\label{sec:msfolHere}
 
-define formarly many sorted first order logic
+The syntax of MSFOL can be described with three syntatic categories:
 
-talk about fixing the meaning of some theories to improve performance
+\begin{enumerate}
+  \item \textbf{Sorts}. Symbols identifying the kinds of variables that are allowed. They are defined by the following grammar:
+        \begin{center}
+          $ \tau := t \vert (\tau_{1}, \tau_{2}, \ldots, \tau_{n}) \rightarrow \tau \vert (\tau_{1}, \tau_{2}, \ldots, \tau_{m})$
+        \end{center}
+        Where the second case represents functions with arity $n$ and the third case represents predicates of arith $m$.
+  \item \textbf{Terms}.
+  \item \textbf{Formulas}.
+\end{enumerate}
 
-skipping this for now, I will write the rest of the thesis so I have a better understanding of what needs to go here
+Definition: Theory
+
+Specific theories instantiate those sets with particular values (e.g. EUF instantiate sorts with $\{U\}$, creates a function $= : U \rightarrow U \rightarrow bool$)
+
+
+% define formarly many sorted first order logic
+
+% talk about fixing the meaning of some theories to improve performance
+
+% skipping this for now, I will write the rest of the thesis so I have a better understanding of what needs to go here
 
 \subsection{Applications}
 
 Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Original Absolute Function}~\label{originalAbs}
 \begin{algorithmic}
 \Function{abs}{x}
@@ -50,9 +70,9 @@ Given a program and a formal specification of some property related to the progr
 \end{algorithmic}
 \end{algorithm}
 
-In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which doesn't have branches:
+In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which doesn't have branches:
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Branchless Absolute Function}~\label{branchlessAbs}
 \begin{algorithmic}
 \Function{abs'}{x}
@@ -79,7 +99,7 @@ Where $\bigoplus$ represents the bitwise xor operation. We can design an instanc
 
 First, we set the combination of theories that will be used in this problem. In our case, we will be using \textit{QF\_BV}, which stands for quantifier free bitvectors. This means that this instance of the problem is not allowed to use quantifiers and is allowed to declare and use variables living in the Bitvector sort, as well as operations over this sort. Bitvectors are fixed-length arrays of bits. They are useful for representing machine integers, as they can simulate their semantics.
 
-Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitVec 32} (arrays of 32 bits): \textit{x} and \textit{result1}. The first one represents the input value from the original \textit{abs} function, and the second one, the result produced by that function. We then have to add an assertion in line 4 that binds the variable \textit{result1} to the output of the function \textit{abs} in terms of \textit{x}. We translate the branch from the pseudocode as the \textit{ite} operator, the comparison as the \textit{bvslt} operator and the multiplication by -1 as the \textit{bvneg} operation. This assertion will be encoded as a regular implication from SAT, where the premiss is it's proposition and the conclusion is the rest of the problem, which still needs to be defined. In lines 5 to 8 we repeat the process to define \textit{y} and \textit{result2}, which corresponds to the result of the branchless \textit{abs} function. Finally, we assert that \textit{result1} and \textit{result2} must be different in line 9. If this problem is satisfiable, then there is a value for \textit{x} which produces different values in each function. If it is unsatisfiable, then we can be sure that no such value exists, therefore, both functions are equivalent. Note that we are not verifying that the actual code of the functions are equivalent, just an abstraction over it's implementation.
+Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitVec 32} (arrays of 32 bits): \textit{x} and \textit{result1}. The first one represents the input value from the original \textit{abs} function, and the second one, the result produced by that function. We then have to add an assertion in line 4 that binds the variable \textit{result1} to the output of the function \textit{abs} in terms of \textit{x}. We translate the branch from the pseudocode as the \textit{ite} operator, the comparison as the \textit{bvslt} operator and the multiplication by -1 as the \textit{bvneg} operation. In lines 5 to 8 we repeat the process to define \textit{y} and \textit{result2}, which corresponds to the result of the branchless \textit{abs} function. Finally, we assert that \textit{result1} and \textit{result2} must be different in line 9. If this problem is satisfiable, then there is a value for \textit{x} which produces different values in each function. If it is unsatisfiable, then we can be sure that no such value exists, therefore, both functions are equivalent. Note that we are not verifying that the actual code of the functions are equivalent, just an abstraction over it's implementation.
 
 % Given that we have very efficient systems to solve such problems, which will be introduced later, the possibility of formally verifying programs using this technology is quite promising. Indeed, \tom{pegar referencias do paper do leonardo (https://fm.csl.sri.com/SSFT14/smt-application-chapter.pdf)}
 %
@@ -107,7 +127,7 @@ A more efficient alternative of a decision procedure for PL is the DPLL algorith
 Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\overline x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \overline x)$.
 \end{theorem}
 
-More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more specific version of Resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\overline x\}$. We present DPLL's pseudocode and a brief explanation over it:
+More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of Resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\overline x\}$. We present DPLL's pseudocode and a brief explanation over it:
 
 \begin{algorithm}[H]
 \caption{DPLL Algorithm}~\label{dpllAlgo}
@@ -125,7 +145,7 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \Else
   \If{$\exists x \in Vars(\psi) \,$ such that $x$ is a target for UR}
     \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$, $\psi$} \Comment{Clauses suitable for applying UR with $x$}
-    \State~\Return~\Call{SolvePL}{$\psi \cup C_{1} \diamond_{x} C_{2}$}
+    \State~\Return~\Call{SolvePL}{$\psi \wedge C_{1} \diamond_{x} C_{2}$}
   \Else
     \State~Let $x$ be an unassinged variable in $\psi$
     \State~\Return~\Call{SolvePL}{$\psi_{\{x \gets \top\}}$} $\vee$ \Call{SolvePL}{$\psi_{\{x \gets \bot\}}$}
@@ -146,7 +166,6 @@ Assuming that we have a decision procedure for a given theory (or a combination 
 Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind DPLL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each atom in it for a fresh boolean variable. We can then use the previously described DPLL algorithm to determine whether $\psi'$ is satisfiable. If it is unsatisfiable, then $\psi$ is also unsatisfiable. Otherwise, we can find a model $M$ for $\psi'$. Although $M$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. The only possible model for this formula is the one that assigns both $p$ and $q$ to $\top$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller than $-2$. If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$. Note that we are assuming that our theory solver has the capability of producing such a conflicting lemma for a particular model.
 
 The following is the pseudocode for DPLL(T):
-
 
 \begin{algorithm}[H]
 \caption{DPLL(T) Algorithm}~\label{dpllTAlgo}
@@ -172,15 +191,25 @@ The following is the pseudocode for DPLL(T):
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Congruence Closure}
+\subsubsection{Equality and Uninterpreted Functions}
 
-\begin{itemize}
-  \item Dar a definicao formal de EUF
-  \item Explicar o que eh o congruence closure
-  \item Explicar o algoritmo com union find pra resolver
-\end{itemize}
+The first theory that we will be interested in this work is Equality and Uninterpreted Functions (EUF).
+
+\begin{theorem}[Congruence]
+Let $f$ be a function and $a$ and $b$ be two atoms. $a = b \rightarrow f(a) = f(b)$.
+\end{theorem}
+
+% \begin{itemize}
+%   \item Dar a definicao formal de EUF
+%   \item Explicar o que eh o congruence closure
+%   \item Explicar o algoritmo com union find pra resolver
+% \end{itemize}
 
 \subsubsection{Linear Arithmetic}
 
 
 \subsection{Proofs in cvc5}
+
+\begin{itemize}
+  \item Resolution tree (cite Rob65 from smtcoq to say that it is complete)
+\end{itemize}
