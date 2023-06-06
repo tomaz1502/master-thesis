@@ -3,30 +3,9 @@ In this section we present the SMT problem. Recall that our goal is to translate
 
 \subsection{Description of the Problem}
 
-The Boolean Satisfiability Problem (SAT) consists of, given a formula in Propositional Logic (PL) containing free variables, determine whether there exists a function that assigns each variable to a boolean value, in a way that, after replacing the variables by their values provided by the function, the formula is evaluated to \textit{true}. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise. In this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in which the input formula always comes in Conjunctive Normal Form, that is, a conjunction of disjunctions. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will use the name \textit{clause} to refer to each one of the disjunctions in some input formula for SAT.
+The Boolean Satisfiability Problem (SAT) consists in, given a formula in Propositional Logic (PL) containing free variables, determining whether there exists a function that assigns each variable to a boolean value, in a way that, after replacing the variables by their values provided by the function, the formula is evaluated to \textit{true}. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise. In this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in which the input formula always comes in Conjunctive Normal Form, that is, a conjunction of disjunctions. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will use the name \textit{clause} to refer to each one of the disjunctions in some input formula for SAT.
 
 Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations over integers). Instances of the problem are allowed to use multiple theories at the same time. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic are given in detail in~\cite{many_sorted}. In Section~\ref{sec:msfolHere} we give a brief overview of it.
-
-% EXAMPLE -- remove?
-
-% For instance, let $x$ and $y$ be integer variables and the symbols $+$ and $<$ have their usual meaning of addition and comparison of integers. Then, consider the formula:
-
-% \begin{center}
-%   $0 < x \land x < 2 \land (\forall z . (y < z) \lor x + y < 1 + y)$
-% \end{center}
-
-% By the first two propositions we can derive that $x = 1$. But if $x = 1$ then $x + y$ can't be lesser than $1 + y$. Also, it is impossible to choose a value for $y$ such that $\forall z . (y < z)$. Therefore, there is no value for $x$ and $y$ that would satisfy the whole formula. In other words, it is unsatisfiable. On the other hand, the following formula is satisfied by assigning, for instance, $x = 0$ and $y = 3$:
-
-% \begin{center}
-%   $-1 < x \land x < 1 \land (\forall z . (y < z) \lor x + y < 1 + y)$
-% \end{center}
-
-% END EXAMPLE
-
-% tem que falar o que eh uma demonstracao nesse contexto antes de falar isso
-% Some of the most relevant theories in SMT are Linear Integer Arithmetic (LIA), Linear Real Arithmetic (LRA), Bitvectors (BV) and Equality and Uninterpreted Functions (EUF).
-% In this work, we will focus on reconstructing proofs from LIA, LRA, EUF and regular SAT proofs of unsatisfiability.
-
 
 \subsection{Many-Sorted First Order Logic}\label{sec:msfolHere}
 
@@ -37,8 +16,8 @@ The syntax of MSFOL can be described with three syntatic categories:
         \begin{center}
           $ \tau ::= \sigma \mid (\tau_{1}, \tau_{2}, \ldots, \tau_{n}) \rightarrow \tau \mid (\tau_{1}, \tau_{2}, \ldots, \tau_{m})$
         \end{center}
-        Where the first case represents an atomic sort drawn from a set of predefined sorts, which we will refer to as $\mathcal{S}_{S}$, the second case represents functions with arity $n$ and the third case represents predicates of arith $m$.
-  \item \textbf{Terms}. Symbols representing sorted variables, constants or function applications. Notice that function applications are only well formed when the sorts are respected. The sort annotations will be omitted when they can be inferred.
+        Where the first case represents an atomic sort drawn from a set of predefined sorts, which we will refer to as $\mathcal{S}_{S}$, the second case represents functions with arity $n$ and the third case represents predicates of arity $m$.
+  \item \textbf{Terms}. Symbols representing sorted variables, constants or function applications. Notice that function applications are only well formed when the sorts are respected. The symbols annotated on top of each term represent their sort, and they will be ommited when they can be inferred.
         \begin{center}
           $ t ::= x^{\tau} \mid f^{(\tau_{1}, \ldots, \tau_{n}) \rightarrow \tau}(t_{1}, \dots, t_{n}) $
         \end{center}
@@ -67,17 +46,9 @@ We also define the following symbols:
   Let $\mathcal{S}_{S} := \{\mathbb{Z}\}$, $\mathcal{S}_{F}' := \{+, -, *\}$ and $\mathcal{S}_{P} := \{<, =\}$. Let's define the semantics of $+$, $-$ and $*$ as the usual semantics of addition, subtraction and multiplication over integers. Also, let's define the semantics of $<$ and $=$ as the usual semantics of the ``lesser than'' and ``equal to'' relations over integers. Finally, let's define $\mathcal{S}_{F} := \mathcal{S}_{F}' \cup \mathbb{Z}$ (as we also need the definition of all the integer constants as nullary functions). We denote by $\mathcal{T}_{LIA}$ (LIA standing for Linear Integer Arithmetic) the theory defined by $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P} \rangle$.
 \end{example}
 
-
-% define formarly many sorted first order logic
-
-% talk about fixing the meaning of some theories to improve performance
-
-% skipping this for now, I will write the rest of the thesis so I have a better understanding of what needs to go here
-
-
 \subsection{SMT Solvers}
 
-A SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in it's most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve the largest possible subset of instances of the problem. In this section we present the ideas used by these systems that are most relevant to the present work.
+A SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in it's most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve the a subset of the instances of the problem. In this section we present the ideas used by these systems that are most relevant to the present work.
 
 \subsubsection{DPLL}
 
@@ -123,7 +94,7 @@ The actual algorithm used by most SMT solvers is a refinement over DPLL, called 
 
 \subsubsection{DPLL(T)}
 
-Assuming that we have a decision procedure for a given theory (or a combination of them), we can use it to extend the DPLL algorithm for checking the satisfiability of MSFOL formulas involving that theory. The technique that does that is called DPLL(T), and it is the solution that most SMT solvers actually implement for solving the SMT problem.
+Assuming that we have a decision procedure for a given theory (or a combination of them), we can use it to extend the DPLL algorithm for checking the satisfiability of MSFOL formulas involving that theory. In this section we will study the DPLL(T) framework, that is a method for doing this extension over DPLL. The actual strategy used by SMT solvers is known as CDCL(T), which is analogous to DPLL(T), except that it is an extension over CDCL instead of DPLL.
 
 Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind DPLL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each term in it for a fresh boolean variable. We can then use the previously described DPLL algorithm to determine whether $\psi'$ is satisfiable. If it is unsatisfiable, then $\psi$ is also unsatisfiable. Otherwise, we can find a model $M$ for $\psi'$. Although $M$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. The only possible model for this formula is the one that assigns both $p$ and $q$ to $\top$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller than $-2$. If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$. Note that we are assuming that our theory solver has the capability of producing such a conflicting lemma for a particular model.
 
@@ -155,10 +126,14 @@ The following is the pseudocode for DPLL(T):
 
 \subsubsection{Equality and Uninterpreted Functions}
 
-The first theory that we will be interested in this work is Equality and Uninterpreted Functions (EUF).
+In this work, we will be interested in two theories and their respective solvers. The first one is Equality and Uninterpreted Functions.
+
+Consider the following problem: given a set of variables and a set of functions, decide whether or not a given set of equalities between them is consistent or not.
+
+$S_{S} := \{U\}$, $S_{f}$
 
 \begin{theorem}[Congruence]
-Let $f$ be a function and $a$ and $b$ be two atoms. $a = b \rightarrow f(a) = f(b)$.
+Let $f$ be a function and $a$ and $b$ be two terms. $a = b \rightarrow f(a) = f(b)$.
 \end{theorem}
 
 % \begin{itemize}
