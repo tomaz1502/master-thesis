@@ -128,9 +128,11 @@ The following is the pseudocode for DPLL(T):
 
 In this work, we will be interested in two theories and their respective solvers. The first one is Equality and Uninterpreted Functions.
 
-Consider the following problem: given a set of variables and a set of functions, decide whether or not a given set of equalities between them is consistent or not.
+Consider the following problem: given a set of universally quantified variables and functions and a set of equalities or inequalities built from variables and functions applied to the variables, decide whether a given equality is a consequence of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables, $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = d, f(b) = d, f(d) = a\}$ have as a consequence the equality $a = b$.
+% $S_{S} := \{U\}$, $S_{f}$
 
-$S_{S} := \{U\}$, $S_{f}$
+The problem described above is essentially asking to calculate the \textit{Congruence Closure} of $S$.
+
 
 \begin{theorem}[Congruence]
 Let $f$ be a function and $a$ and $b$ be two terms. $a = b \rightarrow f(a) = f(b)$.
