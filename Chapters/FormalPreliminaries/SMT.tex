@@ -1,5 +1,5 @@
 
-In this section we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and explaining how it is solved, we focus on showing how proofs are structured in a SMT solver.
+In this chapter we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and explaining how it is solved, we focus on showing how proofs are structured in a SMT solver.
 
 \subsection{Description of the Problem}
 
@@ -42,8 +42,8 @@ We also define the following symbols:
   A theory $\mathcal{T}$ is a triple of sets $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P}\rangle$ together with a formal definition of the corresponding semantics, that is, for each function $f \in \mathcal{S}_{F}$, what is the resulting constant of applying $f$ to each possible sequence of arguments. Also, for each predicate $p \in \mathcal{S}_{P}$ and for each possible sequence of arguments, whether it is a tautology or not.
 \end{definition}
 
-\begin{example}[LIA]
-  Let $\mathcal{S}_{S} := \{\mathbb{Z}\}$, $\mathcal{S}_{F}' := \{+, -, *\}$ and $\mathcal{S}_{P} := \{<, =\}$. Let's define the semantics of $+$, $-$ and $*$ as the usual semantics of addition, subtraction and multiplication over integers. Also, let's define the semantics of $<$ and $=$ as the usual semantics of the ``lesser than'' and ``equal to'' relations over integers. Finally, let's define $\mathcal{S}_{F} := \mathcal{S}_{F}' \cup \mathbb{Z}$ (as we also need the definition of all the integer constants as nullary functions). We denote by $\mathcal{T}_{LIA}$ (LIA standing for Linear Integer Arithmetic) the theory defined by $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P} \rangle$.
+\begin{example}[LIA]\label{ex:lia}
+  Let $\mathcal{S}_{S} := \{\mathbb{Z}\}$, $\mathcal{S}_{F} := \{+, -, 0, succ, pred\}$ and $\mathcal{S}_{P} := \{<, \le, =, \ge, >\}$. Let's define the semantics of $+$ and $-$ as the usual semantics of addition and subtraction and multiplication over integers. $0$ is a nullary function representing the integer zero. $succ$ and $pred$ are unary functions representing successor and predecessor of integers. Also, let's define the semantics of $<$, $\le$, $=$, $\ge$ and $>$ as the usual semantics of comparison relations over integers. We denote by $\mathcal{T}_{LIA}$ (LIA standing for Linear Integer Arithmetic) the theory defined by $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P} \rangle$. An example of formula in this theory is $3x + 2y < 0 \vee 3x + 2y > 0$. Notice that we do not have a multiplication function in $\mathcal{S}_{F}$, so terms like $3x$ and $2y$ are abbreviations for $x + x + x$ and $y + y$.
 \end{example}
 
 \subsection{SMT Solvers}
@@ -141,20 +141,13 @@ We now give a brief overview on the standard algorithm for finding the congruenc
 Let $f$ be a function of arity $n$ and ${(a_{k})}_{k = 1}^{n}$ and ${(b_{k})}_{k = 1}^{n}$ be two sequences of terms. $\bigwedge_{i = 1}^{n} a_{i} = b_{i} \rightarrow f(a_{1}, \ldots, a_{n}) = f(b_{1}, \ldots, b_{n})$.
 \end{theorem}
 
-Let $S$ be the set of equalities that are assumed and $e$ be the one that we want to decide whether it is a consequence of $S$. Let $T$ be the set of all terms that appear in $S \cup \{e\}$ including all function parameters. Let's build a graph $G$ in which for all $t \in T$ we will have a vertex $v$ in $G$ that represents that term. For the vertex $v$, we will assign a label with the name of the term it represents. Moreover, if $t$ is a function application we will add directed edges from $t$ to each vertex that represents a term that is an argument to $t$. Also, we will keep an order over the children for each vertex, according to the order in which the parameters are applied. For instance, let $S := \{f(a, b) = a\}$ and $e := f(f(a, b), b) = a$. Then we would build $G$ as follows:
+Let $S$ be the set of equalities that are assumed and $e$ be the one that we want to decide whether is a consequence of $S$. Let $T$ be the set of all terms that appear in $S \cup \{e\}$ including all function parameters. Let's build a graph $G$ in which for all $t \in T$ we will have a vertex $v$ in $G$ that represents that term. For the vertex $v$, we will assign a label with the name of the term it represents. Moreover, if $t$ is a function application we will add directed edges from $t$ to each vertex that represents a term that is an argument to $t$. Also, we will keep an order over the children for each vertex, according to the order in which the parameters are applied. For instance, let $S := \{f(a, b) = a\}$ and $e := f(f(a, b), b) = a$. Then we would build $G$ as follows:
 
 % For instance, for the example given in the beginning of this section, we build $G$ as follows:
 
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}[node distance={15mm}, main/.style = {draw, circle}]
-% \node[main, label=left:$v_{1}$] (1) {$f$};
-% \node[main, label=right:$v_{2}$] (2) [right of=1] {$f$};
-% \node[main, label=below:$v_{4}$] (4) [below of=1] {$b$};
-% \node[main, label=below:$v_{5}$] (5) [below of=2] {$c$};
-% \node[main, label=below:$v_{3}$] (3) [left of=4] {$a$};
-% \draw[->] (1) -- (4);
-% \draw[->] (2) -- (5);
 \node[main, label=left:$v_{1}$] (1) {$f$};
 \node[main, label=left:$v_{2}$] (2) [below left of=1] {$f$};
 \node[main, label=below:$v_{3}$] (3) [below left of=2] {$a$};
@@ -174,8 +167,6 @@ Initially, each term is only equal to itself. Then, for each equality $t_{1} = t
 
 \renewcommand{\algorithmicforall}{\textbf{for each}}
 \MakeRobust{\Call}
-
-% tem que falar que os vizinhos tao ordenados e que Child(v, i) eh o i-esimo vizinho de v
 
 \begin{algorithm}[H]
 \caption{Merge with Congruence}~\label{merge_cong}
@@ -220,6 +211,12 @@ Once this process is done, we can check whether any pair of terms $t_{1}$ and $t
 
 \subsubsection{Linear Arithmetic}
 
+The second theory that we will be interested in this work is the theory of Linear Arithmetic. A term in this theory is an expression of the form:
+\begin{center}
+  $\mathlarger{\sum}_{i = 1}^{n} a_{i} x_{i} \bowtie b$
+\end{center}
+
+Where each $a_{i}$ and $b$ are constants ranging over integers, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If we allow variables to range over rationals, we have the Linear Real Arithmetic (LRA) theory, which can be described using MSFOL in almost the same way, only changing $\mathcal{S}_{S}$ to $\{\mathbb{Q}\}$. \tom{we don't need to include rational constants in $\mathcal{S}_{F}$, right?}
 \subsection{Proofs in cvc5}
 
 \begin{itemize}
