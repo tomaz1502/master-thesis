@@ -43,7 +43,7 @@ The second one is to match each axiom in the ATP's logic into a proved lemma or 
 defined in the ITP that works directly with native terms of the system.
 The proof produced by the automatic solver is then parsed into a sequence of applications
 of those lemmas and tactics and replayed inside the ITP.\ In this case, the proof is built
-on the fly and doesn't have it's correctness guaranteed (it can fail in the middle of the
+on the fly and does not have it's correctness guaranteed (it can fail in the middle of the
 proccess in case the ATP or the hammer did something wrong). On the other hand,
 this technique skips computations done over embedded terms, which have to be done by the
 Certified approach, having the potential to have a better

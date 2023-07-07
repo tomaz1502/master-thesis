@@ -12,9 +12,7 @@ how the goal changed step-wisely through the proof, as well as to ensure the
 correctness of each step according to a trusted kernel.
 %
 In order to keep the kernel simple and small (and, therefore, easy to be trusted), it's implementation usually just straightforwardly checks the logic rules from the logic implemented by the ITP.\ Because of this, each step must be explicitly stated by the user, making the tool costly to be used.
-% %
-% Each logic step must be explicitly stated by the user, which makes the tool
-% costly to be used.
+%
 
 Automatic theorem provers (ATPs), on the other hand,
 only require the user to define a conjecture, proceeding automatically to
@@ -34,7 +32,7 @@ Another approach to increase the confidence in ATPs is to have them provide a
 proof to support their results, so that it can be independently verified whether
 it indeed proves the theorem in question. This has the downside of creating a need
 for allocating resources to verify the proof of every single theorem that is proved.
-On the other hand, as long as the proof format doesn't change, the implementation
+On the other hand, as long as the proof format does not change, the implementation
 of the solver can be modified without requiring a modification in the checkers. Also,
 it is important to consider that it is often simpler to verify proofs than to verify
 the tool itself.

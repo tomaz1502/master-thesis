@@ -1,5 +1,5 @@
 
-In this chapter we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and explaining how it is solved, we focus on showing how proofs are structured in a SMT solver.
+In this chapter we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and explaining how it is solved, we focus on showing how proofs are structured in an SMT solver.
 
 \subsection{Description of the Problem}
 
@@ -24,7 +24,7 @@ The syntax of MSFOL can be described with three syntatic categories:
         Function symbols are drawn from a predefined set, which we will refer to as $\mathcal{S}_{F}$. Constants are represented by nullary functions.
   \item \textbf{Formulas}. Symbols representing boolean expressions, possibly involving terms. Predicate applications are also only well formed when the sorts are respected. They are drawn from a predefined set which we will refer to as $\mathcal{S}_{P}$.
         \begin{center}
-          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi \mid p^{(\tau_{1}, \ldots, \tau_{m})}(t_{1}, \dots, t_{m}) $ % \mid \psi_{1} \cong \psi_{2} $
+          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi \mid p^{(\tau_{1}, \ldots, \tau_{m})}(t_{1}, \dots, t_{m}) $
         \end{center}
 \end{enumerate}
 
@@ -33,7 +33,6 @@ We also define the following symbols:
 \begin{center}
   $\exists x. \psi := \neg \forall x. \neg \psi$\\
   $\psi_{1} \wedge \psi_{2} := \neg (\neg \psi_{1} \vee \neg \psi_{2})$\\
-  % $\psi_{1} \ncong \psi_{2} := \neg (\psi_{1} \cong \psi_{2})$\\
   $\psi_{1} \Rightarrow \psi_{2} := \neg \psi_{1} \vee \psi_{2}$\\
   $\psi_{1} \Leftrightarrow \psi_{2} := \psi_{1} \Rightarrow \psi_{2} \wedge \psi_{2} \Rightarrow \psi_{1}$
 \end{center}
@@ -48,7 +47,7 @@ We also define the following symbols:
 
 \subsection{SMT Solvers}
 
-A SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in it's most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve the a subset of the instances of the problem. In this section we present the ideas used by these systems that are most relevant to the present work.
+An SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in it's most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve the a subset of the instances of the problem. In this section we present the ideas used by these systems that are most relevant to the present work.
 
 \subsubsection{DPLL}
 
@@ -86,7 +85,7 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \end{algorithmic}
 \end{algorithm}
 
-The algorithm works as follows: first, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it can't, the procedure finds as many variables in which it can apply Unit Resolution as possible, invoking itself recursively with each new application found. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
+The algorithm works as follows: first, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible, invoking itself recursively with each new application found. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
 
 The actual algorithm used by most SMT solvers is a refinement over DPLL, called CDCL~\cite{cdcl}.\ Since this refinement is not relevant for this work, we will not present it here.
 
@@ -143,8 +142,6 @@ Let $f$ be a function of arity $n$ and ${(a_{k})}_{k = 1}^{n}$ and ${(b_{k})}_{k
 
 Let $S$ be the set of equalities that are assumed and $e$ be the one that we want to decide whether is a consequence of $S$. Let $T$ be the set of all terms that appear in $S \cup \{e\}$ including all function parameters. Let's build a graph $G$ in which for all $t \in T$ we will have a vertex $v$ in $G$ that represents that term. For the vertex $v$, we will assign a label with the name of the term it represents. Moreover, if $t$ is a function application we will add directed edges from $t$ to each vertex that represents a term that is an argument to $t$. Also, we will keep an order over the children for each vertex, according to the order in which the parameters are applied. For instance, let $S := \{f(a, b) = a\}$ and $e := f(f(a, b), b) = a$. Then we would build $G$ as follows:
 
-% For instance, for the example given in the beginning of this section, we build $G$ as follows:
-
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}[node distance={15mm}, main/.style = {draw, circle}]
@@ -196,7 +193,7 @@ Initially, each term is only equal to itself. Then, for each equality $t_{1} = t
     \State\Return~$false$
   \EndIf
   \For{$i = 1$ to $\delta(v_{1})$}
-    \If{\Call{SameClasses}{\Call{Child}{$v_{1}$, $i$}, \Call{Child}{$v_{2}$, $i$}}}
+  \If{$\neg$ \Call{SameClasses}{\Call{Child}{$v_{1}$, $i$}, \Call{Child}{$v_{2}$, $i$}}}
       \State\Return $false$
     \EndIf
   \EndFor
@@ -216,7 +213,30 @@ The second theory that we will be interested in this work is the theory of Linea
   $\mathlarger{\sum}_{i = 1}^{n} a_{i} x_{i} \bowtie b$
 \end{center}
 
-Where each $a_{i}$ and $b$ are constants ranging over integers, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If we allow variables to range over rationals, we have the Linear Real Arithmetic (LRA) theory, which can be described using MSFOL in almost the same way, only changing $\mathcal{S}_{S}$ to $\{\mathbb{Q}\}$. \tom{we don't need to include rational constants in $\mathcal{S}_{F}$, right?}
+Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If we allow variables to range over rationals, we have the Linear Real Arithmetic (LRA) theory, which can be described using MSFOL in almost the same way, only changing $\mathcal{S}_{S}$ to $\{\mathbb{Q}\}$. \tom{we don't need to include rational constants in $\mathcal{S}_{F}$, right?}
+
+We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms in this theory is satisfiable
+
+For instance, let the set of those atoms be $\Phi := \{x - y \ge 3, x - y \le 10, x \ge 5, x - 2y < 6\}$. The first step is to, for each atom $t_{i} \bowtie b_{i} \in \Phi$ which does not have a single variable on the left side, create a new variable $s_{i}$. Then, we will define two new sets of atoms: $\Phi_{A}$, such that it's atoms are all of the form $s_{i} = t_{i}$, that is, they state the equality between the new variables and the corresponding terms, and $\Phi'$, that has all the atoms in $\Phi$ but with each term $t_{i}$ substituted by $s_{i}$. From our original set $\Phi$ we would define $\Phi_{A} := \{s_{1} = x - y, s_{2} = x - 2y\}$ and $\Phi' := \{s_{1} \ge 3\, s_{1} \le 10, x \ge 5, s_{2} < 6\}$. It is easy to see that $\Phi$ and $\Phi_{A} \wedge \Phi'$ are equisatisfiable.
+
+Next we will represent the restrictions in $\Phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). If the original problem had $n$ variables and we added $m$ new ones, the matrix $A$ will have dimensions $m$ and $m + n$. In our example, we would have the following:
+
+\begin{center}
+$
+A :=
+\begin{bmatrix}
+  -1 & 1 & 1 & 0 \\
+  -1 & 2 & 0 & 1
+\end{bmatrix}
+x :=
+\begin{bmatrix}
+  x & y & s_{1} & s_{2}
+\end{bmatrix}^{T}
+$
+\end{center}
+
+Now our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\Psi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\Psi'$ and rewrite it's restrictions as $l_{i} \le v_{i} \le r_{i}$, where $l_{i}$ will be $-\infty$ if there is no lower restriction on $v_{i}$ and $r_{i}$ will be $+\infty$ if there is no upper restriction on $v_{i}$.
+
 \subsection{Proofs in cvc5}
 
 \begin{itemize}
@@ -240,7 +260,7 @@ Given a program and a formal specification of some property related to the progr
 \end{algorithmic}
 \end{algorithm}
 
-In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which doesn't have branches:
+In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which does not have branches:
 
 \begin{algorithm}[H]
 \caption{Branchless Absolute Function}~\label{branchlessAbs}
