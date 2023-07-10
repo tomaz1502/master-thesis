@@ -21,13 +21,14 @@ The syntax of MSFOL can be described with three syntatic categories:
         \begin{center}
           $ t ::= x^{\tau} \mid f^{(\tau_{1}, \ldots, \tau_{n}) \rightarrow \tau}(t_{1}, \dots, t_{n}) $
         \end{center}
-        Function symbols are drawn from a predefined set, which we will refer to as $\mathcal{S}_{F}$. Constants are represented by nullary functions.
+        Function symbols are drawn from a predefined set, which we will refer to as $\mathcal{S}_{F}$. Constants are represented by nullary functions. Terms will also be referred to as ``atoms''.
   \item \textbf{Formulas}. Symbols representing boolean expressions, possibly involving terms. Predicate applications are also only well formed when the sorts are respected. They are drawn from a predefined set which we will refer to as $\mathcal{S}_{P}$.
         \begin{center}
-          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi \mid p^{(\tau_{1}, \ldots, \tau_{m})}(t_{1}, \dots, t_{m}) $
+          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi $ % \mid p^{(\tau_{1}, \ldots, \tau_{m})}(t_{1}, \dots, t_{m}) $
         \end{center}
 \end{enumerate}
 
+We will always assume that we have a special sort named \textit{bool} inhabited by only two values, \textit{true} and \textit{false}. A function that returns a value of \textit{bool} type will be called a ``predicate''.
 We also define the following symbols:
 
 \begin{center}
@@ -217,9 +218,10 @@ Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is
 
 We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms in this theory is satisfiable
 
-For instance, let the set of those atoms be $\Phi := \{x - y \ge 3, x - y \le 10, x \ge 5, x - 2y < 6\}$. The first step is to, for each atom $t_{i} \bowtie b_{i} \in \Phi$ which does not have a single variable on the left side, create a new variable $s_{i}$. Then, we will define two new sets of atoms: $\Phi_{A}$, such that it's atoms are all of the form $s_{i} = t_{i}$, that is, they state the equality between the new variables and the corresponding terms, and $\Phi'$, that has all the atoms in $\Phi$ but with each term $t_{i}$ substituted by $s_{i}$. From our original set $\Phi$ we would define $\Phi_{A} := \{s_{1} = x - y, s_{2} = x - 2y\}$ and $\Phi' := \{s_{1} \ge 3\, s_{1} \le 10, x \ge 5, s_{2} < 6\}$. It is easy to see that $\Phi$ and $\Phi_{A} \wedge \Phi'$ are equisatisfiable.
+The first step is to, for each atom $t_{i} \bowtie b_{i} \in \Phi$ in which $t_{i}$ is a sum of at least two variables, create a fresh variable $s_{i}$. Then, we will define two new sets of atoms: $\Phi_{A}$, such that it's atoms are all of the form $s_{i} = t_{i}$, that is, they state the equality between the new variables and the corresponding terms, and $\Phi'$, that has all the atoms in $\Phi$ but with each term $t_{i}$ substituted by the corresponding $s_{i}$. For instance, let the set of atoms be
+$\Phi := \{x - y \ge 3, x - 2y < 6, x - y \le 10, x \ge 5\}$.  From this, we would define $\Phi_{A} := \{s_{1} = x - y, s_{2} = x - 2y\}$ and $\Phi' := \{s_{1} \ge 3, s_{2} < 6, s_{1} \le 10, x \ge 5\}$. It is easy to see that $\Phi$ and $\Phi_{A} \wedge \Phi'$ are equisatisfiable.
 
-Next we will represent the restrictions in $\Phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). If the original problem had $n$ variables and we added $m$ new ones, the matrix $A$ will have dimensions $m$ and $m + n$. In our example, we would have the following:
+Next we will represent the restrictions in $\Phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). If the original problem had $n$ variables and we added $m$ fresh ones, the matrix $A$ will have $m$ rows and $m + n$ columns. In our example, we would have the following:
 
 \begin{center}
 $
@@ -235,7 +237,7 @@ x :=
 $
 \end{center}
 
-Now our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\Psi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\Psi'$ and rewrite it's restrictions as $l_{i} \le v_{i} \le r_{i}$, where $l_{i}$ will be $-\infty$ if there is no lower restriction on $v_{i}$ and $r_{i}$ will be $+\infty$ if there is no upper restriction on $v_{i}$.
+Now our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\Phi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\Phi'$ and rewrite it's restrictions as $l_{i} \le v_{i} \le r_{i}$, where $l_{i}$ will be $-\infty$ if there is no lower restriction on $v_{i}$ and $r_{i}$ will be $+\infty$ if there is no upper restriction on $v_{i}$.
 
 \subsection{Proofs in cvc5}
 
