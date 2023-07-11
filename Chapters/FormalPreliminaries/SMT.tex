@@ -237,7 +237,12 @@ x :=
 $
 \end{center}
 
-Now our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\Phi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\Phi'$ and rewrite it's restrictions as $l_{i} \le v_{i} \le r_{i}$, where $l_{i}$ will be $-\infty$ if there is no lower restriction on $v_{i}$ and $r_{i}$ will be $+\infty$ if there is no upper restriction on $v_{i}$.
+Now, our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\Phi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\Phi'$. Notice that in this case we can represent the restrictions in $\Phi'$ as two sequences of coefficients $l_{i}$ and $r_{i}$ and a sequence of restrictions of the form $l_{i} \le v_{i} \le r_{i}$, as long as we allow $l_{i}$ to be $-\infty$ in case there is no lower restriction on $v_{i}$ and $r_{i}$ to be $+\infty$ in case there is no upper restriction on $v_{i}$.
+
+We will solve this problem by processing each restriction in $\Phi'$ incrementally. Our algorithm will maintain a state that includes the coefficients $l_{i}$ and $r_{i}$, as well as a function $\beta(v)$ that assigns a rational value to each variable $v$. At the beginning, since we haven't processed any inequality yet, we will set each $l_{i}$ to $-\infty$, each $r_{i}$ to $+\infty$, and $\beta(v_{i})$ to $0$ for all $v_{i}$. Additionally, we will keep track of two separate sets of variables: $\mathcal{N}$ (non-basic variables) and $\mathcal{B}$ (basic variables). Initially, $\mathcal{B}$ will consist of all the variables we added to the problem (each $s_{i}$), while $\mathcal{N}$ will include all the original variables from the problem. Those sets divide the variables into the ones that we have freedom to choose the value (non-basic) and the ones that have their values defined by the equation $Ax = 0$ and the value of the non-basic variables.
+
+For each inequality that we process, we will always ensure that the values of $\beta$ satisfy $Ax = 0$ and, for each $v_{i} \in \mathcal{N}$, $l_{i} \le v_{i} \le r_{i}$.
+
 
 \subsection{Proofs in cvc5}
 
