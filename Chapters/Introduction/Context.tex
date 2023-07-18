@@ -34,6 +34,14 @@ automatically to determine whether there exists a proof
 for it, or possibly providing a counter-example if it
 can find one.
 %
+There are a variety of types of tools that use different
+techniques to automatically reason about logical propositions. An important one
+that we will focus on this dissertation is the SMT solvers. Those are
+systems which take as input a formula written in an extended version of First Order Logic,
+capable of incorporating structures from external domains such as arithmetic,
+arrays and others. SMT solvers employ a combination of SAT solvers and
+domain-specific methods to solve such formulas.
+%
 Although they are easier to use, ATPs require a large
 codebase to implement all the algorithms necessary to execute
 the search for a proof, making them more susceptible to

@@ -1,8 +1,8 @@
-Given this context, we present a set of tools that would be an essential
+We present a set of tools that could be an essential
 part of the integration between the ITP Lean 4~\cite{lean} and the SMT solver cvc5~\cite{cvc5}.
 %
 Specifically, we aim to build a system that takes proofs of the unsatisfiability of
-SMT queries produced by cvc5 and reconstructs them in Lean.
+SMT queries produced by cvc5 and reconstructs them in proofs in Lean.
 %
 The main motivation of this project is that despite the fact that Lean is
 emerging as a promising programming language and proof assistant and being
@@ -11,21 +11,25 @@ formalizations~\cite{mathlib, scholze}, there is currently no way to
 interact with SMT solvers from it, even though these systems have been
 central in previous developments of proof automation in ITPs, as we will show in Sections~\ref{sec:smtcoq}
 and~\ref{sec:sledgehammer}. The contribution of the present work
-would enable a faster development of this kind of project using Lean.
+is essential to develop this kind of project using Lean.
+
 
 We use the cvc5 solver because it already has a module for exporting proofs as
 Lean scripts~\cite{Barbosa2022}, using a representation of the SMT terms\footnote{For more details
 about the SMT term language, see SMT-LIB~\cite{smtlib}.} as an inductive type in Lean.
-However, these proofs are not fully verified by Lean's checker. Instead, a set of
-axioms are declared in Lean, representing all the logical rules that cvc5 uses to prove
-theorems, and the ITP only checks whether the rules were applied correctly and whether
-the end result of applying all the rules in the proof is, indeed, the required one.
-Our main contributions are to eliminate the need of increasing the trusted base by introducing
-those axioms and to make the proofs operate over native Lean terms, as opposed to terms
-of the inductive type that represents SMT terms.
+Each proof produced by cvc5 consists of a set of logical steps manipulating the hypothesis
+until it's possible to infer the goal. In order to print proofs in this format, the module
+in question uses a set of axioms that represents each logical rule implemented by the solver.
+Those axioms do not have their validity checked by Lean's checker, therefore, they have to
+be trusted by the user of the tool.
+Our main contribution is to eliminate the need to increase the trusted base by replacing
+those axioms for theorems and tactics that will be checked by Lean's checker. Furthermore,
+those theorems and tactics operate over native Lean terms as opposed to terms represented by an inductive type,
+facilitating the process of using this module to prove theorems originally stated in Lean's language.
 
-Note that the set of tools we are proposing does not implement the full integration
-between Lean and cvc5. For instance, we do not implement a module for translating
-Lean goals into an equivalent SMT problem. However, our project is being used
+Note that the goal of the set of tools we are proposing is to reconstruct in Lean proofs produced by
+cvc5 for SMT problems. In order to have a full integration between Lean and cvc5 we also
+need a module for translating Lean goals into an equivalent SMT problem.
+However, our project is being used
 as part of the joint project Lean-SMT\footnote{The code for the project can be found at \url{https://github.com/ufmg-smite/lean-smt}}, that aims to implement a tactic in Lean
-that would perform the complete process, that is, starting from a Lean goal, translating it to an SMT query, invoking a solver to try to prove it and lifting the proof produced (in case it is found) to Lean's language, so that it can be used as a proof for the original goal.
+that would perform the complete process, that is, starting from a Lean goal, translating it to an SMT query, invoking the solver to try to prove it and lifting the proof produced (in case it is found) to Lean's language, so that it can be used as a proof for the original goal.
