@@ -15,22 +15,21 @@ entre o assistente de demonstra\c{c}\~ao Lean 4 e o
 solucionador SMT cvc5.
 
 Dada uma codifica\c{c}\~ao de um teorema declarado em Lean como um
-problema de SMT e uma demonstra\c{c}\~ao provida pelo cvc5 para
+problema SMT e uma demonstra\c{c}\~ao provida pelo cvc5 para
 o problema codificado, n\'os mostramos como traduzir essa
 demonstra\c{c}\~ao para uma que certifique o teorema original em
 Lean.
 %
 Para isso \'e necess\'ario demonstrar a corretude, em Lean, dos
-passos l\'ogicos tomados pelo solucionador. Desse modo, o
-verificador de demonstra\c{c}\~oes de Lean aceitar\'a a
-demonstra\c{c}\~ao em SMT do teorema original, caso o processo
-seja bem sucedido.
+passos l\'ogicos tomados pelo solucionador. Desse modo, caso o processo
+seja bem sucedido, o verificador de demonstra\c{c}\~oes de Lean aceitar\'a a
+demonstra\c{c}\~ao SMT dada pelo solucionador para o teorema original.
 
 Essas t\'ecnicas s\~ao integradas no projeto Lean-SMT,
 que tem como objetivo criar uma t\'atica em Lean que implemente
 o processo completo, isto \'e, a partir de um teorema em Lean,
-traduzi-lo para um problema formulado na linguagem do solucionador,
+traduzi-lo para um problema formulado na linguagem do solucionador SMT,
 invocar um solucinador para tentar resolv\^e-lo e produzir
 uma demonstra\c{c}\~ao, e, caso ele seja bem-sucedido,
-traduzi-la para certificar o teorema original em Lean (o que
+tentar traduzi-la para certificar o teorema original em Lean (o que
 \'e feito pelas t\'ecnias apresentadas aqui).
