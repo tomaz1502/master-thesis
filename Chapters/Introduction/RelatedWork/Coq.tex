@@ -1,26 +1,29 @@
-One notable example of hammer is SMTCoq~\cite{smtcoq}.
-It is a plugin for the proof assistant Coq~\cite{Bertot2004} that
-can be used as a tactic to prove theorems via their encoding into
-SMT and by lifting proofs produced by the SMT solvers veriT~\cite{Bouton2009}
-and CVC4~\cite{Barrett2011}. The tool can support multiple solvers
-due to a preprocessor written in OCaml, that is able to turn the different
-proof formats they emmit into an unified certificate in the Coq language,
-that will be used as input for the plugin. Our tool explores one specific
-format of cvc5, therefore, for now, it only supports this solver and is
-less flexible in this aspect then SMTCoq.
+SMTCoq~\cite{smtcoq} is a hammer for the Coq proof assistant~\cite{Bertot2004}.
+It offers tactics to prove theorems in Coq via the external proof-producing SMT
+solvers veriT~\cite{Bouton2009} and CVC4~\cite{Barrett2011}. The tool can support multiple proof formats
+due to a preprocessor written in OCaml, that is able to turn them
+into a unified certificate in the Coq language,
+which will be used as input for the plugin. Our tool explores one specific
+proof format of cvc5, therefore, for now, it only supports this solver and is
+less flexible in this aspect than SMTCoq.
 
-The Coq hammer follows directly the Certified transformations approach, described in
-the previous section. It has a set of certified functions representing the transformations
-that can be done in the theory of Equality and Uninterpreted Functions and
-Linear Integer Arithmetic, as well as resolution chains. The way that SMT solvers prove
-that a proposition is true is by showing that it's negation is unsatisfiable
-\tom{it's okay to use unsatisfiable without defining it first?}. This kind of proof
+The hammer directly follows the certified transformations approach.
+It has a set of certified functions representing the transformations
+that are sound in two of the main domains that are available in SMT:\
+Linear Arithmetic and Uninterpreted Functions. The first one is used to
+represent formulas involving numeric variables, and the second one is
+used to represent congruence relatons over variables and functions symbols
+that are universally quantified.
+
+The way that SMT solvers prove
+that a proposition is true is by showing that the negation of the proposition is unsatisfiable,
+that is, false for any assignment of its free variables. This kind of proof
 is parsed in SMTCoq into a sequence of applications of certified functions, which have
-to transform the negation of the original goal into a
+to transform the term representing the negation of the original goal into a
 term that will be lifted to the \textit{False} proposition in Coq. Once the
 ITP verifies that the sequence of steps produced by the solver indeed
-produces \textit{False}, the original theorem can be automatically closed,
-as we described in the previous section.
+produces \textit{False}, the hammer apply its main theorem, which states that if
+this process was successful, then the original goal is true.
 
 SMTCoq also differs from our work as it implements a translation module, but
-it does not implement a premiss selection module.
+it does not implement a premise selection module.
