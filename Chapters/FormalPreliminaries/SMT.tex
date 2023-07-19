@@ -1,49 +1,93 @@
-
-In this chapter we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and explaining how it is solved, we focus on showing how proofs are structured in an SMT solver.
+In this chapter we present the SMT problem. Recall that our goal is to translate proofs of unsatisfiability of SMT queries into Lean proofs. Therefore, besides presenting formally the problem and explaining how it is solved, we focus on showing how proofs are represented in an SMT solver.
 
 \subsection{Description of the Problem}
 
-The Boolean Satisfiability Problem (SAT) consists in, given a formula in Propositional Logic (PL) containing free variables, determining whether there exists a function that assigns each variable to a boolean value, in a way that, after replacing the variables by their values provided by the function, the formula is evaluated to \textit{true}. We say that a formula is satisfiable if such function exists, and unsatisfiable otherwise. In this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in which the input formula always comes in Conjunctive Normal Form, that is, a conjunction of disjunctions. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will use the name \textit{clause} to refer to each one of the disjunctions in some input formula for SAT.
+The Boolean Satisfiability Problem (SAT) consists in determining whether a formula in Propositional Logic (PL), which contains free variables, can be evaluated as \textit{true} by finding a function that assigns Boolean values to each variable.
+We say that a formula is satisfiable if such a function exists, and unsatisfiable otherwise. In
+this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in
+which the input formula always comes in Conjunctive Normal Form, that is, a conjunction
+of disjunctions of literals. From now on, we will use SAT to refer to the CNF-SAT problem. Besides
+that, we will write \textit{clause} to refer to each one of the disjunctions in some
+input formula for SAT.\
 
-Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\ There are two additions in this version of the problem: the first one is that the input formula can contain quantifiers binding variables, which will affect the satisfiability of that formula. Therefore, any formula in First Order Logic is a valid input to the SMT problem. The second addition is the inclusion of a set of theories that allows the problem to refer to variables of different domains. More precisely, a theory consists of a sort (for instance, integers) over which a subset of the variables of the problem can range over and a set of symbols that represents operations over these sorts with predefined semantics (for instance, addition and comparison operations over integers). Instances of the problem are allowed to use multiple theories at the same time. The logic framework that corresponds to Propositional Logic with these two additions is known as Many-Sorted First Order Logic (MSFOL). The semantics of this logic are given in detail in~\cite{many_sorted}. In Section~\ref{sec:msfolHere} we give a brief overview of it.
+
+Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\
+There are two additions: first, the underlying logic framework is First Order
+Logic (FOL) instead of Propositional Logic. This means that the input formula
+can contain quantifiers binding variables, unintepreted function symbols,
+predicates asserting properties about variables and a special symbol ``$\simeq$'' that is used to assert equality between terms. \sout{and an arbitrary domain from which the variables can be drawn.} \tom{I think it's better to not talk about domains here (?) It may be confusing since we are adding them again with the second addition. I am not trying to define precisely first order logic (should I?), just informally saying what are the additions}
+The second addition is the inclusion of a set of theories that
+allows the problem to refer to variables of different types. More
+precisely, a theory consists of a sort (for instance, integers) over which a
+subset of the variables of the problem can range over and a set of symbols
+that represents operations over terms of these sorts with predefined semantics (for
+instance, addition and comparison operations over integers). Instances of the
+problem are allowed to use multiple theories at the same time. The logic
+framework that corresponds to Propositional Logic with these two additions is
+known as Many-Sorted First Order Logic (MSFOL). The precise syntax and semantics of this logic framework
+is given in detail for example in~\cite{many_sorted}. In
+Section~\ref{sec:msfolHere} we give a brief overview of it.
 
 \subsection{Many-Sorted First Order Logic}\label{sec:msfolHere}
+\subsubsection{Syntax}
 
-The syntax of MSFOL can be described with three syntatic categories:
+The syntax of MSFOL consists of three syntatic categories:
 
 \begin{enumerate}
   \item \textbf{Sorts}. Symbols identifying the kinds of variables that are allowed. They are defined by the following grammar:
         \begin{center}
-          $ \tau ::= \sigma \mid (\tau_{1}, \tau_{2}, \ldots, \tau_{n}) \rightarrow \tau \mid (\tau_{1}, \tau_{2}, \ldots, \tau_{m})$
+          $ \tau ::= \sigma \mid (\tau_{1}, \tau_{2}, \ldots, \tau_{n}) \rightarrow \tau$ % \mid (\tau_{1}, \tau_{2}, \ldots, \tau_{m})$
         \end{center}
-        Where the first case represents an atomic sort drawn from a set of predefined sorts, which we will refer to as $\mathcal{S}_{S}$, the second case represents functions with arity $n$ and the third case represents predicates of arity $m$.
-  \item \textbf{Terms}. Symbols representing sorted variables, constants or function applications. Notice that function applications are only well formed when the sorts are respected. The symbols annotated on top of each term represent their sort, and they will be ommited when they can be inferred.
+        The first case represents an atomic sort drawn from a predefined set of sorts, which we will refer to as $\mathcal{S}_{S}$, and is required to have a cardinality that is at most countably infinite. The second case represents sorts of functions with arity $n$. We will always assume that there is a special sort in $\mathcal{S}_{S}$ named $\textit{bool}$.
+  \item \textbf{Terms}. Symbols representing sorted variables, constants or function applications. Function applications are only well formed when the sorts are respected. The symbols annotated on top of each term represent their sort, and they will be ommited when they can be inferred.
         \begin{center}
           $ t ::= x^{\tau} \mid f^{(\tau_{1}, \ldots, \tau_{n}) \rightarrow \tau}(t_{1}, \dots, t_{n}) $
         \end{center}
-        Function symbols are drawn from a predefined set, which we will refer to as $\mathcal{S}_{F}$. Constants are represented by nullary functions. Terms will also be referred to as ``atoms''.
-  \item \textbf{Formulas}. Symbols representing boolean expressions, possibly involving terms. Predicate applications are also only well formed when the sorts are respected. They are drawn from a predefined set which we will refer to as $\mathcal{S}_{P}$.
+        Function symbols are also drawn from a predefined set, which we will refer to as $\mathcal{S}_{F}$, and it is also required to have a cardinality that is at most countably infinite. Constants are represented by nullary functions. Terms will also be referred to as ``atoms''. We will use the term ``predicate'' to refer to functions whose return type is $\textit{bool}$. Variables, when not binded by a quantifier, will also be drawn from a predefined set, which we will refer to as $\mathcal{S}_{X}$ and, again, impose the requirement of having a cardinality that is at most countably infinite.
+  \item \textbf{Formulas}. Symbols representing boolean expressions, possibly involving terms.
         \begin{center}
-          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi $ % \mid p^{(\tau_{1}, \ldots, \tau_{m})}(t_{1}, \dots, t_{m}) $
+          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi \mid \psi_{1} \simeq \psi_{2}$
         \end{center}
 \end{enumerate}
 
-We will always assume that we have a special sort named \textit{bool} inhabited by only two values, \textit{true} and \textit{false}. A function that returns a value of \textit{bool} type will be called a ``predicate''.
 We also define the following symbols:
 
 \begin{center}
   $\exists x. \psi := \neg \forall x. \neg \psi$\\
   $\psi_{1} \wedge \psi_{2} := \neg (\neg \psi_{1} \vee \neg \psi_{2})$\\
-  $\psi_{1} \Rightarrow \psi_{2} := \neg \psi_{1} \vee \psi_{2}$\\
-  $\psi_{1} \Leftrightarrow \psi_{2} := \psi_{1} \Rightarrow \psi_{2} \wedge \psi_{2} \Rightarrow \psi_{1}$
+  $\psi_{1} \rightarrow \psi_{2} := \neg \psi_{1} \vee \psi_{2}$\\
+  $\psi_{1} \leftrightarrow \psi_{2} := \psi_{1} \Rightarrow \psi_{2} \wedge \psi_{2} \Rightarrow \psi_{1}$
 \end{center}
 
-\begin{definition}[Theory]
-  A theory $\mathcal{T}$ is a triple of sets $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P}\rangle$ together with a formal definition of the corresponding semantics, that is, for each function $f \in \mathcal{S}_{F}$, what is the resulting constant of applying $f$ to each possible sequence of arguments. Also, for each predicate $p \in \mathcal{S}_{P}$ and for each possible sequence of arguments, whether it is a tautology or not.
-\end{definition}
+We define a \textit{signature} to be a triple of sets $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$ respecting the requirements defined above.
+
+\subsubsection{Semantics}
+
+Having established how terms in MSFOL are built, we have to define how they are evaluated and what is their meaning.
+Given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, a $\Sigma$\textit{-structure} is an assignemnt that matches, for each sort symbol $s \in \mathcal{S}_{S}$, a corresponding set $D_{s}$, and, for each function symbol $f^{\tau_{1}, \ldots, \tau^{n} \rightarrow \tau} \in \mathcal{S}_{F}$, a function $D_{f}$ of type $D_{\tau_{1}} \times \cdots \times D_{\tau_{n}} \rightarrow D_{\tau}$.
+The $\textit{bool}$ sort will always be matched with the set $\mathcal{B}$, that is the usual set of Boolean values, and the set $\mathcal{S}_{F}$ will always contain two nullary functions $\textit{true}$ and $\textit{false}$ which will be matched with the usual true and false values, represented here respectively as $true^{I}$ and $false^{I}$.
+
+Furthermore, given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, an \textit{Interpretation} is a $\Sigma$-structure paired with an interpretation function $\mathcal{I}$, which assigns to each free variable $x \in \mathcal{S}_{X}$ of sort $s$ a value in $D_{s}$. We denote by $\mathcal{I}_{x \gets v}$ the extension of the function $\mathcal{I}$ that also assigns the value $v$ to the variable $x$. Finally, we define the \textit{Evaluation} of a given formula $\psi$ over an interpretation $\mathcal{I}$, denoted by $\llbracket \psi \rrbracket^{\mathcal{I}}$, in the following way:
+\begin{align*}
+  \llbracket x \rrbracket^{\mathcal{I}} &:= \mathcal{I}(x) \\
+  \llbracket f(t_{1}, \ldots, t_{n}) \rrbracket^{\mathcal{I}} &:= D_{f}(\llbracket t_{1} \rrbracket^{\mathcal{I}}, \ldots, \llbracket t_{n} \rrbracket^{\mathcal{I}}) \\
+  \llbracket \bot \rrbracket &:= false^{I} \\
+  \llbracket t_{1} \simeq t_{2} \rrbracket^{\mathcal{I}} &:= \llbracket t_{1} \rrbracket^{\mathcal{I}} = \llbracket t_{2} \rrbracket^{\mathcal{I}} \\
+  \llbracket \neg \psi \rrbracket^{\mathcal{I}} &:= \llbracket \psi \rrbracket^{\mathcal{I}} = false^{I} \\
+  \llbracket \psi_{1} \vee \psi_{2} \rrbracket^{\mathcal{I}} &:= \llbracket \psi_{1} \rrbracket^{\mathcal{I}} = true^{I}\,\, or\,\, \llbracket \psi_{2} \rrbracket^{\mathcal{I}} = true^{I} \\
+  \llbracket \forall x . \psi \rrbracket^{\mathcal{I}} &:= \llbracket \psi \rrbracket^{\mathcal{I}_{x \gets v}} = true^{I} \text{, for any } v
+\end{align*}
+
+We say that an interpretation $\mathcal{I}$ \textit{satisfies} a formula $\psi$ if and only if $\mathcal{I}(\psi) = true^{I}$. If there is at least
+one interpretation that satisfies a given formula $\psi$, it is said to be \textit{satisfiable}, otherwise it is $\textit{unsatisfiable}$.
+
 
 \begin{example}[LIA]\label{ex:lia}
-  Let $\mathcal{S}_{S} := \{\mathbb{Z}\}$, $\mathcal{S}_{F} := \{+, -, 0, succ, pred\}$ and $\mathcal{S}_{P} := \{<, \le, =, \ge, >\}$. Let's define the semantics of $+$ and $-$ as the usual semantics of addition and subtraction and multiplication over integers. $0$ is a nullary function representing the integer zero. $succ$ and $pred$ are unary functions representing successor and predecessor of integers. Also, let's define the semantics of $<$, $\le$, $=$, $\ge$ and $>$ as the usual semantics of comparison relations over integers. We denote by $\mathcal{T}_{LIA}$ (LIA standing for Linear Integer Arithmetic) the theory defined by $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P} \rangle$. An example of formula in this theory is $3x + 2y < 0 \vee 3x + 2y > 0$. Notice that we do not have a multiplication function in $\mathcal{S}_{F}$, so terms like $3x$ and $2y$ are abbreviations for $x + x + x$ and $y + y$.
+  Let $\mathcal{S}_{S} := \{Z\}$, $\mathcal{S}_{F} := \{add, sub, zero, succ, pred, lt\}$ and
+  $S_{X} := \{x, y\}$. Examples of formulas that can be written using the signature composed by these sets include ``$sub(x, y) < inc(zero)$'' and ``$add(x, y) \simeq add(y, x)$''. For this particular signature, we can have many structures. For instance, by letting $D_{Z} := \mathbb{Z}$ and matching each function symbol to its natural operation over integers, we have a structure that represents formulas over integer numbers. On the other hand, if we let $D_{Z} := \mathbb{Z}_{13}$ and match each function symbol with the corresponding operation over integers modulo $13$, we have a structure representing formulas over integers modulo $13$. In the first case, the presented structure is known as \textit{LIA} (standing for Linear Integer Arithmetic).
+
+
+  % Let's define the semantics of $+$ and $-$ as the usual semantics of addition and subtraction and multiplication over integers. $0$ is a nullary function representing the integer zero. $succ$ and $pred$ are unary functions representing successor and predecessor of integers. Also, let's define the semantics of $<$, $\le$, $=$, $\ge$ and $>$ as the usual semantics of comparison relations over integers. We denote by $\mathcal{T}_{LIA}$ (LIA standing for Linear Integer Arithmetic) the theory defined by $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P} \rangle$. An example of formula in this theory is $3x + 2y < 0 \vee 3x + 2y > 0$. Notice that we do not have a multiplication function in $\mathcal{S}_{F}$, so terms like $3x$ and $2y$ are abbreviations for $x + x + x$ and $y + y$.
 \end{example}
 
 \subsection{SMT Solvers}
