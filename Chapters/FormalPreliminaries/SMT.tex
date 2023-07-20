@@ -65,7 +65,7 @@ We define a \textit{signature} to be a triple of sets $\langle \mathcal{S}_{S}, 
 
 Having established how terms in MSFOL are built, we have to define how they are evaluated and what is their meaning.
 Given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, a $\Sigma$\textit{-structure} is an assignemnt that matches, for each sort symbol $s \in \mathcal{S}_{S}$, a corresponding set $D_{s}$, and, for each function symbol $f^{\tau_{1}, \ldots, \tau^{n} \rightarrow \tau} \in \mathcal{S}_{F}$, a function $D_{f}$ of type $D_{\tau_{1}} \times \cdots \times D_{\tau_{n}} \rightarrow D_{\tau}$.
-The $\textit{bool}$ sort will always be matched with the set $\mathcal{B}$, that is the usual set of Boolean values, and the set $\mathcal{S}_{F}$ will always contain two nullary functions $\textit{true}$ and $\textit{false}$ which will be matched with the usual true and false values, represented here respectively as $true^{I}$ and $false^{I}$.
+The $\textit{bool}$ sort will always be matched with the set $\mathcal{B}$, that is the usual set of Boolean values, and the set $\mathcal{S}_{F}$ will always contain two nullary functions $\textit{true}$ and $\textit{false}$ which will be matched with the usual true and false values, represented here respectively as $true^{I}$ and $false^{I}$. We will also use the name \textit{Theory} as a synonym to structure.
 
 \begin{example}[LIA]\label{ex:lia}
   Let $\mathcal{S}_{S} := \{Z\}$, $\mathcal{S}_{F} := \{add, sub, zero, succ, pred, lt\}$ and
@@ -101,16 +101,16 @@ A more efficient alternative of a decision procedure for PL is the DPLL algorith
 Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\neg x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \neg x)$.
 \end{theorem}
 
-More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\neg x\}$. Notice that the clause that is inferred from the unit resolution theorem has one less literal than the larger clause on the premisses. The general idea of the DPLL algorithm is to explore this fact to generate smaller clauses, while this is possible. Once all possible unit resolutions are performed, the algorithm makes a decision, assigning a boolean value to a variable. This action can potentially create more clauses suitable for unit resolution, which will be then explored. If this decision do not lead to the conclusion that the original formula is satisfiable, the procedure backtracks and assign the variable to the other boolean value. If this decision also does not lead to a positive conclusion, then the original formula is unsatisfiable. The following is the pseudocode of this algorithm:
+More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\neg x\}$. Notice that the clause that is inferred from the unit resolution theorem is equal to one of the clauses in the premisses, with one less literal. The general idea of the DPLL algorithm is to explore this fact to generate smaller clauses, while this is possible. Once all possible unit resolutions are performed, the algorithm makes a decision, assigning a boolean value to a variable. This action can potentially create more clauses suitable for unit resolution, which will be then explored. If this decision do not lead to the conclusion that the original formula is satisfiable, the procedure backtracks and assign the variable to the other boolean value. If this decision also does not lead to a positive conclusion, then the original formula is unsatisfiable. The following is the pseudocode of this algorithm:
 
 \begin{algorithm}[H]
-\caption{DPLL Algorithm}~\label{dpllAlgo}
+\caption{DPLL}~\label{dpllAlgo}
 % \textbf{Input:} $\psi$, a PL formula\\
 % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}[1]
 \Function{SolvePL}{$\psi$}
 \State $\psi \gets \Call{ConvertCNF}{\psi}$
-\If{$\exists C \in \psi .\, C = \{\bot\}$}
+\If{$\exists C \in \psi .\, C = \{\} \vee C = \{\bot\}$}
   \State \Return~\textit{false}
 \ElsIf{$\forall C \in \psi .\, \top \in C$}
   \State \Return~\textit{true}
@@ -127,41 +127,44 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \end{algorithmic}
 \end{algorithm}
 
-The procedure \textit{SolvePL} works as follows: first, in lines 3 to 6, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible, invoking itself recursively with each new application found, as shown in lines 8 to 10. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls in line 13: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
+The procedure \textit{SolvePL} works as follows: first, in lines 3 to 6, it checks if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible using the routine \textit{findClauses} and invokes itself recursively with each new application found, as shown in lines 8 to 10. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls in line 13: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
 
-The actual algorithm used by most SMT solvers is a refinement over DPLL, called CDCL~\cite{cdcl}.\ Since this refinement is not relevant for this work, we will not present it here.
+The actual algorithm used by most SMT solvers to solve SAT is a refinement over DPLL, called known as Conflict Driven Clause Learning (CDCL)~\cite{cdcl}. Its main idea is to modify the algorithm so that, when it finds a conflict (an empty clause or a clause that only contains false variables), analyze the reason for this conflict, allowing it to derive new clauses and to backtrack many decisions of values of variables at once. Since this refinement is not relevant for this work, we will not present it in detail here.
 
-\subsubsection{DPLL(T)}
+\subsubsection{CDCL(T)}
 
-Assuming that we have a decision procedure for a given theory (or a combination of them), we can use it to extend the DPLL algorithm for checking the satisfiability of MSFOL formulas involving that theory. In this section we will study the DPLL(T) framework, that is a method for doing this extension over DPLL. The actual strategy used by SMT solvers is known as CDCL(T), which is analogous to DPLL(T), except that it is an extension over CDCL instead of DPLL.
+Assuming that we have a decision procedure for a given theory (or a combination of them), we can use it to extend the CDCL algorithm for checking the satisfiability of MSFOL formulas involving that theory. In this section we will study the CDCL(T)~\cite{cdcl_t} framework, that is a method for doing this extension over CDCL.\
 
-Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind DPLL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each term in it for a fresh boolean variable. We can then use the previously described DPLL algorithm to determine whether $\psi'$ is satisfiable. If it is unsatisfiable, then $\psi$ is also unsatisfiable. Otherwise, we can find a model $M$ for $\psi'$. Although $M$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. The only possible model for this formula is the one that assigns both $p$ and $q$ to $\top$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller than $-2$. If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$. Note that we are assuming that our theory solver has the capability of producing such a conflicting lemma for a particular model.
+Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind CDCL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each theory atom (that is, an atom that is not a subexpression of another atom in the original formula) in it for a fresh boolean variable. We can then use the previously described CDCL algorithm to determine whether $\psi'$ is satisfiable. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. If $\psi'$ is unsatisfiable, then $\psi$ is also unsatisfiable. If this was not the case, it would be possible for $\psi'$ be unsatisfiable and $\psi$ be satisfiable. This means that there would exist an interpretation for $\psi$ which yields the value true. From this interpretation, we would be able to derive truth values for the variables in $\psi'$ that should satisfy the formula, but this is an absurd since $\psi'$ is unsatisfiable.
+If $\psi'$ is satisfiable, we can find a interpretation $\mathcal{I}$ for $\psi'$. Although $\mathcal{I}$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. In our previous example,
+the only possible interpretation satisfying $\psi'$ is the one that assigns $p$ and $q$ to $true^{I}$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller then $-2$.
+ If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$. Note that we are assuming that our theory solver has the capability of producing such a conflicting lemma for a particular interpretation.
 
-The following is the pseudocode for DPLL(T):
+The following is the pseudocode for CDCL(T):
 
 \begin{algorithm}[H]
-\caption{DPLL(T) Algorithm}~\label{dpllTAlgo}
+\caption{CDCL(T) Algorithm}~\label{cdclTAlgo}
 % \textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
 % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}[1]
 \Function{SolveMSFOL}{$\psi$}
 \State $\psi' \gets \Call{Convert}{\psi}$ \Comment{Get PL formula from MSFOL formula}
-\If{$\Call{SolvePL}{\psi'}$}
-  \State $M \gets \Call{GetModel}{\psi'}$
-  \If{$\Call{TheorySolver}{M, \psi}$} \Comment{Check if $M$ is compatible with $\psi$}
+\If{$\Call{CDCL}{\psi'}$}
+  \State $\mathcal{I} \gets \Call{GetInterpretation}{\psi'}$
+  \If{$\Call{TheorySolver}{\mathcal{I}, \psi}$} \Comment{Check if $\mathcal{I}$ is compatible with $\psi$}
     \State~\Return \textit{true}
   \Else
-    \State $L \gets \Call{GetConflictingLemma}{M, \psi}$
+    \State $L \gets \Call{GetConflictingLemma}{\mathcal{I}, \psi}$
     \State~\Return $\Call{SolveMSFOL}{\psi \wedge L}$
   \EndIf
 \Else
   \State~\Return \textit{false}
 \EndIf
-
-
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
+
+The procedure \textit{SolveMSFOL} works as follows: first, in line 2, we perform the conversion that we just described, in order to obtain a PL formula. Then, in line 3, we run the procedure \textit{CDCL} to determine if $\psi'$ is satisfiable. In case it is not, we just return \textit{false} in line 12. Otherwise, there exists an interpretation $\mathcal{I}$ that satisfies $\psi'$. This interpretation is obtained in line 4 and we proceed to check if the theory solver accepts it for $\psi$ in line 5. If it does accept, the formula is definitely satisfiable and we can return \textit{true}, as done in line 6. Otherwise, the conflicting lemma for the given interpretation is generated in line 8. We then repeat this process in line 9, adding the conflicting lemma to $\psi$.
 
 \subsubsection{Equality and Uninterpreted Functions}
 
