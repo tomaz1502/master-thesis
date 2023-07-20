@@ -67,7 +67,12 @@ Having established how terms in MSFOL are built, we have to define how they are 
 Given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, a $\Sigma$\textit{-structure} is an assignemnt that matches, for each sort symbol $s \in \mathcal{S}_{S}$, a corresponding set $D_{s}$, and, for each function symbol $f^{\tau_{1}, \ldots, \tau^{n} \rightarrow \tau} \in \mathcal{S}_{F}$, a function $D_{f}$ of type $D_{\tau_{1}} \times \cdots \times D_{\tau_{n}} \rightarrow D_{\tau}$.
 The $\textit{bool}$ sort will always be matched with the set $\mathcal{B}$, that is the usual set of Boolean values, and the set $\mathcal{S}_{F}$ will always contain two nullary functions $\textit{true}$ and $\textit{false}$ which will be matched with the usual true and false values, represented here respectively as $true^{I}$ and $false^{I}$.
 
-Furthermore, given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, an \textit{Interpretation} is a $\Sigma$-structure paired with an interpretation function $\mathcal{I}$, which assigns to each free variable $x \in \mathcal{S}_{X}$ of sort $s$ a value in $D_{s}$. We denote by $\mathcal{I}_{x \gets v}$ the extension of the function $\mathcal{I}$ that also assigns the value $v$ to the variable $x$. Finally, we define the \textit{Evaluation} of a given formula $\psi$ over an interpretation $\mathcal{I}$, denoted by $\llbracket \psi \rrbracket^{\mathcal{I}}$, in the following way:
+\begin{example}[LIA]\label{ex:lia}
+  Let $\mathcal{S}_{S} := \{Z\}$, $\mathcal{S}_{F} := \{add, sub, zero, succ, pred, lt\}$ and
+  $S_{X} := \{x, y\}$. Examples of formulas that can be written using the signature composed by these sets include ``$sub(x, y) < inc(zero)$'' and ``$add(x, y) \simeq add(y, x)$''. For this particular signature, we can have many structures. For instance, by letting $D_{Z} := \mathbb{Z}$ and matching each function symbol to its natural operation over integers, we have a structure that represents formulas over integer numbers. On the other hand, if we let $D_{Z} := \mathbb{Z}_{13}$ and match each function symbol with the corresponding operation over integers modulo $13$, we have a structure representing formulas over integers modulo $13$. In the first case, the presented structure is known as \textit{LIA} (standing for Linear Integer Arithmetic).
+\end{example}
+
+Given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, an \textit{Interpretation} is a $\Sigma$-structure paired with an interpretation function $\mathcal{I}$, which assigns to each free variable $x \in \mathcal{S}_{X}$ of sort $s$ a value in $D_{s}$. We denote by $\mathcal{I}_{x \gets v}$ the extension of the function $\mathcal{I}$ that also assigns the value $v$ to the variable $x$. Finally, we define the \textit{Evaluation} of a given formula $\psi$ over an interpretation $\mathcal{I}$, denoted by $\llbracket \psi \rrbracket^{\mathcal{I}}$, in the following way:
 \begin{align*}
   \llbracket x \rrbracket^{\mathcal{I}} &:= \mathcal{I}(x) \\
   \llbracket f(t_{1}, \ldots, t_{n}) \rrbracket^{\mathcal{I}} &:= D_{f}(\llbracket t_{1} \rrbracket^{\mathcal{I}}, \ldots, \llbracket t_{n} \rrbracket^{\mathcal{I}}) \\
@@ -82,29 +87,21 @@ We say that an interpretation $\mathcal{I}$ \textit{satisfies} a formula $\psi$ 
 one interpretation that satisfies a given formula $\psi$, it is said to be \textit{satisfiable}, otherwise it is $\textit{unsatisfiable}$.
 
 
-\begin{example}[LIA]\label{ex:lia}
-  Let $\mathcal{S}_{S} := \{Z\}$, $\mathcal{S}_{F} := \{add, sub, zero, succ, pred, lt\}$ and
-  $S_{X} := \{x, y\}$. Examples of formulas that can be written using the signature composed by these sets include ``$sub(x, y) < inc(zero)$'' and ``$add(x, y) \simeq add(y, x)$''. For this particular signature, we can have many structures. For instance, by letting $D_{Z} := \mathbb{Z}$ and matching each function symbol to its natural operation over integers, we have a structure that represents formulas over integer numbers. On the other hand, if we let $D_{Z} := \mathbb{Z}_{13}$ and match each function symbol with the corresponding operation over integers modulo $13$, we have a structure representing formulas over integers modulo $13$. In the first case, the presented structure is known as \textit{LIA} (standing for Linear Integer Arithmetic).
-
-
-  % Let's define the semantics of $+$ and $-$ as the usual semantics of addition and subtraction and multiplication over integers. $0$ is a nullary function representing the integer zero. $succ$ and $pred$ are unary functions representing successor and predecessor of integers. Also, let's define the semantics of $<$, $\le$, $=$, $\ge$ and $>$ as the usual semantics of comparison relations over integers. We denote by $\mathcal{T}_{LIA}$ (LIA standing for Linear Integer Arithmetic) the theory defined by $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{P} \rangle$. An example of formula in this theory is $3x + 2y < 0 \vee 3x + 2y > 0$. Notice that we do not have a multiplication function in $\mathcal{S}_{F}$, so terms like $3x$ and $2y$ are abbreviations for $x + x + x$ and $y + y$.
-\end{example}
-
 \subsection{SMT Solvers}
 
-An SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in it's most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve the a subset of the instances of the problem. In this section we present the ideas used by these systems that are most relevant to the present work.
+An SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in its most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve a subset of the instances of the problem. In this section we present the ideas used by these systems that are more relevant to the present work.
 
-\subsubsection{DPLL}
+\subsubsection{Davis–Putnam–Logemann–Loveland (DPLL)}
 
 First, let’s explore how SAT is solved. Although MSFOL is not decidable, Propositional Logic is, therefore, it is possible to design a decision procedure for SAT.\@ Indeed, one simple way to check whether a formula in PL with $n$ variables is satisfiable or not is to simply test each one of the $2^{n}$ functions assigning truth values to those variables.
 
 A more efficient alternative of a decision procedure for PL is the DPLL algorithm~\cite{dpll}. DPLL is based on the \textit{Resolution} theorem:
 
 \begin{theorem}[Resolution]
-Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\overline x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \overline x)$.
+Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\neg x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \neg x)$.
 \end{theorem}
 
-More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of Resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\overline x\}$. We present DPLL's pseudocode and a brief explanation over it:
+More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\neg x\}$. Notice that the clause that is inferred from the unit resolution theorem has one less literal than the larger clause on the premisses. The general idea of the DPLL algorithm is to explore this fact to generate smaller clauses, while this is possible. Once all possible unit resolutions are performed, the algorithm makes a decision, assigning a boolean value to a variable. This action can potentially create more clauses suitable for unit resolution, which will be then explored. If this decision do not lead to the conclusion that the original formula is satisfiable, the procedure backtracks and assign the variable to the other boolean value. If this decision also does not lead to a positive conclusion, then the original formula is unsatisfiable. The following is the pseudocode of this algorithm:
 
 \begin{algorithm}[H]
 \caption{DPLL Algorithm}~\label{dpllAlgo}
@@ -118,8 +115,8 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \ElsIf{$\forall C \in \psi .\, \top \in C$}
   \State \Return~\textit{true}
 \Else
-  \If{$\exists x \in Vars(\psi) \,$ such that $x$ is a target for UR}
-    \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$, $\psi$} \Comment{Clauses suitable for applying UR with $x$}
+  \If{$\exists x \in \mathit{Vars}(\psi) \,$ such that $x$ is a target for UR}
+    \State $\langle C_{1}, C_{2} \rangle \gets$ \Call{findClauses}{$x$, $\psi$} \Comment{Suitable for applying UR with $x$}
     \State~\Return~\Call{SolvePL}{$\psi \wedge C_{1} \diamond_{x} C_{2}$}
   \Else
     \State~Let $x$ be an unassinged variable in $\psi$
@@ -130,7 +127,7 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \end{algorithmic}
 \end{algorithm}
 
-The algorithm works as follows: first, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible, invoking itself recursively with each new application found. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
+The procedure \textit{SolvePL} works as follows: first, in lines 3 to 6, it checks to see if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible, invoking itself recursively with each new application found, as shown in lines 8 to 10. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls in line 13: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
 
 The actual algorithm used by most SMT solvers is a refinement over DPLL, called CDCL~\cite{cdcl}.\ Since this refinement is not relevant for this work, we will not present it here.
 
