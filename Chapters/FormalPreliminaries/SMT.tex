@@ -257,14 +257,14 @@ The second theory that we will be interested in this work is the theory of Linea
   $\mathlarger{\sum}_{i = 1}^{n} a_{i} x_{i} \bowtie b$
 \end{center}
 
-Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If we allow variables to range over rationals, we have the Linear Real Arithmetic (LRA) theory, which can be described using MSFOL a similar way.
+Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If variables can range over rationals, the corresponding theory is known as Linear Real Arithmetic (LRA), which can be described using MSFOL a similar way.
 
-We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms from this theory is satisfiable. Initially we will assume that all variables are rational, and then we show how to extend the method for integer variables.
+We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms from LRA is satisfiable. The paper also presents an extension of this method for LIA, which we will not show here.
 
 The first step is to, for each atom $t_{i} \bowtie b_{i} \in \phi$ in which $t_{i}$ is a sum of at least two variables, create a fresh variable $s_{i}$. Then, we will define two new sets of atoms: $\phi_{A}$, such that it's atoms are all of the form $s_{i} = t_{i}$, that is, they state the equality between the new variables and the corresponding terms, and $\phi'$, that has all the atoms in $\phi$ but with each term $t_{i}$ substituted by the corresponding $s_{i}$. For instance, let the set of atoms be
 $\phi := \{x - y \ge 3, x - 2y < 6, x - y \le 10, x \ge 5\}$.  From this, we would define $\phi_{A} := \{s_{1} = x - y, s_{2} = x - 2y\}$ and $\phi' := \{s_{1} \ge 3, s_{2} < 6, s_{1} \le 10, x \ge 5\}$. It is easy to see that $\phi$ and $\phi_{A} \wedge \phi'$ are equisatisfiable.
 
-Next we will represent the restrictions in $\phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). If the original problem had $n$ variables and we added $m$ fresh ones, the matrix $A$ will have $m$ rows and $m + n$ columns. In our example, we would have the following:
+Next we will represent the restrictions in $\phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). We will refer to the entry in the $i$-th row and $j$-th column of $A$ as $a_{ij}$. If the original problem had $n$ variables and we added $m$ fresh ones, the matrix $A$ will have $m$ rows and $m + n$ columns. In our example, we would have the following:
 
 \begin{center}
 $
@@ -284,7 +284,7 @@ $
 \begin{algorithmic}[1]
   \Procedure{Update}{$v_{i}$, $val$}
   \For{$v_{j} \in \mathcal{B}$}
-    \State $\beta(v_{j}) \gets \beta(v_{j}) + a_{ji}(v - \beta(v_{i}))$ \Comment{$a_{ji}$ refers to the entry $(j, i)$ of $A$}
+    \State $\beta(v_{j}) \gets \beta(v_{j}) + a_{ji}(v - \beta(v_{i}))$
   \EndFor
     \State $\beta(v_{i}) \gets val$
   \EndProcedure
@@ -292,7 +292,7 @@ $
 \caption{Change value of non-basic variable and update all basic variables}
 \end{figure}
 
-Now, our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\phi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\phi'$. Notice that in this case we can represent the restrictions in $\phi'$ as two sequences of coefficients $l_{i}$ and $r_{i}$, representing a sequence of restrictions of the form $l_{i} \le v_{i} \le r_{i}$, as long as we allow $l_{i}$ to be $-\infty$ in case there is no lower restriction on $v_{i}$ and $r_{i}$ to be $+\infty$ in case there is no upper restriction on $v_{i}$.
+Now, our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\phi'$, which are all of the form $v_{i} \bowtie b_{i}$. We will assume that there is no strict inequalities in $\phi'$. For an extension of the method presented here for strict inequalities, consult~\cite{simplex_dpllt}. Notice that in this case we can represent the restrictions in $\phi'$ as two sequences of coefficients $l_{i}$ and $r_{i}$, representing a sequence of restrictions of the form $l_{i} \le v_{i} \le r_{i}$, as long as we allow $l_{i}$ to be $-\infty$ in case there is no lower restriction on $v_{i}$ and $r_{i}$ to be $+\infty$ in case there is no upper restriction on $v_{i}$.
 
 We will solve this problem by processing each restriction in $\phi'$ incrementally. Our algorithm will maintain a state that includes the coefficients $l_{i}$ and $r_{i}$, as well as a function $\beta(v)$ that assigns a rational value to each variable $v$. At the beginning, since we haven't processed any inequality yet, we will set each $l_{i}$ to $-\infty$, each $r_{i}$ to $+\infty$, and $\beta(v_{i})$ to $0$ for all $v_{i}$. Additionally, we will keep track of two sets of variables: $\mathcal{N}$ (non-basic variables) and $\mathcal{B}$ (basic variables). Initially, $\mathcal{B}$ will consist of all the variables we added to the problem (each $s_{i}$), while $\mathcal{N}$ will include all the original variables.
 Those sets can exchange elements during the execution of the algorithm, but we will always maintain the invariant that all non-basic variables respect their restrictions, that is, $l_{i} \le \beta(v_{i}) \le r_{i}$ for all $v_{i} \in \mathcal{N}$. Also, everytime we update the value of a variable we will also update the values of all basic variables, in order to satisfy the equation $Ax = 0$.
@@ -352,8 +352,11 @@ Both functions return $false$ if and only if the current restriction is incompat
     \State $\mathcal{N} \gets (\mathcal{N} \setminus \{v_{j}\}) \cup \{v_{i}\}$
   \EndProcedure
 \end{algorithmic}
-% \caption{Update and pivot basic with non-basic variable}
+\caption{Update and pivot basic with non-basic variable}
 \end{figure}
+
+Lastly, if it was possible to run the assertion procedures on all the inequalities from the input without any of them returning \textit{false}, we run the procedure \textit{Check} presented in figure~\ref{check_lra}. The goal of this function is to manipulate the values of the non-basic variables until all variables respect their restrictions, or report that it is impossible, and, therefore, the original formula is unsatisfiable. The first step it takes, in line 2 is to select a variable $v_{i} \in \mathcal{B}$ that is violating its bounds. If there is no such variable then all restrictions are satisfied, and it can just return \textit{true}, as is done in line 4. If $\beta(v_{i}) < l_{i}$, then we must find a non-basic variable $v_{j}$ such that we can modify it without violating its restrictions in a way that the value of $v_{i}$ will increase. If $a_{ij}$ is positive, increasing $v_{j}$ will also increase $v_{i}$, therefore, in order to use $v_{j}$ we need $\beta(v_{j}) < u_{j}$. Similarly, if $a_{ij}$ is negative, we would need $\beta(v_{j}) > l_{j}$. If there is no suitable variable, then it's impossible increase the value of $v_{i}$, therefore the problem is unsatisfiable. This condition is checked on lines 9 and 16. Otherwise, we can find such $v_{j}$. In this case, we set the value of $v_{j}$ to the appropriate limit and make $v_{i}$ a non-basic variable and $v_{j}$ a non-basic variable with the procedure \textit{PivotAndUpdate} in lines 12 and 19. After this, we repeat the process until all restrictions were satisfied. The case where $\beta(v_{i}) > u_{i}$ is symmetrical. In~\cite{simplex_dpllt}, the authors prove that this method always terminates and returns \textit{true} if and only if the original problem was satisfiable.
+
 \begin{figure}[t]
 \begin{algorithmic}[1]
   \Function{Check}{\null}
@@ -364,13 +367,6 @@ Both functions return $false$ if and only if the current restriction is incompat
     \If{$\beta(v_{i}) < l_{i}$}
       \State Let $v_{j}$ be the non-basic variable with smallest index such that\\
       \qquad \qquad $(a_{ij} > 0 \wedge \beta(v_{j}) < u_{j}) \vee (a_{ij} < 0 \wedge \beta(v_{j}) > l_{j})$
-%       \algstore{myalg}
-% \end{algorithmic}
-% \end{algorithm}
-
-% \begin{algorithm}
-% \begin{algorithmic}[1]
-%     \algrestore{myalg}
       \If{There is no such $v_{j}$}
         \State \Return{$false$}
       \EndIf
@@ -390,22 +386,19 @@ Both functions return $false$ if and only if the current restriction is incompat
 \caption{Check if it's possible to satisfy all restrictions}\label{check_lra}
 \end{figure}
 
-Lastly, if it was possible to run the assertion procedures on all the inequalities from the input without any of them returning \textit{false}, we run the procedure \textit{Check} presented in figure~\ref{check_lra}.
+\subsection{Proofs Certificates}
 
+weriofjwoef
 
-
-\subsection{Proofs in cvc5}
-
-\begin{itemize}
-  \item Resolution tree (cite Rob65 from smtcoq to say that it is complete)
-\end{itemize}
+% \begin{itemize}
+%   \item Resolution tree (cite Rob65 from smtcoq to say that it is complete)
+% \end{itemize}
 
 \subsection{Applications}
 
 Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
 
-\begin{algorithm}[t]
-\caption{Original Absolute Function}~\label{originalAbs}
+\begin{figure}[t]
 \begin{algorithmic}[1]
 \Function{abs}{x}
 \If{$x < 0$}
@@ -415,19 +408,20 @@ Given a program and a formal specification of some property related to the progr
 \EndIf
 \EndFunction
 \end{algorithmic}
-\end{algorithm}
+\caption{Original Absolute Function}~\label{originalAbs}
+\end{figure}
 
 In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which does not have branches:
 
-\begin{algorithm}[t]
-\caption{Branchless Absolute Function}~\label{branchlessAbs}
+\begin{figure}[t]
 \begin{algorithmic}[1]
 \Function{abs'}{x}
   \State $y \gets x >> 31$
   \State \Return $(x \bigoplus y) - y$
 \EndFunction
 \end{algorithmic}
-\end{algorithm}
+\caption{Branchless Absolute Function}~\label{branchlessAbs}
+\end{figure}
 
 Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input. We present the instance written in SMT-LIB~\cite{smtlib}, a standardized syntax for representing SMT problems:
 
