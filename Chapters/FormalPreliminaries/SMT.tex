@@ -65,11 +65,11 @@ We define a \textit{signature} to be a triple of sets $\langle \mathcal{S}_{S}, 
 
 Having established how terms in MSFOL are built, we have to define how they are evaluated and what is their meaning.
 Given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, a $\Sigma$\textit{-structure} is an assignemnt that matches, for each sort symbol $s \in \mathcal{S}_{S}$, a corresponding set $D_{s}$, and, for each function symbol $f^{\tau_{1}, \ldots, \tau^{n} \rightarrow \tau} \in \mathcal{S}_{F}$, a function $D_{f}$ of type $D_{\tau_{1}} \times \cdots \times D_{\tau_{n}} \rightarrow D_{\tau}$.
-The $\textit{bool}$ sort will always be matched with the set $\mathcal{B}$, that is the usual set of Boolean values, and the set $\mathcal{S}_{F}$ will always contain two nullary functions $\textit{true}$ and $\textit{false}$ which will be matched with the usual true and false values, represented here respectively as $true^{I}$ and $false^{I}$. We will also use the name \textit{Theory} as a synonym to structure.
+The $\textit{bool}$ sort will always be matched with the usual set of Boolean values, and the set $\mathcal{S}_{F}$ will always contain two nullary functions $\textit{true}$ and $\textit{false}$ which will be matched with the usual true and false values, represented here respectively as $true^{I}$ and $false^{I}$. We will also use the name \textit{Theory} as a synonym of structure.
 
 \begin{example}[LIA]\label{ex:lia}
   Let $\mathcal{S}_{S} := \{Z\}$, $\mathcal{S}_{F} := \{add, sub, zero, succ, pred, lt\}$ and
-  $S_{X} := \{x, y\}$. Examples of formulas that can be written using the signature composed by these sets include ``$sub(x, y) < inc(zero)$'' and ``$add(x, y) \simeq add(y, x)$''. For this particular signature, we can have many structures. For instance, by letting $D_{Z} := \mathbb{Z}$ and matching each function symbol to its natural operation over integers, we have a structure that represents formulas over integer numbers. On the other hand, if we let $D_{Z} := \mathbb{Z}_{13}$ and match each function symbol with the corresponding operation over integers modulo $13$, we have a structure representing formulas over integers modulo $13$. In the first case, the presented structure is known as \textit{LIA} (standing for Linear Integer Arithmetic).
+  $S_{X} := \{x, y\}$. Examples of formulas that can be written using the signature composed by these sets include ``$lt(sub(x, y), succ(zero))$'' and ``$add(x, y) \simeq add(y, x)$''. For this particular signature, we can have many structures. For instance, by letting $D_{Z} := \mathbb{Z}$ and matching each function symbol to its natural operation over integers, we have a structure that represents formulas over integer numbers. On the other hand, if we let $D_{Z} := \mathbb{Z}_{13}$ and match each function symbol with the corresponding operation over integers modulo $13$, we have a structure representing formulas over integers modulo $13$. In the first case, the presented structure is known as \textit{LIA} (standing for Linear Integer Arithmetic).
 \end{example}
 
 Given a signature $\Sigma = \langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$, an \textit{Interpretation} is a $\Sigma$-structure paired with an interpretation function $\mathcal{I}$, which assigns to each free variable $x \in \mathcal{S}_{X}$ of sort $s$ a value in $D_{s}$. We denote by $\mathcal{I}_{x \gets v}$ the extension of the function $\mathcal{I}$ that also assigns the value $v$ to the variable $x$. Finally, we define the \textit{Evaluation} of a given formula $\psi$ over an interpretation $\mathcal{I}$, denoted by $\llbracket \psi \rrbracket^{\mathcal{I}}$, in the following way:
@@ -91,7 +91,7 @@ one interpretation that satisfies a given formula $\psi$, it is said to be \text
 
 An SMT solver is a piece of software whose main goal is to solve the SMT problem. Many-Sorted First Order Logic is undecidable in its most general form~\cite{fol_undec}, therefore SMT solvers have to limit themselves to use heuristics to solve a subset of the instances of the problem. In this section we present the ideas used by these systems that are more relevant to the present work.
 
-\subsubsection{Davis–Putnam–Logemann–Loveland (DPLL)}
+\subsubsection{Davis–Putnam–Logemann–Loveland Algorithm (DPLL)}
 
 First, let’s explore how SAT is solved. Although MSFOL is not decidable, Propositional Logic is, therefore, it is possible to design a decision procedure for SAT.\@ Indeed, one simple way to check whether a formula in PL with $n$ variables is satisfiable or not is to simply test each one of the $2^{n}$ functions assigning truth values to those variables.
 
@@ -101,10 +101,9 @@ A more efficient alternative of a decision procedure for PL is the DPLL algorith
 Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\neg x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \neg x)$.
 \end{theorem}
 
-More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\neg x\}$. Notice that the clause that is inferred from the unit resolution theorem is equal to one of the clauses in the premisses, with one less literal. The general idea of the DPLL algorithm is to explore this fact to generate smaller clauses, while this is possible. Once all possible unit resolutions are performed, the algorithm makes a decision, assigning a boolean value to a variable. This action can potentially create more clauses suitable for unit resolution, which will be then explored. If this decision do not lead to the conclusion that the original formula is satisfiable, the procedure backtracks and assign the variable to the other boolean value. If this decision also does not lead to a positive conclusion, then the original formula is unsatisfiable. The following is the pseudocode of this algorithm:
+More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\neg x\}$. Notice that the clause that is inferred from the unit resolution theorem is equal to one of the clauses in the premisses, with one less literal. The general idea of the DPLL algorithm is to explore this fact to generate smaller clauses, while this is possible. Once all possible unit resolutions are performed, the algorithm makes a decision, assigning a boolean value to a variable. This action can potentially create more clauses suitable for unit resolution, which will be then explored. If this decision do not lead to the conclusion that the original formula is satisfiable, the procedure backtracks and assign the variable to the other boolean value. If this decision also does not lead to a positive conclusion, then the original formula is unsatisfiable.
 
-\begin{algorithm}[H]
-\caption{DPLL}~\label{dpllAlgo}
+\begin{figure}[t]
 % \textbf{Input:} $\psi$, a PL formula\\
 % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}[1]
@@ -125,9 +124,10 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \EndIf
 \EndFunction
 \end{algorithmic}
-\end{algorithm}
+\caption{DPLL Algorithm}~\label{dpllAlgo}
+\end{figure}
 
-The procedure \textit{SolvePL} works as follows: first, in lines 3 to 6, it checks if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible using the routine \textit{findClauses} and invokes itself recursively with each new application found, as shown in lines 8 to 10. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls in line 13: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
+Figure~\ref{dpllAlgo} shows an implementation of this idea. The procedure \textit{SolvePL} works as follows: first, in lines 3 to 6, it checks if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible using the routine \textit{findClauses} and invokes itself recursively with each new application found, as shown in lines 8 to 10. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received by input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and make two recursive calls in line 13: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
 
 The actual algorithm used by most SMT solvers to solve SAT is a refinement over DPLL, called known as Conflict Driven Clause Learning (CDCL)~\cite{cdcl}. Its main idea is to modify the algorithm so that, when it finds a conflict (an empty clause or a clause that only contains false variables), analyze the reason for this conflict, allowing it to derive new clauses and to backtrack many decisions of values of variables at once. Since this refinement is not relevant for this work, we will not present it in detail here.
 
@@ -135,15 +135,7 @@ The actual algorithm used by most SMT solvers to solve SAT is a refinement over 
 
 Assuming that we have a decision procedure for a given theory (or a combination of them), we can use it to extend the CDCL algorithm for checking the satisfiability of MSFOL formulas involving that theory. In this section we will study the CDCL(T)~\cite{cdcl_t} framework, that is a method for doing this extension over CDCL.\
 
-Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind CDCL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each theory atom (that is, an atom that is not a subexpression of another atom in the original formula) in it for a fresh boolean variable. We can then use the previously described CDCL algorithm to determine whether $\psi'$ is satisfiable. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. If $\psi'$ is unsatisfiable, then $\psi$ is also unsatisfiable. If this was not the case, it would be possible for $\psi'$ be unsatisfiable and $\psi$ be satisfiable. This means that there would exist an interpretation for $\psi$ which yields the value true. From this interpretation, we would be able to derive truth values for the variables in $\psi'$ that should satisfy the formula, but this is an absurd since $\psi'$ is unsatisfiable.
-If $\psi'$ is satisfiable, we can find a interpretation $\mathcal{I}$ for $\psi'$. Although $\mathcal{I}$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. In our previous example,
-the only possible interpretation satisfying $\psi'$ is the one that assigns $p$ and $q$ to $true^{I}$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller then $-2$.
- If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$. Note that we are assuming that our theory solver has the capability of producing such a conflicting lemma for a particular interpretation.
-
-The following is the pseudocode for CDCL(T):
-
-\begin{algorithm}[H]
-\caption{CDCL(T) Algorithm}~\label{cdclTAlgo}
+\begin{figure}[t]
 % \textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
 % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}[1]
@@ -162,30 +154,59 @@ The following is the pseudocode for CDCL(T):
 \EndIf
 \EndFunction
 \end{algorithmic}
-\end{algorithm}
+\caption{CDCL(T) Algorithm}~\label{cdclTAlgo}
+\end{figure}
 
-The procedure \textit{SolveMSFOL} works as follows: first, in line 2, we perform the conversion that we just described, in order to obtain a PL formula. Then, in line 3, we run the procedure \textit{CDCL} to determine if $\psi'$ is satisfiable. In case it is not, we just return \textit{false} in line 12. Otherwise, there exists an interpretation $\mathcal{I}$ that satisfies $\psi'$. This interpretation is obtained in line 4 and we proceed to check if the theory solver accepts it for $\psi$ in line 5. If it does accept, the formula is definitely satisfiable and we can return \textit{true}, as done in line 6. Otherwise, the conflicting lemma for the given interpretation is generated in line 8. We then repeat this process in line 9, adding the conflicting lemma to $\psi$.
+Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding whether a given set of propositions in $\mathcal{T}$ is consistent or not). The idea behind CDCL(T) is to create a PL formula $\psi'$ from $\psi$ by substituting each theory atom (that is, an atom that is not a subexpression of another atom in the original formula) in it for a fresh boolean variable. We can then use the previously described CDCL algorithm to determine whether $\psi'$ is satisfiable. For instance, consider $\psi$ to be the formula $x > 3 \wedge x < -2$. From it, we would generate the PL formula $p \wedge q$, where $p$ represents $x > 3$ and $q$ represents $x < -2$. If $\psi'$ is unsatisfiable, then $\psi$ is also unsatisfiable. If this was not the case, it would be possible for $\psi'$ be unsatisfiable and $\psi$ be satisfiable. This means that there would exist an interpretation for $\psi$ which yields the value true. From this interpretation, we would be able to derive truth values for the variables in $\psi'$ that should satisfy the formula, but this is an absurd since $\psi'$ is unsatisfiable.
+If $\psi'$ is satisfiable, we can find a interpretation $\mathcal{I}$ for $\psi'$. Although $\mathcal{I}$ satisfies $\psi'$, it is possible that it contradicts some fact about $\mathcal{T}$. In our previous example,
+the only possible interpretation satisfying $\psi'$ is the one that assigns $p$ and $q$ to $true^{I}$, but this is not valid when we translate back to $\psi$, as $x$ cannot be both greater than $3$ and smaller then $-2$.
+ If this happens, we rely on the theory solver to provide a new lemma from $\mathcal{T}$ that shows why the previous assignment was invalid. In this case, it would provide the lemma $\neg (x > 3 \wedge x < -2)$. Note that we are assuming that our theory solver has the capability of producing such a conflicting lemma for a particular interpretation.
+
+
+Figure~\ref{cdclTAlgo} shows an implementation of CDCL(T). The procedure \textit{SolveMSFOL} works as follows: first, in line 2, we perform the conversion that we just described, in order to obtain a PL formula. Then, in line 3, we run the procedure \textit{CDCL} to determine if $\psi'$ is satisfiable. In case it is not, we just return \textit{false} in line 12. Otherwise, there exists an interpretation $\mathcal{I}$ that satisfies $\psi'$. This interpretation is obtained in line 4 and we proceed to check if the theory solver accepts it for $\psi$ in line 5. If it does accept, the formula is definitely satisfiable and we can return \textit{true}, as done in line 6. Otherwise, the conflicting lemma for the given interpretation is generated in line 8. We then repeat this process in line 9, adding the conflicting lemma to $\psi$.
 
 \subsubsection{Equality and Uninterpreted Functions}
 
 In this work, we will be interested in two theories and their respective solvers. The first one is Equality and Uninterpreted Functions.
 
-Consider the following problem: given a set of universally quantified variables and uninterpreted functions and a set of equalities built from variables and functions applied to the variables, decide whether a given equality is a consequence of the conjunction of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables and $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = c, f(b) = c, f(c) = a\}$ have as a consequence the equality $a = b$.
+Consider the following problem: given a set of universally quantified variables and uninterpreted functions and a set of equalities built from variables and functions applied to those variables, decide whether a given equality is a consequence of the conjunction of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables and $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = c, f(b) = c, f(c) = a\}$ have as a consequence the equality $a = b$.
 
 The set of all equalities that can be derived from a given set of equalities built from variables and function applications is known as the \textit{congruence closure} of that set. Deciding whether a given equality is in the congruence closure for a given set is an old problem, which was shown to be decidable by Ackermann~\cite{ack_cong} in 1954. It is also is used as the basis for the theory of Equality and Uninterpreted Functions (EUF) in SMT.~We can define this problem in the language of MSFOL by setting:
 \begin{enumerate}
   \item The set of predefined sorts to $\{U\}$.
   \item The set of predefined predicates to a singleton containing only the equality predicate $eq^{(U, U)}$.
-  \item The set of predefined functions to an infinite set containing functions of all possible arities (recall that constants are functions of arity $0$). \tom{is this weird? I want to say that the set of functions is flexible and the user can use whatever function he wants}
+  \item The set of predefined functions to an infinite set containing functions of all possible arities (recall that constants are functions of arity $0$).
 \end{enumerate}
 
 We now give a brief overview on the standard algorithm for finding the congruence closure of a given set of equalities. A more detailed explanation can be found at~\cite{orig_cong_clos}. This solution is based on the following theorem:
 
-\begin{theorem}[Congruence]
+\begin{theorem}[Congruence]\label{cong_theorem}
 Let $f$ be a function of arity $n$ and ${(a_{k})}_{k = 1}^{n}$ and ${(b_{k})}_{k = 1}^{n}$ be two sequences of terms. $\bigwedge_{i = 1}^{n} a_{i} = b_{i} \rightarrow f(a_{1}, \ldots, a_{n}) = f(b_{1}, \ldots, b_{n})$.
 \end{theorem}
 
 Let $S$ be the set of equalities that are assumed and $e$ be the one that we want to decide whether is a consequence of $S$. Let $T$ be the set of all terms that appear in $S \cup \{e\}$ including all function parameters. Let's build a graph $G$ in which for all $t \in T$ we will have a vertex $v$ in $G$ that represents that term. For the vertex $v$, we will assign a label with the name of the term it represents. Moreover, if $t$ is a function application we will add directed edges from $t$ to each vertex that represents a term that is an argument to $t$. Also, we will keep an order over the children for each vertex, according to the order in which the parameters are applied. For instance, let $S := \{f(a, b) = a\}$ and $e := f(f(a, b), b) = a$. Then we would build $G$ as follows:
+
+\renewcommand{\algorithmicforall}{\textbf{for each}}
+\MakeRobust{\Call}
+
+\begin{figure}[t]
+\begin{algorithmic}[1]
+  \Procedure{MergeCong}{$v_{1}$, $v_{2}$}
+  \If{$\neg$ \Call{SameClasses}{$v_{1}$, $v_{2}$}}
+    \State Let $v_{1}^{*}$ and $v_{2}^{*}$ be the equivalence classes of $v_{1}$ and $v_{2}$.
+    \State Let $P_{v_{1}^{*}}$ be the set of all predecessors of all vertices in $v_{1}^{*}$
+    \State Let $P_{v_{2}^{*}}$ be the set of all predecessors of all vertices in $v_{2}^{*}$
+    \State\Call{Merge}{$v_{1}$, $v_{2}$}
+    \ForAll{$u_{1} \in P_{v_{1}^{*}}$ and $u_{2} \in P_{v_{2}^{*}}$}
+      \If{\Call{IsCongruent}{$u_{1}$, $u_{2}$}}
+        \State \Call{MergeCong}{$u_{1}$, $u_{2}$}
+      \EndIf
+    \EndFor
+  \EndIf
+  \EndProcedure
+\end{algorithmic}
+\caption{Merge with Congruence}~\label{merge_cong}
+\end{figure}
 
 \begin{figure}[h]
 \centering
@@ -205,33 +226,11 @@ For a vertex $v$, we will denote by $\lambda(v)$ its label, $\delta(v)$ its outd
 
 Next, we will keep a data structure that is capable of representing a set of disjoint sets of vertices. Each one of these disjoint sets represents a class in an equivalence relation, where every vertex in the same class is known to be equal. This data structure must also be able to check whether two vertices are on the same class and to join two classes. An example of structure with such capabilities is~\cite{union_find}.
 
-Initially, each term is only equal to itself. Then, for each equality $t_{1} = t_{2}$ in $S$ we will use the procedure \textit{MergeCong} presented below to merge the vertices $v_{1}$ and $v_{2}$ that correspond to $t_{1}$ and $t_{2}$:
+Initially, each term is only equal to itself. Then, for each equality $t_{1} = t_{2}$ in $S$ we will use the procedure \textit{MergeCong} presented in figure~\ref{merge_cong} to merge the vertices $v_{1}$ and $v_{2}$ that correspond to $t_{1}$ and $t_{2}$.
+Notice that, when we process an equality $t_{1} = t_{2}$, we also have to propagate this information to any other terms that are using $t_{1}$ and $t_{2}$ as parameters (e.g.~if we have $f(t_{1})$ and $f(t_{2})$ as terms, we must also merge their classes). That's why we recursively call \textit{MergeCong} on line 11.
+This method has an auxiliary procedure for checking whether two vertices are congruent given the current state. Figure~\ref{cong_cond} shows an implementation of this method, which essentially just checks the premise of Theorem~\ref{cong_theorem}.
 
-\renewcommand{\algorithmicforall}{\textbf{for each}}
-\MakeRobust{\Call}
-
-\begin{algorithm}[H]
-\caption{Merge with Congruence}~\label{merge_cong}
-\begin{algorithmic}[1]
-  \Function{MergeCong}{$v_{1}$, $v_{2}$}
-  \If{\Call{SameClasses}{$v_{1}$, $v_{2}$}}
-    \State\Return
-  \EndIf
-  \State Let $v_{1}^{*}$ and $v_{2}^{*}$ be the equivalence classes of $v_{1}$ and $v_{2}$.
-  \State Let $P_{v_{1}^{*}}$ be the set of all predecessors of all vertices in $v_{1}^{*}$
-  \State Let $P_{v_{2}^{*}}$ be the set of all predecessors of all vertices in $v_{2}^{*}$
-  \State\Call{Merge}{$v_{1}$, $v_{2}$}
-  \ForAll{$u_{1} \in P_{v_{1}^{*}}$ and $u_{2} \in P_{v_{2}^{*}}$}
-    \If{\Call{IsCongruent}{$u_{1}$, $u_{2}$}}
-      \State\Call{MergeCong}{$u_{1}$, $u_{2}$}
-    \EndIf
-  \EndFor
-  \EndFunction
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}[H]
-\caption{Check Congruence Condition}~\label{cong_cond}
+\begin{figure}[t]
 \begin{algorithmic}[1]
   \Function{IsCongruent}{$v_{1}$, $v_{2}$}
   \If{$\lambda(v_{1}) \neq \lambda(v_{2})$ or $\delta(v_{1}) \neq \delta(v_{2})$}
@@ -245,9 +244,9 @@ Initially, each term is only equal to itself. Then, for each equality $t_{1} = t
   \State\Return $true$
   \EndFunction
 \end{algorithmic}
-\end{algorithm}
+\caption{Check Congruence Condition}~\label{cong_cond}
+\end{figure}
 
-Notice that, when we process an equality $t_{1} = t_{2}$, we also have to propagate this information to any other terms that are using $t_{1}$ and $t_{2}$ as parameters (e.g.~if we have $f(t_{1})$ and $f(t_{2})$ as terms, we must also merge their classes). That's why we recursively call \textit{MergeCong} on line 11.
 
 Once this process is done, we can check whether any pair of terms $t_{1}$ and $t_{2}$ is currently equal to each other by checking whether their corresponding vertices $v_{1}$ and $v_{2}$ are on the same equivalence class (i.e.\ checking whether $Find(v_{1}) = Find(v_{2})$). Therefore, we can use this fact to solve our original problem of checking if the equality $e$ follows from the conjunction of the equalities in $S$.
 
@@ -258,14 +257,14 @@ The second theory that we will be interested in this work is the theory of Linea
   $\mathlarger{\sum}_{i = 1}^{n} a_{i} x_{i} \bowtie b$
 \end{center}
 
-Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If we allow variables to range over rationals, we have the Linear Real Arithmetic (LRA) theory, which can be described using MSFOL in almost the same way, only changing $\mathcal{S}_{S}$ to $\{\mathbb{Q}\}$. \tom{we don't need to include rational constants in $\mathcal{S}_{F}$, right?}
+Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If we allow variables to range over rationals, we have the Linear Real Arithmetic (LRA) theory, which can be described using MSFOL a similar way.
 
-We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms in this theory is satisfiable
+We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms from this theory is satisfiable. Initially we will assume that all variables are rational, and then we show how to extend the method for integer variables.
 
-The first step is to, for each atom $t_{i} \bowtie b_{i} \in \Phi$ in which $t_{i}$ is a sum of at least two variables, create a fresh variable $s_{i}$. Then, we will define two new sets of atoms: $\Phi_{A}$, such that it's atoms are all of the form $s_{i} = t_{i}$, that is, they state the equality between the new variables and the corresponding terms, and $\Phi'$, that has all the atoms in $\Phi$ but with each term $t_{i}$ substituted by the corresponding $s_{i}$. For instance, let the set of atoms be
-$\Phi := \{x - y \ge 3, x - 2y < 6, x - y \le 10, x \ge 5\}$.  From this, we would define $\Phi_{A} := \{s_{1} = x - y, s_{2} = x - 2y\}$ and $\Phi' := \{s_{1} \ge 3, s_{2} < 6, s_{1} \le 10, x \ge 5\}$. It is easy to see that $\Phi$ and $\Phi_{A} \wedge \Phi'$ are equisatisfiable.
+The first step is to, for each atom $t_{i} \bowtie b_{i} \in \phi$ in which $t_{i}$ is a sum of at least two variables, create a fresh variable $s_{i}$. Then, we will define two new sets of atoms: $\phi_{A}$, such that it's atoms are all of the form $s_{i} = t_{i}$, that is, they state the equality between the new variables and the corresponding terms, and $\phi'$, that has all the atoms in $\phi$ but with each term $t_{i}$ substituted by the corresponding $s_{i}$. For instance, let the set of atoms be
+$\phi := \{x - y \ge 3, x - 2y < 6, x - y \le 10, x \ge 5\}$.  From this, we would define $\phi_{A} := \{s_{1} = x - y, s_{2} = x - 2y\}$ and $\phi' := \{s_{1} \ge 3, s_{2} < 6, s_{1} \le 10, x \ge 5\}$. It is easy to see that $\phi$ and $\phi_{A} \wedge \phi'$ are equisatisfiable.
 
-Next we will represent the restrictions in $\Phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). If the original problem had $n$ variables and we added $m$ fresh ones, the matrix $A$ will have $m$ rows and $m + n$ columns. In our example, we would have the following:
+Next we will represent the restrictions in $\phi_{A}$ as $Ax = 0$, where $A$ is a matrix and $x$ is a vector with all the variables in the problem (including the ones we added). If the original problem had $n$ variables and we added $m$ fresh ones, the matrix $A$ will have $m$ rows and $m + n$ columns. In our example, we would have the following:
 
 \begin{center}
 $
@@ -281,11 +280,118 @@ x :=
 $
 \end{center}
 
-Now, our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\Phi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\Phi'$. Notice that in this case we can represent the restrictions in $\Phi'$ as two sequences of coefficients $l_{i}$ and $r_{i}$ and a sequence of restrictions of the form $l_{i} \le v_{i} \le r_{i}$, as long as we allow $l_{i}$ to be $-\infty$ in case there is no lower restriction on $v_{i}$ and $r_{i}$ to be $+\infty$ in case there is no upper restriction on $v_{i}$.
+\begin{figure}[t]
+\begin{algorithmic}[1]
+  \Procedure{Update}{$v_{i}$, $val$}
+  \For{$v_{j} \in \mathcal{B}$}
+    \State $\beta(v_{j}) \gets \beta(v_{j}) + a_{ji}(v - \beta(v_{i}))$ \Comment{$a_{ji}$ refers to the entry $(j, i)$ of $A$}
+  \EndFor
+    \State $\beta(v_{i}) \gets val$
+  \EndProcedure
+\end{algorithmic}
+\caption{Change value of non-basic variable and update all basic variables}
+\end{figure}
 
-We will solve this problem by processing each restriction in $\Phi'$ incrementally. Our algorithm will maintain a state that includes the coefficients $l_{i}$ and $r_{i}$, as well as a function $\beta(v)$ that assigns a rational value to each variable $v$. At the beginning, since we haven't processed any inequality yet, we will set each $l_{i}$ to $-\infty$, each $r_{i}$ to $+\infty$, and $\beta(v_{i})$ to $0$ for all $v_{i}$. Additionally, we will keep track of two separate sets of variables: $\mathcal{N}$ (non-basic variables) and $\mathcal{B}$ (basic variables). Initially, $\mathcal{B}$ will consist of all the variables we added to the problem (each $s_{i}$), while $\mathcal{N}$ will include all the original variables from the problem. Those sets divide the variables into the ones that we have freedom to choose the value (non-basic) and the ones that have their values defined by the equation $Ax = 0$ and the value of the non-basic variables.
+Now, our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\phi'$, which are all of the form $v_{i} \bowtie b_{i}$. For now, we will assume that there is no strict inequalities in $\phi'$. Notice that in this case we can represent the restrictions in $\phi'$ as two sequences of coefficients $l_{i}$ and $r_{i}$, representing a sequence of restrictions of the form $l_{i} \le v_{i} \le r_{i}$, as long as we allow $l_{i}$ to be $-\infty$ in case there is no lower restriction on $v_{i}$ and $r_{i}$ to be $+\infty$ in case there is no upper restriction on $v_{i}$.
 
-For each inequality that we process, we will always ensure that the values of $\beta$ satisfy $Ax = 0$ and, for each $v_{i} \in \mathcal{N}$, $l_{i} \le v_{i} \le r_{i}$.
+We will solve this problem by processing each restriction in $\phi'$ incrementally. Our algorithm will maintain a state that includes the coefficients $l_{i}$ and $r_{i}$, as well as a function $\beta(v)$ that assigns a rational value to each variable $v$. At the beginning, since we haven't processed any inequality yet, we will set each $l_{i}$ to $-\infty$, each $r_{i}$ to $+\infty$, and $\beta(v_{i})$ to $0$ for all $v_{i}$. Additionally, we will keep track of two sets of variables: $\mathcal{N}$ (non-basic variables) and $\mathcal{B}$ (basic variables). Initially, $\mathcal{B}$ will consist of all the variables we added to the problem (each $s_{i}$), while $\mathcal{N}$ will include all the original variables.
+Those sets can exchange elements during the execution of the algorithm, but we will always maintain the invariant that all non-basic variables respect their restrictions, that is, $l_{i} \le \beta(v_{i}) \le r_{i}$ for all $v_{i} \in \mathcal{N}$. Also, everytime we update the value of a variable we will also update the values of all basic variables, in order to satisfy the equation $Ax = 0$.
+
+For each restriction in $\phi'$ of the form $v_{i} \le b_{i}$ we will run the procedure \textit{AssertUpper} shown below, and for each restriction of the form $v_{i} \ge b_{i}$ we will run \textit{AssertLower}. If there is a restriction of the form $v_{i} = b_{i}$ we will run both procedures.
+
+\algnewcommand{\IIf}[1]{\State\algorithmicif\ #1\ \algorithmicthen}
+\algnewcommand{\EndIIf}{\unskip\ \algorithmicend\ \algorithmicif}
+
+\begin{figure}[t]
+\begin{algorithmic}[1]
+  \Function{AssertLower}{$v_{i}$, $b_{i}$}
+  \IIf{$b_{i} \le l_{i}$} \Return $true$ \EndIIf
+  \IIf{$b_{i} > u_{i}$} \Return~$false$ \EndIIf
+  \State $l_{i} \gets b_{i}$
+  \If{$v_{i}$ is a non-basic variable and $\beta(v_{i}) > u_{i}$}
+    \State \Call{Update}{$v_{i}$, $u_{i}$}
+  \EndIf
+  \State \Return~$true$
+  \EndFunction
+\end{algorithmic}
+\begin{algorithmic}[1]
+  \Function{AssertUpper}{$v_{i}$, $b_{i}$}
+  \IIf{$b_{i} \ge u_{i}$} \Return $true$ \EndIIf
+  \IIf{$b_{i} < l_{i}$} \Return~$false$ \EndIIf
+  \State $u_{i} \gets b_{i}$
+%       \algstore{myalg}
+% \end{algorithmic}
+% \end{algorithm}
+
+% \begin{algorithm}
+% \begin{algorithmic}[1]
+    % \algrestore{myalg}
+
+  \If{$v_{i}$ is a non-basic variable and $\beta(v_{i}) < l_{i}$}
+    \State \Call{Update}{$v_{i}$, $l_{i}$}
+  \EndIf
+  \State \Return~$true$
+  \EndFunction
+\end{algorithmic}
+\caption{Assert inequalities}
+\end{figure}
+
+Both functions return $false$ if and only if the current restriction is incompatible with the previous ones, otherwise they correctly update the bounds on the variable on the restriction, and also update its value in case it is a non-basic variable (remember that we keep the invariant that non-basic variables respect their bounds). If the current restriction is $v_{i} \le b_{i}$, we first have to check if the current limit on $v_{i}$ already satisfies this restriction, which is done in line 2 of the function \textit{AssertUpper} and simply return $true$ if this is the case. Otherwise, we compare the current lower bound on $v_{i}$ with $b_{i}$ and immediately return $false$ if it is not, since in this case it would be impossible to find a valid value for $v_{i}$. Finally, if none of these conditions held, we update the limit $u_{i}$ accordingly in line 8 and update the value of $v_{i}$ and of all basic variables in line 10, if it is necessary. The procedure \textit{AssertLower} is symmetrical.
+
+
+\begin{figure}[t]
+\begin{algorithmic}[1]
+  \Procedure{PivotAndUpdate}{$v_{i}$, $v_{j}$, $val$}
+    \State $\delta \gets \frac{val - \beta(v_{i})}{a_{ij}}$
+    \State $\beta(v_{i}) \gets val$
+    \State $\beta(v_{j}) \gets \beta(v_{j}) + \delta$
+    \For{$v_{k} \in \mathcal{B} \setminus \{v_{i}\}$}
+      \State~$\beta(v_{k}) \gets \beta(v_{k}) + a_{kj}\delta$
+    \EndFor
+    \State $\mathcal{B} \gets (\mathcal{B} \setminus \{v_{i}\}) \cup \{v_{j}\}$
+    \State $\mathcal{N} \gets (\mathcal{N} \setminus \{v_{j}\}) \cup \{v_{i}\}$
+  \EndProcedure
+\end{algorithmic}
+% \caption{Update and pivot basic with non-basic variable}
+\end{figure}
+\begin{figure}[t]
+\begin{algorithmic}[1]
+  \Function{Check}{\null}
+    \State Let $v_{i}$ be the basic variable that violates a restriction with the smallest index.
+    \If{There is no such $v_{i}$}
+      \State \Return{$true$}
+    \EndIf
+    \If{$\beta(v_{i}) < l_{i}$}
+      \State Let $v_{j}$ be the non-basic variable with smallest index such that\\
+      \qquad \qquad $(a_{ij} > 0 \wedge \beta(v_{j}) < u_{j}) \vee (a_{ij} < 0 \wedge \beta(v_{j}) > l_{j})$
+%       \algstore{myalg}
+% \end{algorithmic}
+% \end{algorithm}
+
+% \begin{algorithm}
+% \begin{algorithmic}[1]
+%     \algrestore{myalg}
+      \If{There is no such $v_{j}$}
+        \State \Return{$false$}
+      \EndIf
+      \State \Call{PivotAndUpdate}{$v_{i}$, $v_{j}$, $l_{i}$}
+    \ElsIf{$\beta(v_{i}) > u_{i}$}
+        \State Let $v_{j}$ be the non-basic variable with smallest index such that\\
+        \qquad \qquad $(a_{ij} < 0 \wedge \beta(v_{j}) < u_{j}) \vee (a_{ij} > 0 \wedge \beta(v_{j}) > l_{j})$
+        \If{There is no such $v_{j}$}
+          \State \Return{$false$}
+        \EndIf
+        \State \Call{PivotAndUpdate}{$v_{i}$, $v_{j}$, $u_{i}$}
+    \EndIf
+    \State \Call{Check}{\null}
+  \EndFunction
+
+\end{algorithmic}
+\caption{Check if it's possible to satisfy all restrictions}\label{check_lra}
+\end{figure}
+
+Lastly, if it was possible to run the assertion procedures on all the inequalities from the input without any of them returning \textit{false}, we run the procedure \textit{Check} presented in figure~\ref{check_lra}.
+
 
 
 \subsection{Proofs in cvc5}
@@ -298,7 +404,7 @@ For each inequality that we process, we will always ensure that the values of $\
 
 Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
 
-\begin{algorithm}[H]
+\begin{algorithm}[t]
 \caption{Original Absolute Function}~\label{originalAbs}
 \begin{algorithmic}[1]
 \Function{abs}{x}
@@ -313,7 +419,7 @@ Given a program and a formal specification of some property related to the progr
 
 In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which does not have branches:
 
-\begin{algorithm}[H]
+\begin{algorithm}[t]
 \caption{Branchless Absolute Function}~\label{branchlessAbs}
 \begin{algorithmic}[1]
 \Function{abs'}{x}
