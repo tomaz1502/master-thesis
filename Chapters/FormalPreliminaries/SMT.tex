@@ -56,7 +56,8 @@ We also define the following symbols:
   $\exists x. \psi := \neg \forall x. \neg \psi$\\
   $\psi_{1} \wedge \psi_{2} := \neg (\neg \psi_{1} \vee \neg \psi_{2})$\\
   $\psi_{1} \rightarrow \psi_{2} := \neg \psi_{1} \vee \psi_{2}$\\
-  $\psi_{1} \leftrightarrow \psi_{2} := \psi_{1} \Rightarrow \psi_{2} \wedge \psi_{2} \Rightarrow \psi_{1}$
+  $\psi_{1} \leftrightarrow \psi_{2} := \psi_{1} \Rightarrow \psi_{2} \wedge \psi_{2} \Rightarrow \psi_{1}$\\
+  $\psi_{1} \not\simeq \psi_{2} := \neg (\psi_{1} \simeq \psi_{2})$
 \end{center}
 
 We define a \textit{signature} to be a triple of sets $\langle \mathcal{S}_{S}, \mathcal{S}_{F}, \mathcal{S}_{X} \rangle$ respecting the requirements defined above.
@@ -97,7 +98,7 @@ First, let’s explore how SAT is solved. Although MSFOL is not decidable, Propo
 
 A more efficient alternative of a decision procedure for PL is the DPLL algorithm~\cite{dpll}. DPLL is based on the \textit{Resolution} theorem:
 
-\begin{theorem}[Resolution]
+\begin{theorem}[Resolution]\label{res_theorem}
 Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_{1}$ and $\neg x \in C_{2}$. Then $C_{1} \wedge C_{2} \rightarrow (C_{1} \setminus x) \vee (C_{2} \setminus \neg x)$.
 \end{theorem}
 
@@ -386,61 +387,94 @@ Lastly, if it was possible to run the assertion procedures on all the inequaliti
 \caption{Check if it's possible to satisfy all restrictions}\label{check_lra}
 \end{figure}
 
-\subsection{Proofs Certificates}
+\section{Proof Certificates}
 
-weriofjwoef
+In order to convince the ITP that the result found by the SMT solver is correct, we need some sort of evidence provided by the ATP.
+We will refer to these evidences as proof certificates. The main feature of a good certificate is being easy to check if it really is sufficient to prove the desired result. In particular, it must be easier to check it then to solve the original problem. The theories that are of our interest in this project have already been instrumentized in cvc5 so that the solver can produce proof certificates for them. In this section we present the formats of these certificates.
 
-% \begin{itemize}
-%   \item Resolution tree (cite Rob65 from smtcoq to say that it is complete)
-% \end{itemize}
+\subsection{Certificates for Boolean Satisfiability}
 
-\subsection{Applications}
+First, let's consider what would be suitable certificates for results regarding the SAT problem. If the SMT solver determines that a given instance is satisfiable, then a certificate could be simply the valuation of the variables in the problem. One could verify that the certificate is valid simply by replacing the valuation on the original formula and checking if it evaluates to \textit{true}. For unsatisfiability results, there is not a certificate that is so simple. The alternative mainly used by SMT solvers is to produce a \textit{resolution tree}. A resolution tree is a binary tree in which each leaf correspond to a clause from the SAT instance, each internal node correspond to the clause resulting of applying Theorem~\ref{res_theorem} on its two children and the root correspond to the empty clause.
 
-Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
+For instance\footnote{Example taken from~\cite{smtcoq}}, for the SAT formula that corresponds to the conjunction of the set of clauses $\{x \vee y, x \vee \neg y \vee z, \neg x \vee z,  \neg z\}$, a possible resolution tree that certificates its unsatisfiability is the following:
 
-\begin{figure}[t]
-\begin{algorithmic}[1]
-\Function{abs}{x}
-\If{$x < 0$}
-  \State\Return$-x$
-\Else
-  \State\Return$x$
-\EndIf
-\EndFunction
-\end{algorithmic}
-\caption{Original Absolute Function}~\label{originalAbs}
-\end{figure}
+% the leafs are each clause from the SAT instance and the parent of a pair of nodes consists of the clause resulting from applying resolution between those two nodes.
 
-In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which does not have branches:
+\inferLineSkip=3pt
+\[
+\infer[]{\bot}{
+  \infer[]
+  {x}
+  {x \vee y & \infer[]{x \vee \neg y}{x \vee \neg y \vee z & \neg z}} & \infer[]{\neg x}{\neg x \vee z & \neg z}}
+\]
 
-\begin{figure}[t]
-\begin{algorithmic}[1]
-\Function{abs'}{x}
-  \State $y \gets x >> 31$
-  \State \Return $(x \bigoplus y) - y$
-\EndFunction
-\end{algorithmic}
-\caption{Branchless Absolute Function}~\label{branchlessAbs}
-\end{figure}
+In order to check it, is enough to check if the leafs correspond to premisses, each resolution was applied correctly and the root corresponds to the empty clause. It is known that, for any unsatisfiable instance of the SAT problem, there exists at least one resolution tree that certificates its unsatisfiability~\cite{res_tree_complete}. This is the format produced by cvc5 and, therefore, we will use it in this thesis.
 
-Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input. We present the instance written in SMT-LIB~\cite{smtlib}, a standardized syntax for representing SMT problems:
+\subsection{Certificates for Congruence Closure}
 
-\begin{minted}[linenos]{smtlib2.py -x}
-(set-logic QF_BV)
-(declare-const x (_ BitVec 32))
-(declare-const result1 (_ BitVec 32))
-(assert (= result1 (ite (bvslt x #x00000000) (bvneg x) x)))
-(declare-const y (_ BitVec 32))
-(declare-const result2 (_ BitVec 32))
-(assert (= y (bvashr x (_ bv31 32))))
-(assert (= result2 (bvsub (bvxor x y) y)))
-(assert (distinct result1 result2))
-(check-sat)
-\end{minted}
+Remember that in the theory of Equality and Uninterpreted Functions, we are given a set of equalities or inequalities and we must check whether they are consistent. Similarly to the previous case, if the set of atoms is satisfiable, a proof certificate could be just a valuation of the variables in the problem, which is trivially checked. If the set of atoms is unsatisfiable, then we can build a proof tree, similar to the resolution tree presented before. The only difference is that, instead of using the resolution theorem to transition between children and parent, this tree will use the axioms that equality satisfies (reflexivity, symmetry and transitivity), as well as Theorem~\ref{cong_theorem}. For instance, for the set of atoms $\{a \simeq f(f(a)), a \simeq f(f(f(a))), f(a) \not\simeq a\}$, a proof certificate of its unsatisfiability could be the following tree:
 
-First, we set the combination of theories that will be used in this problem. In our case, we will be using \textit{QF\_BV}, which stands for quantifier free bitvectors. This means that this instance of the problem is not allowed to use quantifiers and is allowed to declare and use variables living in the Bitvector sort, as well as operations over this sort. Bitvectors are fixed-length arrays of bits. They are useful for representing machine integers, as they can simulate their semantics.
+\[
+  \infer[]{\bot}{\infer[trans]{f(a) \simeq a}{\infer[cong]{f(a) \simeq f(f(f(a)))}{a \simeq f(f(a))} & \infer[symm]{f(f(f(a))) \simeq a}{a \simeq f(f(f(a)))}} & f(a) \not\simeq a}
+\]
 
-Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitVec 32} (arrays of 32 bits): \textit{x} and \textit{result1}. The first one represents the input value from the original \textit{abs} function, and the second one, the result produced by that function. We then have to add an assertion in line 4 that binds the variable \textit{result1} to the output of the function \textit{abs} in terms of \textit{x}. We translate the branch from the pseudocode as the \textit{ite} operator, the comparison as the \textit{bvslt} operator and the multiplication by -1 as the \textit{bvneg} operation. In lines 5 to 8 we repeat the process to define \textit{y} and \textit{result2}, which corresponds to the result of the branchless \textit{abs} function. Finally, we assert that \textit{result1} and \textit{result2} must be different in line 9. If this problem is satisfiable, then there is a value for \textit{x} which produces different values in each function. If it is unsatisfiable, then we can be sure that no such value exists, therefore, both functions are equivalent. Note that we are not verifying that the actual code of the functions are equivalent, just an abstraction over it's implementation.
+\subsection{Certificates for Linear Arithmetic}
+
+The proof certificates for linear arithmetic rely on the following fact:
+
+\begin{theorem}[Farkas' Lemma]
+  Let $A$ be a matrix over real numbers with $n$ rows and $m$ columns. Let $b$ be a vector with $m$ entries of real numbers. The system $Ax = b$ has no solution with $x \ge 0$ if and only if the system $A^{T}y \ge 0$ has a solution with $b^{T}y < 0$.
+\end{theorem}
+
+% \subsection{Applications}
+
+% Given a program and a formal specification of some property related to the program, it is often \tom{always?} the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
+
+% \begin{figure}[t]
+% \begin{algorithmic}[1]\label{originalAbs}
+% \Function{abs}{x}
+% \If{$x < 0$}
+%   \State\Return$-x$
+% \Else
+%   \State\Return$x$
+% \EndIf
+% \EndFunction
+% \end{algorithmic}
+
+% \begin{algorithmic}[1]
+% \Function{abs'}{x}
+%   \State $y \gets x >> 31$
+%   \State \Return $(x \bigoplus y) - y$
+% \EndFunction
+% \end{algorithmic}
+% \caption{Two implementations of the absolute value function}~\label{branchlessAbs}
+% \end{figure}
+
+% In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which does not have branches:
+
+
+% Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input. We present the instance written in SMT-LIB~\cite{smtlib}, a standardized syntax for representing SMT problems:
+
+% \begin{figure}[t]
+% \begin{minted}[linenos]{smtlib2.py -x}
+% (set-logic QF_BV)
+% (declare-const x (_ BitVec 32))
+% (declare-const result1 (_ BitVec 32))
+% (assert (= result1 (ite (bvslt x #x00000000) (bvneg x) x)))
+% (declare-const y (_ BitVec 32))
+% (declare-const result2 (_ BitVec 32))
+% (assert (= y (bvashr x (_ bv31 32))))
+% (assert (= result2 (bvsub (bvxor x y) y)))
+% (assert (distinct result1 result2))
+% (check-sat)
+% \end{minted}
+% \caption{SMTLib script for equivalence of absolute functions}
+% \end{figure}
+
+
+% First, we set the combination of theories that will be used in this problem. In our case, we will be using \textit{QF\_BV}, which stands for quantifier free bitvectors. This means that this instance of the problem is not allowed to use quantifiers and is allowed to declare and use variables living in the Bitvector sort, as well as operations over this sort. Bitvectors are fixed-length arrays of bits. They are useful for representing machine integers, as they can simulate their semantics.
+
+% Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitVec 32} (arrays of 32 bits): \textit{x} and \textit{result1}. The first one represents the input value from the original \textit{abs} function, and the second one, the result produced by that function. We then have to add an assertion in line 4 that binds the variable \textit{result1} to the output of the function \textit{abs} in terms of \textit{x}. We translate the branch from the pseudocode as the \textit{ite} operator, the comparison as the \textit{bvslt} operator and the multiplication by -1 as the \textit{bvneg} operation. In lines 5 to 8 we repeat the process to define \textit{y} and \textit{result2}, which corresponds to the result of the branchless \textit{abs} function. Finally, we assert that \textit{result1} and \textit{result2} must be different in line 9. If this problem is satisfiable, then there is a value for \textit{x} which produces different values in each function. If it is unsatisfiable, then we can be sure that no such value exists, therefore, both functions are equivalent. Note that we are not verifying that the actual code of the functions are equivalent, just an abstraction over it's implementation.
 
 % Given that we have very efficient systems to solve such problems, which will be introduced later, the possibility of formally verifying programs using this technology is quite promising. Indeed, \tom{pegar referencias do paper do leonardo (https://fm.csl.sri.com/SSFT14/smt-application-chapter.pdf)}
 %
