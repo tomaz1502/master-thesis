@@ -258,7 +258,7 @@ The second theory that we will be interested in this work is the theory of Linea
   $\mathlarger{\sum}_{i = 1}^{n} a_{i} x_{i} \bowtie b$
 \end{center}
 
-Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$, $=$, $>$ or $\ge$. If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If variables can range over rationals, the corresponding theory is known as Linear Real Arithmetic (LRA), which can be described using MSFOL a similar way.
+Where each $a_{i}$ and $b$ are constants ranging over rationals, each $x_{i}$ is a variable and $\bowtie$ is one of $\le$, $<$ or $\simeq$ (we model $\ge$ and $>$ as the negation of $<$ and $\le$). If we allow variables to range only over integers, we have the Linear Integer Arithmetic theory, which was described in terms of MSFOL in Example~\ref{ex:lia}. If variables can range over rationals, the corresponding theory is known as Linear Real Arithmetic (LRA), which can be described using MSFOL a similar way.
 
 We will now review the method presented in~\cite{simplex_dpllt} for checking whether a given set of atoms from LRA is satisfiable. The paper also presents an extension of this method for LIA, which we will not show here.
 
@@ -320,14 +320,6 @@ For each restriction in $\phi'$ of the form $v_{i} \le b_{i}$ we will run the pr
   \IIf{$b_{i} \ge u_{i}$} \Return $true$ \EndIIf
   \IIf{$b_{i} < l_{i}$} \Return~$false$ \EndIIf
   \State $u_{i} \gets b_{i}$
-%       \algstore{myalg}
-% \end{algorithmic}
-% \end{algorithm}
-
-% \begin{algorithm}
-% \begin{algorithmic}[1]
-    % \algrestore{myalg}
-
   \If{$v_{i}$ is a non-basic variable and $\beta(v_{i}) < l_{i}$}
     \State \Call{Update}{$v_{i}$, $l_{i}$}
   \EndIf
@@ -390,11 +382,11 @@ Lastly, if it was possible to run the assertion procedures on all the inequaliti
 \section{Proof Certificates}
 
 In order to convince the ITP that the result found by the SMT solver is correct, we need some sort of evidence provided by the ATP.
-We will refer to these evidences as proof certificates. The main feature of a good certificate is being easy to check if it really is sufficient to prove the desired result. In particular, it must be easier to check it then to solve the original problem. The theories that are of our interest in this project have already been instrumentized in cvc5 so that the solver can produce proof certificates for them. In this section we present the formats of these certificates.
+We will refer to these evidences as proof certificates. The main feature of a good certificate is being easy to check if they are really sufficient to prove the desired result. In particular, it must be easier to check a certificate then to solve the original problem. The theories that are of our interest in this project have already been instrumentized in cvc5 so that the solver can produce proof certificates for them. In this section we present the formats of these certificates.
 
-\subsection{Certificates for Boolean Satisfiability}
+\subsubsection{Certificates for Boolean Satisfiability}
 
-First, let's consider what would be suitable certificates for results regarding the SAT problem. If the SMT solver determines that a given instance is satisfiable, then a certificate could be simply the valuation of the variables in the problem. One could verify that the certificate is valid simply by replacing the valuation on the original formula and checking if it evaluates to \textit{true}. For unsatisfiability results, there is not a certificate that is so simple. The alternative mainly used by SMT solvers is to produce a \textit{resolution tree}. A resolution tree is a binary tree in which each leaf correspond to a clause from the SAT instance, each internal node correspond to the clause resulting of applying Theorem~\ref{res_theorem} on its two children and the root correspond to the empty clause.
+First, let's consider what would be suitable certificates for results for the SAT problem. If the SMT solver determines that a given instance is satisfiable, then a certificate could be simply the valuation of the variables in the problem. One could verify that the certificate is valid simply by replacing the valuation on the original formula and checking if it evaluates to \textit{true}. For unsatisfiability results, there is not a certificate that is so simple. The alternative mainly used by SMT solvers is to produce a \textit{resolution tree}. A resolution tree is a binary tree in which each leaf correspond to a clause from the SAT instance, each internal node correspond to the clause resulting of applying Theorem~\ref{res_theorem} on its two children and the root correspond to the empty clause.
 
 For instance\footnote{Example taken from~\cite{smtcoq}}, for the SAT formula that corresponds to the conjunction of the set of clauses $\{x \vee y, x \vee \neg y \vee z, \neg x \vee z,  \neg z\}$, a possible resolution tree that certificates its unsatisfiability is the following:
 
@@ -408,23 +400,30 @@ For instance\footnote{Example taken from~\cite{smtcoq}}, for the SAT formula tha
   {x \vee y & \infer[]{x \vee \neg y}{x \vee \neg y \vee z & \neg z}} & \infer[]{\neg x}{\neg x \vee z & \neg z}}
 \]
 
-In order to check it, is enough to check if the leafs correspond to premisses, each resolution was applied correctly and the root corresponds to the empty clause. It is known that, for any unsatisfiable instance of the SAT problem, there exists at least one resolution tree that certificates its unsatisfiability~\cite{res_tree_complete}. This is the format produced by cvc5 and, therefore, we will use it in this thesis.
+In order to check it, it's enough to check if the leafs correspond to premisses, each resolution was applied correctly and the root corresponds to the empty clause. It is known that, for any unsatisfiable instance of the SAT problem, there exists at least one resolution tree that certificates its unsatisfiability~\cite{res_tree_complete}. This is the format produced by cvc5 and, therefore, we will use it in this thesis.
 
-\subsection{Certificates for Congruence Closure}
+\subsubsection{Certificates for Congruence Closure}
 
-Remember that in the theory of Equality and Uninterpreted Functions, we are given a set of equalities or inequalities and we must check whether they are consistent. Similarly to the previous case, if the set of atoms is satisfiable, a proof certificate could be just a valuation of the variables in the problem, which is trivially checked. If the set of atoms is unsatisfiable, then we can build a proof tree, similar to the resolution tree presented before. The only difference is that, instead of using the resolution theorem to transition between children and parent, this tree will use the axioms that equality satisfies (reflexivity, symmetry and transitivity), as well as Theorem~\ref{cong_theorem}. For instance, for the set of atoms $\{a \simeq f(f(a)), a \simeq f(f(f(a))), f(a) \not\simeq a\}$, a proof certificate of its unsatisfiability could be the following tree:
+Remember that, in the theory of Equality and Uninterpreted Functions, we are given a set of equalities and inequalities involving variables and functions and we must check whether they are satisfiable. Similarly to the previous case, a suitable proof certificate for a positive result is a valuation of the variables in the problem, which can be trivially checked. If the set of atoms is unsatisfiable, then we can build a proof tree, similar to the resolution tree presented before. The only difference is that, instead of using the resolution theorem to infer new propositions, this tree will use the axioms that equality satisfies (reflexivity, symmetry and transitivity), as well as Theorem~\ref{cong_theorem}. For instance, consider the following set of propositions: $\{a \simeq f(f(a)), a \simeq f(f(f(a))), f(a) \not\simeq a\}$. One possible proof tree that certificates its unsatisfiability is the following:
 
 \[
   \infer[]{\bot}{\infer[trans]{f(a) \simeq a}{\infer[cong]{f(a) \simeq f(f(f(a)))}{a \simeq f(f(a))} & \infer[symm]{f(f(f(a))) \simeq a}{a \simeq f(f(f(a)))}} & f(a) \not\simeq a}
 \]
 
-\subsection{Certificates for Linear Arithmetic}
+\subsubsection{Certificates for Linear Arithmetic}
 
-The proof certificates for linear arithmetic rely on the following fact:
+The proof certificates for unsatisfiability of problems on the theory of linear arithmetic rely on the following variant of Farkas' lemma~\cite{farkas_ref}:
 
-\begin{theorem}[Farkas' Lemma]
-  Let $A$ be a matrix over real numbers with $n$ rows and $m$ columns. Let $b$ be a vector with $m$ entries of real numbers. The system $Ax = b$ has no solution with $x \ge 0$ if and only if the system $A^{T}y \ge 0$ has a solution with $b^{T}y < 0$.
+\begin{theorem}[Farkas' Lemma]\label{farkas_lemma}
+  Let $C$ be a sequence of $m$ restrictions, where the $j$-th one has the form $\mathlarger{\sum}_{i = 1}^{n} a_{i} x_{i} \bowtie_{j} b_{j}$ and each $\bowtie_{j}$ is either $\le$ or $<$. If there is no solution for the conjunction of these restrictions, then there exists a sequence of positive coefficients $s$, known as Farkas' coefficients, that satisfies $\mathlarger{\sum}_{i = 1}^{m} s_{i} (\mathlarger{\sum}_{j = 1}^{n} a_{j} x_{j}) = 0$ and $\mathlarger{\sum}_{i = 1}^{m} s_{i} b_{i} \bowtie 0$, where $\bowtie$ is $\le$ if any of the original relation symbols was strict or $<$ otherwise.
 \end{theorem}
+
+One can use a sequence of coefficients with these properties to certify that a given instance of the problem is unsatisfiable. Given the sequence $s$, we can multiply each one of the restrictions $\sum_{i = 1}^{n} a_{i} x_{i} \bowtie_{j} b_{j}$ by $s_{j}$, obtaining $ s_{j} \sum_{i = 1}^{n} a_{i} x_{i} \bowtie_{j} s_{j} b_{j}$ (note that $\bowtie$ does not change, as $s_{j}$ is positive). Adding all the restrictions we get $\sum_{j = 1}^{m} s_{j} (\sum_{i = 1}^{n} a_{i} x_{i}) \bowtie^{*} \sum_{j = 1}^{m} s_{j} b_{j}$, where $\bowtie^{*}$ is $<$ if at least one $\bowtie_{j}$ was $<$ or $\le$ otherwise. By hypothesis, the left-hand side evaluates to $0$. If $\bowtie^{*}$ is $<$, then the right-hand side is smaller then or equal to $0$, which is an absurd. If $\bowtie^{*}$ is $\le$, then the right hand side is positive, which is also an absurd ($0 < 0$). Therefore, in order to verify that a given sequence of coefficients indeed prove that the restrictions are unsatisfiable, it's sufficient to apply the rules stating that we can add inequalities and multiply them by constants in the way we did, and then evaluate the final inequality to obtain a contradiction.
+
+Since it is always possible to find this coefficients for unsatisfiable instances of the problem, the SMT solver can provide them as a proof certificate for this theory. Indeed, this is the certificate used by cvc5, and it is the one we will be interested in this thesis.
+% Using this fact, an SMT solver can compute the Farkas' coefficients
+% Using this fact, it's enough to provide the Farkas' coefficients to certificate the unsatisfability of an instance of the problem.
+
 
 % \subsection{Applications}
 
