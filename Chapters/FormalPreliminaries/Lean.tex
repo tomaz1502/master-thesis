@@ -1,0 +1,68 @@
+Lean is both an Interactive Theorem Prover and a programming
+language. It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic_ref} and explores the well-known correspondence between types and propositions~\cite{ch_correspondence} to implement a system that is both a proof checker and a type checker. This way, the ITP has a kernel with less than 7500 lines\footnote{Information obtained in 25/07/2023} that is powerful enough to recognize a language capable of expressing the theory of dependent types~\cite{dep_type_theory}.
+
+\subsection{Lean as a Programming Language}
+
+Lean has all the main features one can expect from a functional programming language. Its features include algebraic datatypes, pattern matching, polymorphism, typeclasses, IO support using monads and a robust macro system. The following script is a valid Lean program, that defines a new type representing natural numbers, together with a function for adding them:
+
+\begin{minted}{lean}
+inductive Natural where
+  | zero : Natural
+  | succ : Natural -> Natural
+
+open Natural
+
+def add (n m : Natural) : Natural :=
+  match n with
+  | zero   => m
+  | succ n' => succ (add n' m)
+
+notation x " + " y => add x y
+\end{minted}
+
+The keyword \textit{inductive} is used to introduce a new algebraic datatype, which in this case will be named \textit{Natural}. After the name, the user must use the keyword \textit{where}, followed by its constructors and their types. The constructors for the type Natural are \textit{zero} and \textit{succ}. This declaration introduces the constructors in the context with the names \textit{Natural.zero} and \textit{Natural.succ}. In order to be able to write just ``zero'' and ``succ'' we use the command \textit{open Natural}.
+
+The next three lines define the sum function. We define new functions using the keyword \textit{def} followed by its name, the list of parameters and their types, the return type and the body of the function after the symbol ``:=''. In this case, we define the function by pattern matching on the first parameter. If it is \textit{zero}, we just return the second parameter. If it is \textit{succ} of some other value \textit{n'}, we return the \textit{succ} constructor applied to the result of a recursive call, using \textit{n'} and \textit{m}.
+
+Lastly, we use the command \textit{notation} to define a macro for using the add function with the usual infix ``+'' operator.
+
+\subsection{Lean as a Theorem Prover}
+
+
+\begin{minted}{lean}
+theorem add_zero : ∀ (n : Natural), (n + zero) = n := fun n =>
+  match n with
+  | zero => rfl
+  | succ n' => congrArg succ (add_zero n')
+
+theorem add_succ : ∀ (n m : Natural), (n + succ m) = succ (n + m) := fun n m =>
+  match n with
+  | zero => rfl
+  | succ n' => congrArg succ (add_succ n' m)
+
+theorem add_comm : ∀ (n m : Natural), (n + m) = (m + n) := fun n m =>
+  match n with
+  | zero => Eq.symm (add_zero m)
+  | succ n' =>
+    Eq.trans (congrArg succ (add_comm n' m)) (Eq.symm (add_succ m n'))
+\end{minted}
+
+\begin{minted}{lean}
+theorem add_zero' : ∀ (n : Natural), (n + zero) = n := by
+  intro n
+  induction n with
+  | zero => rfl
+  | succ n' IH => rw [add, IH]
+
+theorem add_succ' : ∀ (n m : Natural), (n + succ m) = succ (n + m) := by
+  intros n m
+  induction n with
+  | zero => rfl
+  | succ n' IH => rw [add, add, IH]
+
+theorem add_comm' : ∀ (n m : Natural), (n + m) = (m + n) := by
+  intros n m
+  induction n with
+  | zero => rw [add, add_zero']
+  | succ n' IH => rw [add, add_succ', IH]
+\end{minted}

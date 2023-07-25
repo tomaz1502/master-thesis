@@ -34,6 +34,9 @@
 \usepackage[normalem]{ulem}
 \usepackage{stmaryrd}
 \usepackage{proof}
+\usepackage{mathtools}
+\usepackage{amsfonts}
+\usepackage{amsthm}
 % \usepackage[proofrulebaseline=2ex]{prooftrees}
 
 
@@ -50,6 +53,8 @@
 
 %% **** Caso não haja nenhuma lista adicional, os comandos acima podem ser apagados. ****
 %% ===============================================
+
+\DeclareUnicodeCharacter{2200}{$\mathbb{\forall}$}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{definition}{Definition}
@@ -150,6 +155,7 @@
 	  \section{Satisfiability Modulo Theories (SMT)}
 	    \input{Chapters/FormalPreliminaries/SMT}
 	  \section{Lean}
+      \input{Chapters/FormalPreliminaries/Lean}
 	    % take a look at chapter 2 of smtcoq
 	    % \begin{itemize}
 	    %   \item Falar sobre porque eh facil confiar no proof assistant
