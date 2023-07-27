@@ -172,6 +172,7 @@ In this work, we will be interested in two theories and their respective solvers
 
 Consider the following problem: given a set of universally quantified variables and uninterpreted functions and a set of equalities built from variables and functions applied to those variables, decide whether a given equality is a consequence of the conjunction of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables and $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = c, f(b) = c, f(c) = a\}$ have as a consequence the equality $a = b$.
 
+\tom{OUTDATED - will rewrite later}
 The set of all equalities that can be derived from a given set of equalities built from variables and function applications is known as the \textit{congruence closure} of that set. Deciding whether a given equality is in the congruence closure for a given set is an old problem, which was shown to be decidable by Ackermann~\cite{ack_cong} in 1954. It is also is used as the basis for the theory of Equality and Uninterpreted Functions (EUF) in SMT.~We can define this problem in the language of MSFOL by setting:
 \begin{enumerate}
   \item The set of predefined sorts to $\{U\}$.

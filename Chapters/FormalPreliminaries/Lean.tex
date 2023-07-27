@@ -1,3 +1,5 @@
+\tom{disclaimer: for now I will just give a minimal definition on Lean's features. Later, if I discover that I need something else in the next chapter I add it here}
+
 Lean is both an Interactive Theorem Prover and a programming
 language. It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic_ref} and explores the well-known correspondence between types and propositions~\cite{ch_correspondence} to implement a system that is both a proof checker and a type checker. This way, the ITP has a kernel with less than 7500 lines\footnote{Information obtained in 25/07/2023} that is powerful enough to recognize a language capable of expressing the theory of dependent types~\cite{dep_type_theory}.
 
@@ -14,55 +16,75 @@ open Natural
 
 def add (n m : Natural) : Natural :=
   match n with
-  | zero   => m
+  | zero    => m
   | succ n' => succ (add n' m)
 
 notation x " + " y => add x y
 \end{minted}
 
-The keyword \textit{inductive} is used to introduce a new algebraic datatype, which in this case will be named \textit{Natural}. After the name, the user must use the keyword \textit{where}, followed by its constructors and their types. The constructors for the type Natural are \textit{zero} and \textit{succ}. This declaration introduces the constructors in the context with the names \textit{Natural.zero} and \textit{Natural.succ}. In order to be able to write just ``zero'' and ``succ'' we use the command \textit{open Natural}.
+The keyword \textit{inductive} is used to introduce a new type, which in this case will be named \textit{Natural}. After the name, the user must use the keyword \textit{where}, followed by its constructors and their types. The constructors for the type Natural are \textit{zero} and \textit{succ}. This declaration introduces the constructors in the context with the names \textit{Natural.zero} and \textit{Natural.succ}. In order to be able to write just ``zero'' and ``succ'' we use the command \textit{open Natural}.
 
-The next three lines define the sum function. We define new functions using the keyword \textit{def} followed by its name, the list of parameters and their types, the return type and the body of the function after the symbol ``:=''. In this case, we define the function by pattern matching on the first parameter. If it is \textit{zero}, we just return the second parameter. If it is \textit{succ} of some other value \textit{n'}, we return the \textit{succ} constructor applied to the result of a recursive call, using \textit{n'} and \textit{m}.
+The next three lines define the sum function. We define new functions using the keyword \textit{def} followed by its name, the list of parameters and their types, the return type and the body of the function after the symbol ``:=''. In this case, we define the function by pattern matching on the first parameter. If it is \textit{zero}, we just return the second parameter. If it is \textit{succ} of some other value \textit{n'}, we return the \textit{succ} constructor applied to the result of a recursive call of \textit{add}, using \textit{n'} and \textit{m}.
 
 Lastly, we use the command \textit{notation} to define a macro for using the add function with the usual infix ``+'' operator.
 
+% Another useful feature of Lean is the possibility of asking for a type of a given expression. We do this with the command \textit{\#check}, followed by the expression we want to consult the type:
+
+% \begin{minted}{lean}
+%   #check add -- Natural -> Natural -> Natural
+%   #check Natural -- Type
+% \end{minted}
+
 \subsection{Lean as a Theorem Prover}
 
+In Lean, propositions are represented by types, which are inhabited by terms that represent proofs of those propositions. For instance, the following Lean expression represents a proposition (which is also a type) stating that, according to our previous definition of natural numbers, the addition of any natural \textit{n} and \textit{zero} results in \textit{n}:
 
 \begin{minted}{lean}
-theorem add_zero : ∀ (n : Natural), (n + zero) = n := fun n =>
-  match n with
-  | zero => rfl
-  | succ n' => congrArg succ (add_zero n')
+∀ (n : Natural), (n + zero) = n
+\end{minted}
 
-theorem add_succ : ∀ (n m : Natural), (n + succ m) = succ (n + m) := fun n m =>
+Therefore, proving that this statement holds amounts to finding a term with this type. The following snippet shows the construction of such term:
+
+\begin{minted}{lean}
+theorem add_zero : ∀ (n : Natural), (n + zero) = n :=
+  fun n =>
+    match n with
+    | zero    => rfl
+    | succ n' => congrArg succ (add_zero n')
+\end{minted}
+
+This structure follows the same pattern as the one for defining functions, the only difference is the change of the keyword \textit{def} to \textit{theorem}. After the symbol ``:='' we have essentially a constructive proof of the statement. First, it introduces the variable binded by the $\forall$ symbol in the context, using \textit{fun n}. Then, it uses pattern match on \textit{n}. If \textit{n} is \textit{zero}, the type that is required is reduced to \textit{zero + zero = zero}, which follows directly from the definition of \textit{add}. The term \textit{rfl} is a proof that any term is equal to itself. In this case, Lean can match its type with the required one. If \textit{n} follows the pattern \textit{succ n'}, then the required type is \textit{succ n' + zero = succ n'}. By the definition of \textit{add}, the left-hand side evaluates to \textit{succ (n' + zero)}.
+Note that the term \textit{add\_zero n'} has type \textit{n' + zero = n'}, which is almost the required one, missing only the \textit{succ} on both sides. This is solved by applying \textit{congrArg succ} on \textit{add\_zero n'} (\textit{congrArg} is a version of Theorem~\ref{cong_theorem} in Lean's library), which produces a term with the correct type.
+
+
+We also present a proof that our addition function is commutative, together with another necessary lemma:
+
+\begin{minted}{lean}
+  theorem add_succ : ∀ (n m : Natural),
+    (n + succ m) = succ (n + m) := fun n m =>
   match n with
-  | zero => rfl
+  | zero    => rfl
   | succ n' => congrArg succ (add_succ n' m)
 
 theorem add_comm : ∀ (n m : Natural), (n + m) = (m + n) := fun n m =>
   match n with
-  | zero => Eq.symm (add_zero m)
+  | zero    => Eq.symm (add_zero m)
   | succ n' =>
     Eq.trans (congrArg succ (add_comm n' m)) (Eq.symm (add_succ m n'))
 \end{minted}
 
+Note that, since we have to make explicit every single logic step, even simple proofs are not easy to write and read. Lean (and most ITPs) provide an alternative for this kind of proof: the usage of tactics. As previously explained, tactics are routines that simulate common proof techniques. While we are building a proof term, Lean's kernel always keep track of a context, containing all declarations in scope and what is the currently expected type for the term we are building (also known as the goal). Tactics operate by manipulating these two structures, without compromising the trusted kernel. In other words, any modification that is made by a tactic must be properly justified and will be checked by Lean's kernel, in the same way it checked that our proof was correct.
+
+We present a new version of \textit{add\_comm} with this new approach:
+
 \begin{minted}{lean}
-theorem add_zero' : ∀ (n : Natural), (n + zero) = n := by
-  intro n
-  induction n with
-  | zero => rfl
-  | succ n' IH => rw [add, IH]
-
-theorem add_succ' : ∀ (n m : Natural), (n + succ m) = succ (n + m) := by
-  intros n m
-  induction n with
-  | zero => rfl
-  | succ n' IH => rw [add, add, IH]
-
 theorem add_comm' : ∀ (n m : Natural), (n + m) = (m + n) := by
   intros n m
   induction n with
-  | zero => rw [add, add_zero']
-  | succ n' IH => rw [add, add_succ', IH]
+  | zero       => rw [add, add_zero]
+  | succ n' IH => rw [add, add_succ, IH]
 \end{minted}
+
+The keyword \textit{by} is used to communicate that the term will not be build explicitly, but instead computed by a tactic. Given a goal of the form $\forall (x : t) . P(x)$, the tactic \textit{intros x} will change the goal to $P(x)$ and introduce in the context a variable with name $x$ with type $t$. It can also be used to introduce multiple variables at one. We use it to introduce the two naturals, \textit{n} and \textit{m}. Next, we use the \textit{induction} tactic. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form $P(n, m)$, where $n$ is a natural number, it will produce two new goals: $P(zero, m)$ and $P(n', m) \rightarrow P(succ(n'), m)$. Each one of this goals is then completed by the \textit{rw} tactic. Given a term that represents a proof of an equality $e_{1} = e_{2}$, the tactic \textit{rw} rewrites all occurrences of $e_{1}$ by $e_{2}$ in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. Note that this tactic also accepts function names such as \textit{add} as a parameter. In this case, it rewrites the definition of the function.
+
+\subsection{Metaprogramming in Lean}
