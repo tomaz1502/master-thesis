@@ -5,7 +5,7 @@ language. It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic
 
 \subsection{Lean as a Programming Language}
 
-Lean has all the main features one can expect from a functional programming language. Its features include algebraic datatypes, pattern matching, polymorphism, typeclasses, IO support using monads and a robust macro system. The following script is a valid Lean program, that defines a new type representing natural numbers, together with a function for adding them:
+Lean has all the main features one can expect from a functional programming language. Its features include algebraic datatypes, pattern matching, polymorphism, typeclasses, side effect support using monads and a robust macro system. The following script is a valid Lean program, that defines a new type representing natural numbers, together with a function for adding them:
 
 \begin{minted}{lean}
 inductive Natural where
@@ -87,23 +87,13 @@ theorem add_comm' : ∀ (n m : Natural), (n + m) = (m + n) := by
   | succ n' IH => rw [add, add_succ, IH]
 \end{minted}
 
-The keyword \textit{by} is used to communicate that the term will not be build explicitly, but instead computed by a sequence of tactics, also known as a tactic block. Given a goal of the form $\forall (x : t) . P(x)$, the tactic \textit{intros x} will change the goal to $P(x)$ and introduce in the context a variable with name $x$ and type $t$. It can also be used to introduce multiple variables at one. We use it to introduce two naturals, \textit{n} and \textit{m}. Next, we use the \textit{induction} tactic. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form $P(n, m)$, where $n$ is a natural number, it will produce two new goals: $P(zero, m)$ and $P(n', m) \rightarrow P(succ(n'), m)$. Each one of this goals is then completed by the \textit{rw} tactic. Given a term that represents a proof of an equality $e_{1} = e_{2}$, the tactic \textit{rw} rewrites all occurrences of $e_{1}$ by $e_{2}$ in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. Note that this tactic also accepts function names such as \textit{add} as a parameter. In this case, it rewrites the definition of the function.
+The keyword \textit{by} is used to indicate that the term will not be build explicitly, but instead computed by a sequence of tactics, also known as a tactic block. Given a goal of the form $\forall (v : t) . P(v)$, the tactic \textit{intros x} will change the goal to $P(x)$ and introduce in the context a variable with name $x$ and type $t$. It can also be used to introduce multiple variables at one. We use it to introduce two naturals, \textit{n} and \textit{m}. Next, we use the \textit{induction} tactic. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form $P(n, m)$, where $n$ is a natural number, it will produce two new goals: $P(zero, m)$ and $P(n', m) \rightarrow P(succ(n'), m)$. Each one of this goals is then completed by the \textit{rw} tactic. Given a term that represents a proof of an equality $e_{1} = e_{2}$, the tactic \textit{rw} rewrites all occurrences of $e_{1}$ by $e_{2}$ in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. Note that this tactic also accepts function names such as \textit{add} as a parameter. In this case, it rewrites the definition of the function.
 
 \subsection{Metaprogramming in Lean}
 
 Lean has a metaprogramming framework that enable its users to implement new tactics. In our project, we heavily rely on this framework for translating the SMT solver's logical rules, as demonstrated later. We will provide a concise overview of the tactic implementation process in Lean. For a more comprehensive guide, refer to~\cite{metaLean}.
 
 \subsubsection{Expr}
-
-% important things to say:
-% \begin{itemize}
-%   \item DONE expr is the internal representation of any lean expression used by the compiler
-%   \item DONE tactics manipulate them directly
-%   \item DONE basic overview on how they are structured - show real AST hiding irrelevant parts
-%   \item TODO they go to the kernel to be checked
-%   \item TODO the goal of a tactic is often produce an expr with the type of the goal
-% \end{itemize}
-
 
 In Lean, the development of tactics relies on metaprogramming principles. These routines are allowed to access and manipulate terms using the internal representation employed by the compiler, granting them a lot of flexibility. Therefore, to understand how tactics operate it is important to understand how the compiler abstracts the structure of programs.
 
@@ -137,4 +127,45 @@ The end goal of a tactic block is to produce an expression that matches the type
 
 After all metavariables of an expression are assigned, the expression is sent to the kernel to be checked. Therefore, any manipulation done by a tactic will be checked and has to be sound, which means that we are not increasing the trusted base by using tactics.
 
-\subsubsection{Monad Stack (?) Metaprogramming API (?)}
+\subsubsection{MetaM and TacticM}
+
+Manipulating declarations in context and the goal are side effects. The support for side effects in Lean is based on the approach implemented by the Haskell programming language~\cite{haskell}, which uses monads to isolate effectful computations from effectless ones~\cite{imperativeFunctional}. We will not discuss deeply how this is achieved in this thesis. Instead, we will provide a high-level explanation on how to use this feature from the point of view of a Lean programmer.
+
+In Lean, certain predetermined types, such as those built with the \textit{IO} type constructor, are permitted to generate a particular kind of side effect associated with the type.
+Given a type \textit{$\alpha$}, a value of type \textit{IO $\alpha$} is a sequence of actions, each one possibly involving reading or writing to the
+filesystem or interacting with the standard input/output, where the last action must always produce a value of type \textit{$\alpha$}. For instance,
+the function \textit{IO.FS.readFile} has type \textit{FilePath -\textgreater\ IO String}. Given the path of a file in the system \textit{fp}, the application \textit{IO.FS.readFile fp} consists of a single action, which reads all the text in the file and produces a \textit{String}, containing the whole text. Types with such capabilities are known as \textit{monadic types}. The restriction that the last action must always produce a value with the given underlying type is not particular to \textit{IO}, it is a requirement for any monadic type
+
+This class of types is also equipped with what is known as \textit{do}-notation. This is a way of extracting values from multiple values of the same monadic type and combine them. As an example, the following code read the contents of two files and produces the string corresponding to the concatenation of those contents:
+
+\begin{minted}{lean}
+def readAndConcatenate (fp1 fp2 : FilePath) : IO String :=
+  do
+    let c1 <- IO.FS.readFile fp1
+      -- c1 is now bound to the contents of the file fp1
+    let c2 <- IO.FS.readFile fp2
+      -- c2 is now bound to the contents of the file fp2
+    return c1 ++ c2 -- last action producing a value of type String
+\end{minted}
+
+In this work, we will be interested in two monadic type constructors: \textit{MetaM} and \textit{TacticM}.
+
+Values in the family of types constructed with MetaM are allowed to inspect and modify the context of metavariables. Two examples of useful functions in this family are:
+
+\begin{itemize}
+  \item \textbf{assign}: it has type \textit{MVarId -\textgreater\ Expr -\textgreater\ MetaM Unit} (\textit{Unit} is a type inhabited by a single value, normally used to indicate that the function does not produce a meaningful value) and it is used to attempt to assign the provided \textit{Expr} to the metavariable represented by the \textit{MVarId} received, throwing an error if the kernel indicates that the type of the \textit{Expr} does not match the required one
+  \item \textbf{inferType}: it has type \textit{Expr -\textgreater\ MetaM Expr} and, given an expression representing an well-typed term, it infers its type, returning the corresponding expression. If the input was ill-typed it throws an error.
+\end{itemize}
+
+TacticM is an extension of MetaM. This means that any operation that can be done in MetaM can also be done in TacticM. Furthermore, TacticM also grants access to the current goal and to Lean's elaborator, which can compile source code into a value of type \textit{Expr}. These two side effects enable the implementation of the function \textit{evalTactic}, which can apply any tactic in the current context. This function is very convenient for using existing tactics in the implementation of new ones.
+
+All tactics are values of type \textit{Syntax -\textgreater\ TacticM Unit}, where \textit{Syntax} is Lean's builtin type for representing source code and this parameter matches exactly the code used to invoke the tactic.
+
+% important things to say:
+% \begin{itemize}
+%  \item give brief idea of what is a monad and why it is important here
+%  \item there is a billion, we are only interested in MetaM and TacticM
+%  \item MetaM gives us access to the environment of meta variables
+%  \item TacticM allows us to manipulate syntax and use elabTerm
+%  \item TacticM is more high level, we can use it to avoid manually craft expressions
+% \end{itemize}
