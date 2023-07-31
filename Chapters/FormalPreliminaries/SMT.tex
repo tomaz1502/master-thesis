@@ -6,9 +6,8 @@ The Boolean Satisfiability Problem (SAT) consists in determining whether a formu
 We say that a formula is satisfiable if such a function exists, and unsatisfiable otherwise. In
 this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in
 which the input formula always comes in Conjunctive Normal Form, that is, a conjunction
-of disjunctions of literals. From now on, we will use SAT to refer to the CNF-SAT problem. Besides
-that, we will write \textit{clause} to refer to each one of the disjunctions in some
-input formula for SAT.\
+of disjunctions of literals. From now on, we will use SAT to refer to the CNF-SAT problem. Besides that, we will write \textit{clause} to refer to each one of the disjunctions in some
+input formula for SAT.\ We will also treat a clause as a set of its composing literals and use set operations over it. For instance, we will write $x \in C$ to state that the literal $x$ is present in clause $C$ and $C \setminus \{x\}$ to refer to the clause $C$ without the literal $x$.
 
 
 Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\
@@ -170,15 +169,11 @@ Figure~\ref{cdclTAlgo} shows an implementation of CDCL(T). The procedure \textit
 
 In this work, we will be interested in two theories and their respective solvers. The first one is Equality and Uninterpreted Functions.
 
-Consider the following problem: given a set of universally quantified variables and uninterpreted functions and a set of equalities built from variables and functions applied to those variables, decide whether a given equality is a consequence of the conjunction of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables and $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = c, f(b) = c, f(c) = a\}$ have as a consequence the equality $a = b$.
+Consider the following problem: given a set of variables and uninterpreted functions and a set of equalities built from variables and functions applied to those variables, decide whether a given equality is a consequence of the conjunction of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables and $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = c, f(b) = c, f(c) = a\}$ have as a consequence the equality $a = b$.
 
-\tom{OUTDATED - will rewrite later}
-The set of all equalities that can be derived from a given set of equalities built from variables and function applications is known as the \textit{congruence closure} of that set. Deciding whether a given equality is in the congruence closure for a given set is an old problem, which was shown to be decidable by Ackermann~\cite{ack_cong} in 1954. It is also is used as the basis for the theory of Equality and Uninterpreted Functions (EUF) in SMT.~We can define this problem in the language of MSFOL by setting:
-\begin{enumerate}
-  \item The set of predefined sorts to $\{U\}$.
-  \item The set of predefined predicates to a singleton containing only the equality predicate $eq^{(U, U)}$.
-  \item The set of predefined functions to an infinite set containing functions of all possible arities (recall that constants are functions of arity $0$).
-\end{enumerate}
+The set of all equalities that can be derived from a given set of equalities built from variables and function applications is known as the \textit{congruence closure} of that set. Deciding whether a given equality is in the congruence closure for a given set is an old problem, which was shown to be decidable by Ackermann in 1954~\cite{ack_cong} . It is also is used as the basis for the theory of Equality and Uninterpreted Functions (EUF) in SMT.\
+
+Note that, since MSFOL already has a built-in equality operator, we can encode this problem in this language by simply defining a set $U^{I}$, which will correspond to the artificial sort $U$ and a set of variables $\mathcal{S}_{X}$ which will include all variables and functions that are going to be used in instances of the problem. The set $\mathcal{S}_{F}$ will be empty. Since this theory does not add any new function in MSFOL, it is also known as the ``empty theory''.
 
 We now give a brief overview on the standard algorithm for finding the congruence closure of a given set of equalities. A more detailed explanation can be found at~\cite{orig_cong_clos}. This solution is based on the following theorem:
 
@@ -390,8 +385,6 @@ We will refer to these evidences as proof certificates. The main feature of a go
 First, let's consider what would be suitable certificates for results for the SAT problem. If the SMT solver determines that a given instance is satisfiable, then a certificate could be simply the valuation of the variables in the problem. One could verify that the certificate is valid simply by replacing the valuation on the original formula and checking if it evaluates to \textit{true}. For unsatisfiability results, there is not a certificate that is so simple. The alternative mainly used by SMT solvers is to produce a \textit{resolution tree}. A resolution tree is a binary tree in which each leaf correspond to a clause from the SAT instance, each internal node correspond to the clause resulting of applying Theorem~\ref{res_theorem} on its two children and the root correspond to the empty clause.
 
 For instance\footnote{Example taken from~\cite{smtcoq}}, for the SAT formula that corresponds to the conjunction of the set of clauses $\{x \vee y, x \vee \neg y \vee z, \neg x \vee z,  \neg z\}$, a possible resolution tree that certificates its unsatisfiability is the following:
-
-% the leafs are each clause from the SAT instance and the parent of a pair of nodes consists of the clause resulting from applying resolution between those two nodes.
 
 \inferLineSkip=3pt
 \[
