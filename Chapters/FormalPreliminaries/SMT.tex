@@ -45,7 +45,7 @@ The syntax of MSFOL consists of three syntatic categories:
         Function symbols are also drawn from a predefined set, which we will refer to as $\mathcal{S}_{F}$, and it is also required to have a cardinality that is at most countably infinite. Constants are represented by nullary functions. Terms will also be referred to as ``atoms''. We will use the term ``predicate'' to refer to functions whose return type is $\textit{bool}$. Variables, when not binded by a quantifier, will also be drawn from a predefined set, which we will refer to as $\mathcal{S}_{X}$ and, again, impose the requirement of having a cardinality that is at most countably infinite.
   \item \textbf{Formulas}. Symbols representing boolean expressions, possibly involving terms.
         \begin{center}
-          $ \psi ::= \bot \mid \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi \mid \psi_{1} \simeq \psi_{2}$
+          $ \psi ::= \psi_{1} \vee \psi_{2} \mid \forall x.\psi \mid \neg \psi \mid \psi_{1} \simeq \psi_{2}$
         \end{center}
 \end{enumerate}
 
@@ -171,7 +171,7 @@ In this work, we will be interested in two theories and their respective solvers
 
 Consider the following problem: given a set of variables and uninterpreted functions and a set of equalities built from variables and functions applied to those variables, decide whether a given equality is a consequence of the conjunction of the ones in the set. For instance, let $a$, $b$, $c$ and $d$ be variables and $f$ a function of arity $1$. For now we assume that all variables belong to an artificial sort $U$, and all functions take arguments from this sort. The set $S := \{b = c, f(b) = c, f(c) = a\}$ have as a consequence the equality $a = b$.
 
-The set of all equalities that can be derived from a given set of equalities built from variables and function applications is known as the \textit{congruence closure} of that set. Deciding whether a given equality is in the congruence closure for a given set is an old problem, which was shown to be decidable by Ackermann in 1954~\cite{ack_cong} . It is also is used as the basis for the theory of Equality and Uninterpreted Functions (EUF) in SMT.\
+The set of all equalities that can be derived from a given set of equalities built from variables and function applications is known as the \textit{congruence closure} of that set. Deciding whether a given equality is in the congruence closure for a given set is an old problem, which was shown to be decidable by Ackermann in 1954~\cite{ack_cong}. It is also is used as the basis for the theory of Equality and Uninterpreted Functions (EUF) in SMT.\
 
 Note that, since MSFOL already has a built-in equality operator, we can encode this problem in this language by simply defining a set $U^{I}$, which will correspond to the artificial sort $U$ and a set of variables $\mathcal{S}_{X}$ which will include all variables and functions that are going to be used in instances of the problem. The set $\mathcal{S}_{F}$ will be empty. Since this theory does not add any new function in MSFOL, it is also known as the ``empty theory''.
 
@@ -375,7 +375,7 @@ Lastly, if it was possible to run the assertion procedures on all the inequaliti
 \caption{Check if it's possible to satisfy all restrictions}\label{check_lra}
 \end{figure}
 
-\section{Proof Certificates}
+\subsection{Proof Certificates}\label{sec:proof_cert}
 
 In order to convince the ITP that the result found by the SMT solver is correct, we need some sort of evidence provided by the ATP.
 We will refer to these evidences as proof certificates. The main feature of a good certificate is being easy to check if they are really sufficient to prove the desired result. In particular, it must be easier to check a certificate then to solve the original problem. The theories that are of our interest in this project have already been instrumentized in cvc5 so that the solver can produce proof certificates for them. In this section we present the formats of these certificates.
