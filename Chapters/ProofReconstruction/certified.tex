@@ -1,0 +1,59 @@
+Given this framework for encoding MSFOL in Lean, our goal is to
+modify its architecture so that the validity of the rules can be \
+checked by the kernel, and also, in a way that the proofs can refer
+to native Lean values, as opposed to only values encoded by the
+\texttt{term} type. In this section we describe our first attempt
+to achieve this goal, which was using the certified transformations
+approach, as described in the introduction.
+
+Initially, we will limit ourselves to the fragment of MSFOL that
+deals with Boolean values\footnote{The Boolean fragment of the \emph{Core} theory in SMT-Lib, as defined in \url{http://smtlib.cs.uiowa.edu/theories-Core.shtml}}.
+The first step is to define a function to compile values from the \texttt{term} type with the corresponding Boolean value. Note that our term can contain free variables. For those, we will need an auxiliary interpreation function assigning concrete values to them.
+Free variables are
+identified by a \texttt{Nat} (the built-in Lean type for natural numbers), therefore, we can
+represent this information as a function from \texttt{Nat} to
+\texttt{Bool}:
+
+\begin{minted}{lean}
+  def Interpretation := Nat -> Bool
+\end{minted}
+
+With this definition, we can define our evaluation function:
+
+\begin{minted}{lean}
+  def evalTerm (I : Interpretation) (t : term) : Bool :=
+    match t with
+    | term.const   i  _  => I i
+    | term.not     t1    => not $ evalTerm I t1
+    | term.and     t1 t2 => and (evalTerm I t1) (evalTerm I t2)
+    | term.or      t1 t2 => or (evalTerm I t1) (evalTerm I t2)
+    | term.implies t1 t2 => bimplies (evalTerm I t1) (evalTerm I t2)
+    | term.eq      t1 t2 => beq  (evalTerm I t1) (evalTerm I t2)
+    | term.bot           => false
+    | term.top           => true
+    | _                  => false
+\end{minted}
+
+Notice how the \texttt{Interpretation} type we introduced, as well as the evaluation function, match the notions of interpretation and evaluation introduced in Section~\ref{sec:msfolHere}. Indeed, we can now define what it means for an interpretation to satisfy a \texttt{term} and what it means to be unsatisfiable:
+
+\begin{minted}{lean}
+  def satisfies (I : Interpretation) (t : term) : Prop :=
+    evalTerm I t = true
+  def unsatisfiable (t : term) : Prop :=
+    ∀ (I : Interpretation), ¬ satisfies I t
+\end{minted}
+
+One important notion we need to define is what it means for a \texttt{term}
+to follow logically from another, which is the primary relationship modeled
+by the axioms presented previously.
+%
+If, for any fixed interpretation, the evaluation of a given \texttt{term} being true
+implies in the evaluation of another \texttt{term} being true, then we can conclude
+that the second one from the first. The following definition states this relationship
+in Lean:
+
+\begin{minted}{lean}
+  def followsFrom (t1 t2 : term) : Prop :=
+    ∀ (I : Interpretation), satisfies I t1 -> satisfies I t2
+\end{minted}
+% The canonical way to transform a \texttt{Bool} value \texttt{b} into a \texttt{Prop} is through \texttt{b = true}

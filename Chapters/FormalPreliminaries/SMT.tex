@@ -14,7 +14,7 @@ Satisfiability Modulo Theories (SMT)~\cite{smt} is a generalization of SAT.\
 There are two additions: first, the underlying logic framework is First Order
 Logic (FOL) instead of Propositional Logic. This means that the input formula
 can contain quantifiers binding variables, unintepreted function symbols,
-predicates asserting properties about variables and a special symbol ``$\simeq$'' that is used to assert equality between terms. \sout{and an arbitrary domain from which the variables can be drawn.} \tom{I think it's better to not talk about domains here (?) It may be confusing since we are adding them again with the second addition. I am not trying to define precisely first order logic (should I?), just informally saying what are the additions}
+predicates asserting properties about variables and a special symbol ``$\simeq$'' that is used to assert equality between terms. %\sout{and an arbitrary domain from which the variables can be drawn.} \tom{I think it's better to not talk about domains here (?) It may be confusing since we are adding them again with the second addition. I am not trying to define precisely first order logic (should I?), just informally saying what are the additions}
 The second addition is the inclusion of a set of theories that
 allows the problem to refer to variables of different types. More
 precisely, a theory consists of a sort (for instance, integers) over which a

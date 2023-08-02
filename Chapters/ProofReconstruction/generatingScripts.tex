@@ -1,14 +1,14 @@
 As previously explained, cvc5 has a module for exporting its proofs as Lean scripts.
-We will illustrate the format used by those scripts generated with an instance of the SMT problem corresponding
+We will illustrate the format used by those scripts with an instance of the SMT problem corresponding
 to the negation of modus ponens, i.e. $\neg (p \rightarrow ((p \rightarrow q) \rightarrow q))$.
 We present this instance using SMT-Lib~\cite{smtlib}, a standardized syntax for
 representing SMT problems recognized by most SMT solvers:
 
 \begin{minted}{smtlib2.py -x}
-(set-logic QF_UF)
-(declare-const p Bool)
-(declare-const q Bool)
-(assert (not (=> p (=> (=> p q) q))))
+  (set-logic QF_UF)
+  (declare-const p Bool)
+  (declare-const q Bool)
+  (assert (not (=> p (=> (=> p q) q))))
 \end{minted}
 
 Feeding cvc5 with this script yields the result ``unsat'', as expected. The proof produced by the solver is shown in Figure~\ref{fig:cvc5-proof} and is an instance of the resolution tree introduced in Section~\ref{sec:proof_cert}. In addition to the resolution rule (in purple and green), there are also rules for conjunctive normal form transformations (yellow)\footnote{The rules in the figure are in the internal calculus of cvc5, which is documented in \url{https://cvc5.github.io/docs/latest/proofs/proof_rules.html}}. Note that all leaves (in blue) correspond to the input formula, \texttt{(not (=> p (=> (=> p q) q)))}.
@@ -26,7 +26,7 @@ Feeding cvc5 with this script yields the result ``unsat'', as expected. The proo
 \end{figure}
 
 The encoding of this proof into Lean requires representing the terms that appear
-in it, i.e.the formulas built with $p$ and $q$, as well as the rules.
+in it, i.e.\ the formulas built with $p$ and $q$, as well as the rules.
 %
 This encoding uses a \emph{deep embedding} of the proof calculus of cvc5 into
 Lean\footnote{The code is available at \url{https://github.com/tomaz1502/signatures/blob/smallCheckers/Cdclt/Lift/Other/BoolsExample.lean}}.
@@ -42,42 +42,44 @@ the case for \texttt{p} and \texttt{q} but not for example for \texttt{false}),
 are declared as:
 
 \begin{minted}{lean}
-def p: term := const 1000 boolSort
-def q: term := const 1001 boolSort
+  def p: term := const 1000 boolSort
+  def q: term := const 1001 boolSort
 \end{minted}
 
 The identifiers \texttt{1000} and \texttt{1001} are arbitrary, with only the
 requirement that they are unique.
 
-With these terms and using the reserved symbols \texttt{implies} and
-\texttt{not} from the deep embedding corresponding to the MSFOL symbols
-$\rightarrow$ and $\neg$, respectively, we encode the formula used in the
+With these terms and using the functions \texttt{implies} and
+\texttt{not} defined in the deep embedding corresponding to the MSFOL symbols
+$\rightarrow$ and $\neg$, we encode the formula used in the
 query:
 
 \begin{minted}{lean}
-def notModusPonens: term :=
-  not (implies p (implies (implies p q) q))
+  def notModusPonens: term :=
+    not (implies p (implies (implies p q) q))
 \end{minted}
 
-Finally, the proof from Figure~\ref{fig:cvc5-proof} is encoded as
+Finally, the proof from Figure~\ref{fig:cvc5-proof} is encoded and printed by cvc5 as:
 
 \begin{minted}{lean}
-theorem th0 : thHolds notModusPonens -> thHolds bot :=
-  fun lean_a0 =>
-    have lean_s0 := notImplies2 lean_a0
-    have lean_s1 := notImplies1 lean_s0
-    have lean_s2 := impliesElim lean_s1
-    have lean_s4 := notImplies1 lean_a0
-    have lean_s6 := R1 (conjunction lean_s2 lean_s4)
-    have lean_s9 := notImplies2 lean_s0
-    contradiction (conjunction lean_s9 lean_s6)
+  theorem th0 : thHolds notModusPonens -> thHolds bot :=
+    fun lean_a0 =>
+      have lean_s0 := notImplies2 lean_a0
+      have lean_s1 := notImplies1 lean_s0
+      have lean_s2 := impliesElim lean_s1
+      have lean_s4 := notImplies1 lean_a0
+      have lean_s6 := R1 (conjunction lean_s2 lean_s4)
+      have lean_s9 := notImplies2 lean_s0
+      contradiction (conjunction lean_s9 lean_s6)
 \end{minted}
 
-where \texttt{thHolds} is a Lean axiom that lifts a \texttt{term} into a \texttt{Prop} (which is the Lean type that represents propositions), asserting that it is a valid term. All the inference rules are encoded as axioms that have the type \texttt{thHolds $\alpha$ -> thHolds $\beta$}, for some terms $\alpha$ and $\beta$. For instance, \texttt{notImplies1} is written in the following form:
+where \texttt{thHolds} is a Lean axiom that lifts a \texttt{term} into a \texttt{Prop}, asserting that it is a valid term. All the inference rules are encoded as axioms that have the type \texttt{thHolds $\alpha$ -> thHolds $\beta$}, for some terms $\alpha$ and $\beta$. For instance, \texttt{notImplies1} is written in the following form:
 \begin{minted}{lean}
-axiom notImplies1 : forall {t1 t2 : term},
-  thHolds (not (implies t1 t2)) -> thHolds t1
+  axiom notImplies1 : ∀ {t1 t2 : term},
+    thHolds (not (implies t1 t2)) -> thHolds t1
 \end{minted}
+
+The usage of curly brackets indicate that the parameters are implicit.
 
 By applying the rules in the sequence generated by cvc5, we can derive a term
 that has type \texttt{thHolds notModusPonens -> thHolds bot}, where \texttt{bot}
