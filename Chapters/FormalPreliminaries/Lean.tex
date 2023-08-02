@@ -89,13 +89,24 @@ We present a new version of \texttt{add\_comm} with this new approach:
 
 The keyword \texttt{by} is used to indicate that the term will not be build explicitly, but instead computed by a sequence of tactics, also known as a tactic block. Given a goal of the form $\forall (v : t) . P(v)$, the tactic \texttt{intros x} will change the goal to $P(x)$ and introduce in the context a variable with name $x$ and type $t$. It can also be used to introduce multiple variables at one. We use it to introduce two naturals, \texttt{n} and \texttt{m}. Next, we use the \texttt{induction} tactic. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form $P(n, m)$, where $n$ is a natural number, it will produce two new goals: $P(zero, m)$ and $P(n', m) \rightarrow P(succ(n'), m)$. Each one of these goals is then completed with the \texttt{rw} tactic. Given a term that represents a proof of an equality $e_{1} = e_{2}$, the tactic \texttt{rw} rewrites all occurrences of $e_{1}$ by $e_{2}$ in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. Note that this tactic also accepts function names such as \texttt{add} as a parameter. In this case, it rewrites the definition of the function.
 
-Another useful feature in Lean is the possibility of introducing new axioms, that is, theorems that will not be proved. Its syntax follows the same pattern as the introduction of theorems and functions, except that the keyword used is \texttt{axiom} and we do not specify the body:
+\subsubsection{Classical vs. Intuitionistic}
 
-\begin{minted}{lean}
-axiom absurd : zero = succ zero
-\end{minted}
+The logic framework underlying Lean is intuitionistic~\cite{intuitionistic}. This means that any proof written in the ITP
+must be done in a constructive manner. The correspondence between types and propositions that serves as a foundation for Lean
+is originally established in terms of constructive logic, therefore, this restriction is imposed to facilitate the concretization
+of this correspondence by the ITP.\
 
-Obviously, this feature must be used with caution, as it increases the trusted base.
+The logic of the SMT solvers, on the other hand, is classical. This means that it accepts theorems that are impossible to prove
+constructively, such as the law of the excluded middle (i.e., for any proposition \texttt{P}, either \texttt{P} or \texttt{Not P}
+holds). Indeed, all the proofs that we will translate from cvc5 to Lean are based on double negation elimination, as we will
+always prove that some formula \texttt{P} is true by proving that \texttt{Not P} is unsatisfiable, which is also an implication
+that is not provable constructively.
+
+Fortunately, Lean provides a mechanism for defining new axioms. This axioms will be available for the user to prove new theorems
+, which were possibly not provable before, extending the logic framework. Obviously, this must be done with caution, as
+there is nothing to prevent the introduction of axioms that will make the logic inconsistent.
+The \texttt{Classical} module, which is part of Lean's standard library, uses this feature to add the axioms needed to prove
+any true statement in classical logic. We used this module extensively in the present work.
 
 \subsection{Metaprogramming in Lean}
 
