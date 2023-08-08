@@ -165,7 +165,7 @@ the only possible interpretation satisfying $\psi'$ is the one that assigns $p$ 
 
 Figure~\ref{cdclTAlgo} shows an implementation of CDCL(T). The procedure \textit{SolveMSFOL} works as follows: first, in line 2, we perform the conversion that we just described, in order to obtain a PL formula. Then, in line 3, we run the procedure \textit{CDCL} to determine if $\psi'$ is satisfiable. In case it is not, we just return \textit{false} in line 12. Otherwise, there exists an interpretation $\mathcal{I}$ that satisfies $\psi'$. This interpretation is obtained in line 4 and we proceed to check if the theory solver accepts it for $\psi$ in line 5. If it does accept, the formula is definitely satisfiable and we can return \textit{true}, as done in line 6. Otherwise, the conflicting lemma for the given interpretation is generated in line 8. We then repeat this process in line 9, adding the conflicting lemma to $\psi$.
 
-\subsubsection{Equality and Uninterpreted Functions}
+\subsubsection{Equality and Uninterpreted Functions}\label{sec:euf}
 
 In this work, we will be interested in two theories and their respective solvers. The first one is Equality and Uninterpreted Functions.
 

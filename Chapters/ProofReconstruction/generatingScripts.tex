@@ -29,7 +29,7 @@ The encoding of this proof into Lean requires representing the terms that appear
 in it, i.e.\ the formulas built with $p$ and $q$, as well as the rules.
 %
 This encoding uses a \emph{deep embedding} of the proof calculus of cvc5 into
-Lean\footnote{The code is available at \url{https://github.com/tomaz1502/signatures/blob/smallCheckers/Cdclt/Lift/Other/BoolsExample.lean}}.
+Lean\footnote{The code is available at \url{https://github.com/tomaz1502/signatures/blob/smallCheckers/Cdclt/Lift/Other/PropsExample.lean}}.
 %
 It provides a \texttt{term} type that models terms and formulas from MSFOL. This type has
 a \texttt{const} constructor for defining symbols, parameterized with an
@@ -55,14 +55,14 @@ $\rightarrow$ and $\neg$, we encode the formula used in the
 query:
 
 \begin{minted}{lean}
-  def notModusPonens: term :=
-    not (implies p (implies (implies p q) q))
+  def modusPonensEmbed: term := implies p (implies (implies p q) q)
+  def notModusPonensEmbed: term := not modusPonensEmbed
 \end{minted}
 
-Finally, the proof from Figure~\ref{fig:cvc5-proof} is encoded and printed by cvc5 as:
+Finally, the proof from Figure~\ref{fig:cvc5-proof} is encoded as:
 
 \begin{minted}{lean}
-  theorem th0 : thHolds notModusPonens -> thHolds bot :=
+  theorem cvc5_th0 : thHolds notModusPonensEmbed -> thHolds bot :=
     fun lean_a0 =>
       have lean_s0 := notImplies2 lean_a0
       have lean_s1 := notImplies1 lean_s0
@@ -73,7 +73,8 @@ Finally, the proof from Figure~\ref{fig:cvc5-proof} is encoded and printed by cv
       contradiction (conjunction lean_s9 lean_s6)
 \end{minted}
 
-where \texttt{thHolds} is a Lean axiom that lifts a \texttt{term} into a \texttt{Prop}, asserting that it is a valid term. All the inference rules are encoded as axioms that have the type \texttt{thHolds $\alpha$ -> thHolds $\beta$}, for some terms $\alpha$ and $\beta$. For instance, \texttt{notImplies1} is written in the following form:
+where \texttt{thHolds} is a Lean axiom that lifts a \texttt{term} into a \texttt{Prop}, asserting that it is a valid term.
+All the inference rules are encoded as axioms that have the type \texttt{thHolds t1 -> thHolds t2}, for some terms \texttt{t1} and \texttt{t2}. For instance, \texttt{notImplies1} is written in the following form:
 \begin{minted}{lean}
   axiom notImplies1 : ∀ {t1 t2 : term},
     thHolds (not (implies t1 t2)) -> thHolds t1
@@ -86,3 +87,5 @@ that has type \texttt{thHolds notModusPonens -> thHolds bot}, where \texttt{bot}
 is the encoding of MSFOL's \texttt{false}.
 %
 The existence of this term shows that, assuming the rules used by cvc5, the term \texttt{notModusPonens} is equivalent to \texttt{bot}, which is the same as to say that it is unsatisfiable. This way, we have encoded the proof found by cvc5 inside Lean.
+
+Note that the encoding and printing of the SMT-Lib query as a \texttt{term}, as well as the encoding and printing of the proof, are done automatically by cvc5. On the other hand, the definition of the type \texttt{term} and the declaration of the axioms corresponding to the rules remain static within the module.
