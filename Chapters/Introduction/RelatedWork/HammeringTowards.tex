@@ -47,8 +47,8 @@ In this case, the proof steps are reconstructed and checked in the ITP on the
 fly each time the hammer is invoked. Since there is no theorem stating the
 correctness of them, it is possible that this process fails.
 On the other hand,
-this technique skips computations done over embedded terms, which have to be done by the
-certified approach, having the potential to have a better
+this technique skips computations over embedded terms, which have to be done by the
+certified approach, granting it the potential to have a better
 performance. It also diminishes the complexity of the tool, as there is no need to
 define an intermediate representation inside the ITP.\
 
@@ -64,4 +64,4 @@ it has the advantage over the two previous methods of only requiring access to t
 on the first time that the proof is checked.
 
 In this project we will be using the second approach. We give more details about this
-decision in the later chapters. The next two sections describe examples of hammers.
+decision in Chapter~\ref{chap:rcons}. The next two sections describe examples of hammers.

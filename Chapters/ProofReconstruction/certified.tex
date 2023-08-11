@@ -306,7 +306,7 @@ Now we can make the statement in the theorem \texttt{refl} true by adding the hy
 
 The introduction of this hypothesis creates a new requirement for applying
 the theorem in a proof, that is, we have to provide a proof that \texttt{t} is well-typed.
-If it is well-typed (which will always be the case as long
+If it is, indeed, well-typed (which will always be the case as long
 as there is no bug in the SMT solver), then Lean's kernel can evaluate
 both functions \texttt{inferSort} and \texttt{isSome} and obtain \texttt{true},
 and the proof that the term is well-typed follows by reflexivity. Deriving facts
@@ -320,7 +320,7 @@ Another downside of this approach is the necessity of providing explicit proofs 
 general case of all rules. Some of the rules, such as resolution and
 \textit{factor} (which takes as premiss a clause and have as a conclusion the same clause, removing
 all formulas that are duplicated) appear to lack any proofs that are not highly challenging to derive.
-This difficulty is also recognized in~\cite[6]{snipe}:
+This difficulty is also recognized in~\cite[p. 6]{snipe}:
 \begin{quote}
   ``Indeed, the former [certified transformations] require we work only with the reified [meaning deeply embedded] syntax of the
   terms of CIC and even for a simple transformation, the proof of soundess is hard (thousands lines of code).''

@@ -1,0 +1,110 @@
+The second approach, known as certifying
+transformations, is based on generating proofs on demand, which will be checked
+every time the tool is invoked. The specific manner in which we applied
+this concept in our context was to develop a set of tactics matching
+each one of the rules present in cvc5's proof calculus.
+A cvc5 proof is now represented by a sequence of applications of those tactics.
+When we ask Lean's kernel to check a proof, it will execute one by one
+of the tactics. Each one of them will inspect the current context
+and produce a proof term, corresponding to a proof of a specific
+case of the statement represented by that tactic. The checker will then
+verify the correctness of each proof, closing the original goal if all
+checks were succesful.
+
+The main reason for mapping MSFOL formulas to an inductive type (i.e. \texttt{term})
+instead of native Lean expressions was the flexibility achieved by this representation.
+While it is straightforward to define a function that inspects and manipulates the
+structure of
+a \texttt{term} by pattern matching, there is no way to do the same for a \texttt{Prop},
+for instance, without recurring to metaprogramming. As we have shown in
+Section~\ref{sec:metaLean},
+the metaprogramming context grants us access to the internal representation of any
+expression
+through the \texttt{Expr} type, which can be inspected and manipulated in the same way
+as \texttt{term}. Since the framework for writing tactics is based on metaprogramming, we
+do not need to rely on the flexibility of the \texttt{term} type anymore. Therefore, we
+have decided to not use the deep embedding anymore, and translate MSFOL formulas directly
+to Lean expressions.
+
+In the rest of this section we will give an overview of the implementation of each tactic.
+We present their statement with the same format used in cvc5's documentation\footnote{The documentation of cvc5's rules can be found at:
+  \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html}}, that is,
+for a tactic that has a conclusion $\psi$, premisses $\psi_{1} \cdots \psi_{n}$ and
+parameters $t_{1} \cdots t_{n}$, we will write:
+\[
+  \infer[]{\psi}{\psi_{1}, \cdots, \psi_{n} \mid t_{1}, \cdots, t_{n}}
+\]
+
+Notice that a large portion of the rules can be trivially proved using classical
+reasoning. Instead of mapping those rules to tactics, we just proved them as theorems.
+Those theorems will not be presented here. For a complete overview of the rules, their statement and whether they were implemented with a tactic or a
+theorem, refer to Table~\ref{tab:rules}.
+
+
+\subsection*{GroupClausePrefix\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{(P_{1} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}}
+    {P_{1} \vee \cdots \vee P_{n} \mid i}
+\]
+
+\subsection*{LiftOrNToNeg\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{\neg (P_{1} \wedge \cdots \wedge P_{n})}{(\neg P_{1} \vee \cdots \vee \neg P_{n}) \mid -}
+\]
+
+
+\subsection*{LiftOrNToImp\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{P_{1} \wedge \cdots \wedge P_{i} \rightarrow P_{i + 1} \vee \cdots \vee P_{n}}{\neg P_{1} \vee \cdots \vee \neg P_{i} \vee P_{i + 1} \vee \cdots P_{n} \mid i}
+\]
+
+\subsection*{PermutateClause\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{P_{p(1)} \vee \cdots \vee P_{p(n)}}{P_{1} \vee \cdots \vee P_{n} \mid p}
+\]
+
+\subsection*{Resolution\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{m}, P_{i} = Q_{j} \mid i, j}
+\]
+
+\subsection*{Factor\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{removeDuplicates(P_{1} \vee \cdots \vee P_{n})}{P_{1} \vee \cdots \vee P_{n} \mid -}
+\]
+
+
+% \subsection{Pull}
+
+\subsection*{SumBounds\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}}{\bigwedge_{i = 1}^{n} a_{i} \bowtie_{i} b_{i}}
+\]
+
+\subsection*{MulPosNeg\\\normalsize{Rule Statement:}}
+% \[
+%   \infer[]{}{}
+% \]
+
+
+% \subsection{MulPosNeg}
+
+% \subsection{TightBounds}
+
+
+% TODO: put this in an appendix
+\begin{table}[]\label{tab:rules}
+\centering
+\begin{tabular}{ l l l }
+\toprule
+Name        & Statement & Implementation \\ \midrule
+NotImplies1 & \texttt{Not (p -> q) -> p}      & theorem        \\ \midrule
+NotImplies2 & blah      & theorem        \\ \midrule
+EquivElim1  & blah      & theorem        \\ \midrule
+EquivElim2  & blah      & theorem        \\ \midrule
+NotEquivElim1  & blah      & theorem        \\ \midrule
+NotEquivElim2  & blah      & theorem        \\ \midrule
+ImpliesElim & blah      & theorem        \\ \bottomrule
+\end{tabular}
+\caption{Rules from cvc5's proof calculus}
+\end{table}
