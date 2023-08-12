@@ -153,7 +153,7 @@ Manipulating declarations in context and the goal are side effects. The support 
 In Lean, certain predetermined types, such as those built with the \texttt{IO} type constructor, are permitted to generate a particular kind of side effect associated with the type.
 Given a type \texttt{$\alpha$}, a value of type \texttt{IO $\alpha$} is a sequence of actions, each one possibly involving reading or writing to the
 filesystem or interacting with the standard input/output, where the last action must always produce a value of type \texttt{$\alpha$}. For instance,
-the function \texttt{IO.FS.readFile} has type \texttt{FilePath -\textgreater\ IO String}. Given the path of a file in the system \texttt{fp}, the application \texttt{IO.FS.readFile fp} consists of a single action, which reads all the text in the file and produces a \texttt{String}, containing the whole text. Types with such capabilities are known as \texttt{monadic types}. The restriction that the last action must always produce a value with the given underlying type is not particular to \texttt{IO}, it is a requirement for any monadic type
+the function \texttt{IO.FS.readFile} has type \texttt{FilePath → IO String}. Given the path of a file in the system \texttt{fp}, the application \texttt{IO.FS.readFile fp} consists of a single action, which reads all the text in the file and produces a \texttt{String}, containing the whole text. Types with such capabilities are known as \textit{monadic types}. The restriction that the last action must always produce a value with the given underlying type is not particular to \texttt{IO}, it is a requirement for any monadic type
 
 This class of types is also equipped with what is known as \texttt{do}-notation. This is a way of extracting values from multiple values of the same monadic type and combine them. As an example, the following code read the contents of two files and produces the string corresponding to the concatenation of those contents:
 
@@ -172,13 +172,16 @@ In this work, we will be interested in two monadic type constructors: \texttt{Me
 Values in the family of types constructed with MetaM are allowed to inspect and modify the context of metavariables. Two examples of useful functions in this family are:
 
 \begin{itemize}
-  \item \textbf{assign}: it has type \texttt{MVarId -\textgreater\ Expr -\textgreater\ MetaM Unit} (\texttt{Unit} is a type inhabited by a single value, normally used to indicate that the function does not produce a meaningful value) and it is used to attempt to assign the provided \texttt{Expr} to the metavariable represented by the \texttt{MVarId} received, throwing an error if the kernel indicates that the type of the \texttt{Expr} does not match the required one
-  \item \textbf{inferType}: it has type \texttt{Expr -\textgreater\ MetaM Expr} and, given an expression representing an well-typed term, it infers its type, returning the corresponding expression. If the input was ill-typed it throws an error.
+  \item \textbf{assign}: it has type \texttt{MVarId → Expr → MetaM Unit} (\texttt{Unit} is a type inhabited by a single value, normally used to indicate that the function does not produce a meaningful value) and it is used to attempt to assign the provided \texttt{Expr} to the metavariable represented by the \texttt{MVarId} received, throwing an error if the kernel indicates that the type of the \texttt{Expr} does not match the required one
+  \item \textbf{inferType}: it has type \texttt{Expr → MetaM Expr} and, given an expression representing an well-typed term, it infers its type, returning the corresponding expression. If the input was ill-typed it throws an error.
 \end{itemize}
 
 TacticM is an extension of MetaM. This means that any operation that can be done in MetaM can also be done in TacticM. Furthermore, TacticM also grants access to the current goal and to Lean's elaborator, which can compile source code into a value of type \texttt{Expr}. These two side effects enable the implementation of the function \texttt{evalTactic}, which can apply any tactic in the current context. This function is very convenient for using existing tactics in the implementation of new ones.
 
-All tactics are values of type \texttt{Syntax -\textgreater\ TacticM Unit}, where \texttt{Syntax} is Lean's builtin type for representing source code and this parameter matches exactly the code used to invoke the tactic.
+All tactics are functions of type \texttt{Syntax → TacticM Unit}, where \texttt{Syntax}
+his Lean's builtin type for representing source code. The \texttt{Syntax} received by
+a tactic matches exactly the code used to invoke it, and it is a responsibility of the
+tactic to check if this code follows the pattern that is expected.
 
 % important things to say:
 % \begin{itemize}
