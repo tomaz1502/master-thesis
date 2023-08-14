@@ -158,25 +158,24 @@ the function \texttt{IO.FS.readFile} has type \texttt{FilePath → IO String}. G
 This class of types is also equipped with what is known as \texttt{do}-notation. This is a way of extracting values from multiple values of the same monadic type and combine them. As an example, the following code read the contents of two files and produces the string corresponding to the concatenation of those contents:
 
 \begin{minted}{lean}
-  def readAndConcatenate (fp1 fp2 : FilePath) : IO String :=
-    do
-      let c1 <- IO.FS.readFile fp1
-        -- c1 is now bound to the contents of the file fp1
-      let c2 <- IO.FS.readFile fp2
-        -- c2 is now bound to the contents of the file fp2
-      return c1 ++ c2 -- last action producing a value of type String
+  def readAndConcatenate (fp1 fp2 : FilePath) : IO String := do
+    let c1 : String <- IO.FS.readFile fp1
+      -- c1 is now bound to the contents of the file fp1
+    let c2 : String <- IO.FS.readFile fp2
+      -- c2 is now bound to the contents of the file fp2
+    return c1 ++ c2 -- last action producing a value of type String
 \end{minted}
 
 In this work, we will be interested in two monadic type constructors: \texttt{MetaM} and \texttt{TacticM}.
 
-Values in the family of types constructed with MetaM are allowed to inspect and modify the context of metavariables. Two examples of useful functions in this family are:
+Values in the family of types constructed with \texttt{MetaM} are allowed to inspect and modify the context of metavariables. Two examples of useful functions in this family are:
 
 \begin{itemize}
   \item \textbf{assign}: it has type \texttt{MVarId → Expr → MetaM Unit} (\texttt{Unit} is a type inhabited by a single value, normally used to indicate that the function does not produce a meaningful value) and it is used to attempt to assign the provided \texttt{Expr} to the metavariable represented by the \texttt{MVarId} received, throwing an error if the kernel indicates that the type of the \texttt{Expr} does not match the required one
   \item \textbf{inferType}: it has type \texttt{Expr → MetaM Expr} and, given an expression representing an well-typed term, it infers its type, returning the corresponding expression. If the input was ill-typed it throws an error.
 \end{itemize}
 
-TacticM is an extension of MetaM. This means that any operation that can be done in MetaM can also be done in TacticM. Furthermore, TacticM also grants access to the current goal and to Lean's elaborator, which can compile source code into a value of type \texttt{Expr}. These two side effects enable the implementation of the function \texttt{evalTactic}, which can apply any tactic in the current context. This function is very convenient for using existing tactics in the implementation of new ones.
+\texttt{TacticM} is an extension of \texttt{MetaM}. This means that any operation that can be done in \texttt{MetaM} can also be done in \texttt{TacticM}. Furthermore, \texttt{TacticM} also grants access to the current goal and to Lean's elaborator, which can compile source code into a value of type \texttt{Expr}. These two side effects enable the implementation of the function \texttt{evalTactic}, which can apply any tactic in the current context. This function is very convenient for using existing tactics in the implementation of new ones.
 
 All tactics are functions of type \texttt{Syntax → TacticM Unit}, where \texttt{Syntax}
 his Lean's builtin type for representing source code. The \texttt{Syntax} received by

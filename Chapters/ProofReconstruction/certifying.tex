@@ -1,28 +1,37 @@
-The second approach, known as certifying
-transformations, is based on generating proofs on demand, which will be checked
-every time the tool is invoked. The specific manner in which we applied
+The second approach is based on an idea known as certifying
+transformations, which consists of generating proofs on demand
+and checking them every time the tool is invoked.
+%
+The specific manner in which we applied
 this concept in our context was to develop a set of tactics matching
-each one of the rules present in cvc5's proof calculus.
+the rules present in cvc5's proof calculus.
 A cvc5 proof is now represented by a sequence of applications of those tactics.
-When we ask Lean's kernel to check a proof, it will execute one by one
+When we ask Lean's kernel to check the proof script, it will execute one by one
 of the tactics. Each one of them will inspect the current context
 and produce a proof term, corresponding to a proof of a specific
-case of the statement represented by that tactic. The checker will then
-verify the correctness of each proof, closing the original goal if all
-checks were succesful.
+case of the rule represented by that tactic.
+The checker will then verify the correctness of each proof, closing the original goal if
+all checks were succesful.
 
-The main reason for mapping MSFOL formulas to an inductive type (i.e. \texttt{term})
+Originally, we implemented all of our tactics using various features from
+\texttt{TacticM}.
+In this initial iteration, we built the \texttt{Syntax} representation of a proof for the targeted rule and then invoked \texttt{evalTactic} using this representation.
+However, later on, we identified a potential enhancement (which will be described in Chapter~\ref{chap:future}, as it was not completely executed yet) that led us to reimplement the
+core functionality of all our tactics exclusively within the \texttt{MetaM} monad. This
+second implementation was successfully executed.
+Since the \texttt{MetaM} monad do not have access to Lean's elaborator, we could not represent proofs using
+\texttt{Syntax} anymore. Instead, we had to manually craft the \texttt{Expr} that proved each theorem.
+
+Another important difference from the certified transformations approach is that we do not use the \texttt{term}
+type anymore. The main reason for mapping MSFOL formulas to this inductive type
 instead of native Lean expressions was the flexibility achieved by this representation.
-While it is straightforward to define a function that inspects and manipulates the
-structure of
-a \texttt{term} by pattern matching, there is no way to do the same for a \texttt{Prop},
-for instance, without recurring to metaprogramming. As we have shown in
-Section~\ref{sec:metaLean},
-the metaprogramming context grants us access to the internal representation of any
-expression
+While it is straightforward to define a function that inspects and manipulates the structure of
+a \texttt{term} by pattern matching, there is no way to do the same for certain Lean types (\texttt{Prop}, for
+instance) without recurring to metaprogramming. As we have shown in Section~\ref{sec:metaLean},
+the metaprogramming context grants us access to the internal representation of any expression
 through the \texttt{Expr} type, which can be inspected and manipulated in the same way
 as \texttt{term}. Since the framework for writing tactics is based on metaprogramming, we
-do not need to rely on the flexibility of the \texttt{term} type anymore. Therefore, we
+did not need to rely on the flexibility of the \texttt{term} type anymore. Therefore, we
 have decided to not use the deep embedding anymore, and translate MSFOL formulas directly
 to Lean expressions.
 
@@ -47,16 +56,131 @@ theorem, refer to Table~\ref{tab:rules}.
     {P_{1} \vee \cdots \vee P_{n} \mid i}
 \]
 
-\subsection*{LiftOrNToNeg\\\normalsize{Rule Statement:}}
-\[
-  \infer[]{\neg (P_{1} \wedge \cdots \wedge P_{n})}{(\neg P_{1} \vee \cdots \vee \neg P_{n}) \mid -}
-\]
+The first tactic we will present does not correspond to a rule from cvc5's proof
+calculus, instead, it is a custom tactic we created to facilitate the implementation
+of the others.
+
+The operator $\vee$ in Lean is right-associative. Given a natural number $i$ and a proof $h$
+of the validity of a clause, \texttt{groupClausePrefix h, i} proves the same clause, with the
+first $i$ propositions grouped. This tactic employs the following two theorems:
+
+\begin{itemize}
+  \item \mintinline{lean}{orAssoc {A B C : Prop} : A ∨ B ∨ C → (A ∨ B) ∨ C}
+  \item \mintinline{lean}{congOrLeft {A B C : Prop} (hyp : A → B) : C ∨ A → C ∨ B}
+\end{itemize}
+
+% Also, it will make use of the \texttt{apply} tactic. If the current goal is \texttt{Q}, and
+% we have a proof \texttt{h} of \texttt{P → Q}, we can reduce the goal to \texttt{P} with
+% \texttt{apply h}.
+
+% Let's instantiate, in the theorem \texttt{orAssoc}, \texttt{A} to $P_{1}$, \texttt{B}
+% to $P_{2} \vee \cdots \vee P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee P_{n}$. This will yield a proof of
+% of $P_{1} \vee (P_{2} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n} \rightarrow (P_{1} \vee \dots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$. Since
+% the proof script is annotated with the type it expects from each tactic application,
+% we can assume that the current goal is $(P_{1} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$. Therefore, we can change the goal to $P_{1} \vee (P_{2} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$ with \texttt{apply orAssoc} (Lean's kernel can infer what are the implicit arguments in this case). Now we would like to apply \texttt{orAssoc} again to remove $P_{2}$ from the parenthesized group. We cannot do it directly, due to the term $P_{1}$ to the left of the parenthesis. We solved this
+% problem by using \texttt{congOrLeft}, with \texttt{C} instantiated to $P_{1}$ and
+% \texttt{hyp} instantiated to \texttt{orAssoc}, which yields a proof of the correct
+% statement. Therefore, we can change the goal to $P_{1} \vee P_{2} \vee (P_{3} \vee \cdots \vee P_{i}) \vee \cdots \vee P_{n}$ with \texttt{apply (congOrLeft orAssoc)}.
+
+First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. We will use \texttt{orAssoc} instantiating \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee
+P_{n}$, which will yield the term:
+
+\begin{center}
+    $f_{1}: P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
+\end{center}
+
+Then, we apply \texttt{congOrLeft} to $f_{1}$ instantiating \texttt{C} to $P_{i - 2}$, which will produce:
+
+\begin{center}
+    $f_{2}: P_{i - 2} \vee P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow P_{i - 2} \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
+\end{center}
+
+We repeat this process $i - 2$ times, until we get the term $f_{i - 2}$ of type $P_{1} \vee \cdots \vee P_{n} \rightarrow P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Applying $f_{i - 2}$ to our original hypothesis \texttt{h} will yield a term \texttt{h'} with type $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
+
+The term $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$ can
+be treated as a clause with $n - 1$ propositions, and we can reduce our
+original problem to group the first $i - 1$ terms of this clause. We can repeat
+this process
+
+This means
+that we can achieve our goal by
 
 
-\subsection*{LiftOrNToImp\\\normalsize{Rule Statement:}}
-\[
-  \infer[]{P_{1} \wedge \cdots \wedge P_{i} \rightarrow P_{i + 1} \vee \cdots \vee P_{n}}{\neg P_{1} \vee \cdots \vee \neg P_{i} \vee P_{i + 1} \vee \cdots P_{n} \mid i}
-\]
+applying recursively the process of
+composing \texttt{congOrLeft} and \texttt{orAssoc} $i - 2$ more times.
+
+The following snippet was taken from the project's source code and shows the
+implementation of the core functionality of this tactic:
+
+\begin{minted}[linenos]{lean}
+def groupPrefixCore (h : Expr) (i : Nat) : MetaM Expr := do
+  let clause  : Expr      ← inferType h
+  let props   : List Expr ← collectPropsInClause clause
+  if i > 0 && i < List.length props then
+    let lemmas : List Expr ← groupPrefixLemmas props (i - 1)
+    let answer : Expr :=
+      List.foldl (fun acc lem => Expr.app lem acc) h lemmas
+    return answer
+  else throwError
+    "[groupPrefix]: invalid prefix length"
+\end{minted}
+
+The parameters \texttt{h} and \texttt{i} of the function \texttt{groupPrefixCore}
+represent, respectively, the proof of the validity of the original clause
+and the length of the prefix that should be grouped. We obtain an \texttt{Expr}
+corresponding to the original clause by inspecting the type of \texttt{h},
+with the built-in routine \texttt{inferType} in line 2. Then, in line 3,
+we use the function \texttt{collectPropsInClause} (defined by us) to
+extract a \texttt{List} with each one of the propositions in the clause.
+Next, we check if the prefix length is valid, and, if it is, we invoke
+\texttt{groupPrefixLemmas}. This function will generate a list, where
+each element is the \texttt{Expr} representation of one of the compositions
+of \texttt{congOrLeft} and \texttt{orAssoc} we described before. Notice that
+we cannot rely on implicit parameters in the \texttt{Expr} level, so
+this function also computes the implicit arguments that have to be
+passed to \texttt{congOrLeft} and \texttt{orAssoc}. Lean has some built-in
+functionality to automatically infer some of those arguments, but a signifcant
+part of them have to be manually constructed. Finally, we use \texttt{foldl}
+in line 7 to apply each one of the lemmas to \texttt{h}, accumulating the results.
+
+\begin{minted}[linenos]{lean}
+  syntax (name := groupClausePrefix)
+    "groupClausePrefix" term "," term : tactic
+
+  def parseGroupPrefix : Syntax → TacticM (Expr × Nat)
+    | `(tactic| groupClausePrefix $hs, $is) => do
+        let h ← elabTerm hs none
+        let i ← stxToNat is
+        return (h, i)
+    | _ => throwError "[groupClausePrefix]: wrong usage"
+
+  @[tactic groupClausePrefix] def evalGroupClausePrefix :
+      Syntax → TacticM Unit :=
+    fun stx => withMainContext do
+      let (h, i) ← parseGroupPrefix stx
+      let answer ← groupPrefixCore h i
+      closeMainGoal answer
+\end{minted}
+
+% Remember that while in the \texttt{MetaM} context we do not have access to the
+% \texttt{Syntax} of terms, only to its representation as \texttt{Expr}s, and we have to
+% produce an \texttt{Expr} of the right type to close the goal. This means that we receive
+% a proof of the input clause as an \texttt{Expr} \texttt{e}. In order to obtain an
+% \texttt{Expr} corresponding to the clause, we
+
+
+
+Example of usage:
+\begin{minted}{lean}
+  example : A ∨ B ∨ C ∨ D ∨ E → (A ∨ B ∨ C ∨ D) ∨ E := by
+    intro h
+    groupClausePrefix h, 4
+\end{minted}
+
+% \subsection*{LiftOrNToImp\\\normalsize{Rule Statement:}}
+% \[
+%   \infer[]{\neg P_{1} \wedge \cdots \wedge \neg P_{i} \rightarrow P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n} \mid i}
+% \]
 
 \subsection*{PermutateClause\\\normalsize{Rule Statement:}}
 \[
@@ -65,7 +189,7 @@ theorem, refer to Table~\ref{tab:rules}.
 
 \subsection*{Resolution\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{m}, P_{i} = Q_{j} \mid i, j}
+  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{m}, P_{i} = \neg Q_{j} \mid i, j}
 \]
 
 \subsection*{Factor\\\normalsize{Rule Statement:}}
@@ -108,3 +232,23 @@ ImpliesElim & blah      & theorem        \\ \bottomrule
 \end{tabular}
 \caption{Rules from cvc5's proof calculus}
 \end{table}
+
+
+% proof of $P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$, together with \texttt{congOrLeft} to surpass
+% the propositions to the left of $P_{i - 1}$. We need one application of \texttt{congOrLeft}
+% for each proposition to the left of $P_{i - 1}$. For instance, if:
+% \begin{itemize}
+%   \item \textbf{i = 2} our term will be \texttt{orAssoc}
+%   \item \textbf{i = 3} our term will be \texttt{congOrLeft orAssoc}
+%   \item \textbf{i = 4} our term will be \texttt{congOrLeft (congOrLeft orAssoc)}
+% \end{itemize}
+
+
+% The idea is to use \texttt{congOrLeft} to surpass the propositions to the left of $P_{i - 1}$ together with \texttt{orAssoc} instantiating \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee
+% P_{n}$, which will yield a proof of $P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
+
+
+% We cannot directly apply it to $h$ since there are potentially other terms to the left of $P_{i - 1}$.
+% To solve this problem, we use the theorem \texttt{congOrLeft} setting \texttt{hyp} to the application of \texttt{orAssoc} that we just described.
+% Since the first $i - 2$ propositions are not grouped, we cannot instantiate \texttt{C} to $P_{i - 1} \vee \cdots \vee P_{i - 2}$.
+% Instead, we set \texttt{C} to $P_{i - 2}$, which will yield a proof \texttt{h₂} of $P_{i - 2} \vee P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow P_{i - 2} \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Now we repeat the process applying \texttt{congOrLeft} with \texttt{C} instantiated to $P_{i - 3}$ (if it exists) and \texttt{hyp} to \texttt{h₂}. We keep going until we set \texttt{C} to $P_{1}$. We will then obtain a term of the form \texttt{congOrLeft (congOrLeft \ldots (congOrLeft orAssoc)\ldots)} (with $i - 2$ applications of \texttt{congOrLeft}), which, when applied to \texttt{h}, will prove $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
