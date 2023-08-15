@@ -49,7 +49,6 @@ reasoning. Instead of mapping those rules to tactics, we just proved them as the
 Those theorems will not be presented here. For a complete overview of the rules, their statement and whether they were implemented with a tactic or a
 theorem, refer to Table~\ref{tab:rules}.
 
-
 \subsection*{GroupClausePrefix\\\normalsize{Rule Statement:}}
 \[
   \infer[]{(P_{1} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}}
@@ -57,7 +56,7 @@ theorem, refer to Table~\ref{tab:rules}.
 \]
 
 The first tactic we will present does not correspond to a rule from cvc5's proof
-calculus, instead, it is a custom tactic we created to facilitate the implementation
+calculus. Instead, it is a custom tactic we created to facilitate the implementation
 of the others.
 
 The operator $\vee$ in Lean is right-associative. Given a natural number $i$ and a proof $h$
@@ -82,8 +81,8 @@ first $i$ propositions grouped. This tactic employs the following two theorems:
 % \texttt{hyp} instantiated to \texttt{orAssoc}, which yields a proof of the correct
 % statement. Therefore, we can change the goal to $P_{1} \vee P_{2} \vee (P_{3} \vee \cdots \vee P_{i}) \vee \cdots \vee P_{n}$ with \texttt{apply (congOrLeft orAssoc)}.
 
-First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. We will use \texttt{orAssoc} instantiating \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee
-P_{n}$, which will yield the term:
+First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. By applying \texttt{orAssoc} instantiating \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee
+P_{n}$, we obtain the term:
 
 \begin{center}
     $f_{1}: P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
@@ -95,19 +94,17 @@ Then, we apply \texttt{congOrLeft} to $f_{1}$ instantiating \texttt{C} to $P_{i 
     $f_{2}: P_{i - 2} \vee P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow P_{i - 2} \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
 \end{center}
 
-We repeat this process $i - 2$ times, until we get the term $f_{i - 2}$ of type $P_{1} \vee \cdots \vee P_{n} \rightarrow P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Applying $f_{i - 2}$ to our original hypothesis \texttt{h} will yield a term \texttt{h'} with type $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
+We repeat this process until we get the term $f_{i - 1}$ of type $P_{1} \vee \cdots \vee P_{n} \rightarrow P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Applying $f_{i - 1}$ to our original hypothesis \texttt{h} will yield a term \texttt{h'} with type $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
 
-The term $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$ can
-be treated as a clause with $n - 1$ propositions, and we can reduce our
-original problem to group the first $i - 1$ terms of this clause. We can repeat
-this process
-
-This means
-that we can achieve our goal by
-
-
-applying recursively the process of
-composing \texttt{congOrLeft} and \texttt{orAssoc} $i - 2$ more times.
+A clause is composed by any kind of propositions, including other clauses.
+Therefore, the term $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$ is a new clause
+with $n - 1$ propositions, in which the $(i - 1)$-th proposition is the clause
+$P_{i - 1} \vee P_{i}$. This means that our original problem can be reduced to
+group the first $i - 1$ terms of this clause.
+With this in mind, we repeat the process of composing \texttt{congOrLeft} with
+\texttt{orAssoc} and apply the result to \texttt{h'}, obtaining
+a new term of type $P_{1} \vee \cdots \vee (P_{i - 2} \vee P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
+We keep repeating this process until the whole prefix is grouped.
 
 The following snippet was taken from the project's source code and shows the
 implementation of the core functionality of this tactic:
@@ -122,70 +119,107 @@ def groupPrefixCore (h : Expr) (i : Nat) : MetaM Expr := do
       List.foldl (fun acc lem => Expr.app lem acc) h lemmas
     return answer
   else throwError
-    "[groupPrefix]: invalid prefix length"
+    "[groupClausePrefix]: invalid prefix length"
 \end{minted}
 
 The parameters \texttt{h} and \texttt{i} of the function \texttt{groupPrefixCore}
 represent, respectively, the proof of the validity of the original clause
-and the length of the prefix that should be grouped. We obtain an \texttt{Expr}
-corresponding to the original clause by inspecting the type of \texttt{h},
-with the built-in routine \texttt{inferType} in line 2. Then, in line 3,
+and the length of the prefix that should be grouped. In line 2, we obtain
+an \texttt{Expr} corresponding to the original clause by inspecting the type
+of \texttt{h}, with the built-in routine \texttt{inferType}. Then, in line 3,
 we use the function \texttt{collectPropsInClause} (defined by us) to
 extract a \texttt{List} with each one of the propositions in the clause.
-Next, we check if the prefix length is valid, and, if it is, we invoke
-\texttt{groupPrefixLemmas}. This function will generate a list, where
-each element is the \texttt{Expr} representation of one of the compositions
-of \texttt{congOrLeft} and \texttt{orAssoc} we described before. Notice that
-we cannot rely on implicit parameters in the \texttt{Expr} level, so
+Next, we check if the prefix length is valid. If it is, we apply the function
+\texttt{groupPrefixLemmas} to obtain a list of expressions. Each element in this list
+is a composition of \texttt{congOrLeft} and \texttt{orAssoc} described before.
+Notice that we cannot rely on implicit parameters in the \texttt{Expr} level, so
 this function also computes the implicit arguments that have to be
-passed to \texttt{congOrLeft} and \texttt{orAssoc}. Lean has some built-in
-functionality to automatically infer some of those arguments, but a signifcant
+passed to \texttt{congOrLeft} and \texttt{orAssoc}. Lean has a built-in
+functionality to automatically infer some of those arguments, but a significant
 part of them have to be manually constructed. Finally, we use \texttt{foldl}
 in line 7 to apply each one of the lemmas to \texttt{h}, accumulating the results.
 
-\begin{minted}[linenos]{lean}
-  syntax (name := groupClausePrefix)
-    "groupClausePrefix" term "," term : tactic
+In order to use \texttt{groupPrefixCore} as a tactic, we also had to implement
+a function of type \texttt{Syntax → TacticM Unit}, which parses the \texttt{Syntax}
+to obtain \texttt{h} and \texttt{i} and use the \texttt{Expr} generated by
+\texttt{groupPrefixCore} to close the current goal.
 
-  def parseGroupPrefix : Syntax → TacticM (Expr × Nat)
-    | `(tactic| groupClausePrefix $hs, $is) => do
-        let h ← elabTerm hs none
-        let i ← stxToNat is
-        return (h, i)
-    | _ => throwError "[groupClausePrefix]: wrong usage"
+The following snippet shows an example of usage of this tactic:
 
-  @[tactic groupClausePrefix] def evalGroupClausePrefix :
-      Syntax → TacticM Unit :=
-    fun stx => withMainContext do
-      let (h, i) ← parseGroupPrefix stx
-      let answer ← groupPrefixCore h i
-      closeMainGoal answer
-\end{minted}
-
-% Remember that while in the \texttt{MetaM} context we do not have access to the
-% \texttt{Syntax} of terms, only to its representation as \texttt{Expr}s, and we have to
-% produce an \texttt{Expr} of the right type to close the goal. This means that we receive
-% a proof of the input clause as an \texttt{Expr} \texttt{e}. In order to obtain an
-% \texttt{Expr} corresponding to the clause, we
-
-
-
-Example of usage:
 \begin{minted}{lean}
-  example : A ∨ B ∨ C ∨ D ∨ E → (A ∨ B ∨ C ∨ D) ∨ E := by
+  theorem group3 : A ∨ B ∨ C ∨ D ∨ E → (A ∨ B ∨ C) ∨ D ∨ E := by
     intro h
-    groupClausePrefix h, 4
+    groupClausePrefix h, 3
 \end{minted}
 
-% \subsection*{LiftOrNToImp\\\normalsize{Rule Statement:}}
-% \[
-%   \infer[]{\neg P_{1} \wedge \cdots \wedge \neg P_{i} \rightarrow P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n} \mid i}
-% \]
+We can use the \texttt{\#print} command to inspect the proof term generated by the tactic, and
+verify that it is, indeed, the one we described:
+
+\begin{minted}{lean}
+  #print group3 -- fun {A B C D E} h => orAssoc (congOrLeft orAssoc h)
+\end{minted}
+
+\tom{proof term size is $\mathcal{O}(i^{2})$. Maybe say a few words about this?}
+
+\subsection*{Pull\\\normalsize{Rule Statement:}}
+\[
+  \infer[]{P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n} \mid i}
+\]
+
+Given a proof \texttt{h} of the validity of a clause and an index \texttt{i}, \texttt{pull h, i} produces a proof term for the same clause,
+with the \texttt{i}-th term moved to the first position. This tactic was also created to facilitate the implementation
+of the other tactics and does not exist in cvc5's proof calculus. We will need three new theorems to implement \textit{pull}:
+
+\begin{itemize}
+  \item \mintinline{lean}{orComm {A B C : Prop} : A ∨ B → B ∨ A}
+  \item \mintinline{lean}{congOrRight {A B C : Prop} (hyp : A → B) : A ∨ C → B ∨ C}
+  \item \mintinline{lean}{orAssocConv {A B C : Prop} : (A ∨ B) ∨ C → A ∨ B ∨ C}
+\end{itemize}
+
+To build the required proof term, let's first apply our tactic \texttt{groupClausePrefix} at \texttt{h}, grouping the prefix of length \texttt{i - 1}.
+We cannot use the tactic itself, as we are working on the context of \texttt{MetaM}, but we can invoke directly the function \texttt{groupPrefixCore}
+to produce the required term. We will obtain the following term:
+
+\begin{center}
+  $h_{1} : (P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i} \vee \cdots \vee P_{n}$
+\end{center}
+
+Then, we use again our function \texttt{groupPrefixCore} in \texttt{h₁}, grouping the prefix of length 2. This will provide the term:
+
+\begin{center}
+  $h_{2} : ((P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$
+\end{center}
+
+Next, we will define the new term \texttt{h₃} as \texttt{congOrRight orComm h₂}. Given the appropriate instantiation for the implicit parameters,
+this application flips the position of $P_{1} \vee \cdots \vee P_{i - 1}$ and $P_{i}$, while not modifying the suffix $P_{i + 1} \vee \cdots \vee P_{n}$.
+Therefore, \texttt{h₃} has type $(P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i + 1} \vee \cdots \vee P_{n}$ (we do not need to parenthesize
+$P_{1} \vee \cdots \vee P_{i - 1}$ as $\vee$ is right-associative). Finally we use another tactic we implemented, \texttt{ungroupClausePrefix},
+to remove the parenthesis around $P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}$, concluding our goal.
+This tactic is very similar to \texttt{groupClausePrefix}. The
+difference is that it substitutes the theorem \texttt{orAssoc} by \texttt{orAssocConv} and it applies the theorems in reverse order, i.e., it
+starts with an application of \texttt{orAssocConv}, then it applies \texttt{congOrLeft orAssocConv} and so on.
+
+One source of ambiguity that we have to take into account here is the representation of the clauses.
+While there is no distinction in Lean between, for instance, the clauses $A \vee B \vee C \vee D \vee E$
+and $A \vee B \vee C \vee (D \vee E)$, this distinction can be made inside the SMT solver. Indeed, if
+we have a term \texttt{h} in Lean of type $A \vee B \vee C \vee D \vee E$ and cvc5 prints the tactic
+application \texttt{pull h, 4}, there is no way to know, inside Lean, if it is expecting to receive
+a proof of $D \vee A \vee B \vee C \vee E$ or $(D \vee E) \vee A \vee B \vee C$. To address this issue,
+we adapted cvc5 to print an extra parameter to this tactic (and to others that suffered from the same problem),
+which is a natural number corresponding to the index of the last proposition in the clause from the
+point of view of the SMT solver. Therefore, for the example we just described, it would print
+\texttt{pull h, 4, 4} to indicate that it wants a proof for $(D \vee E) \vee A \vee B \vee C$ and
+\texttt{pull h, 4, 5} to indicate that it wants a proof for $E \vee A \vee B \vee C \vee D$.
 
 \subsection*{PermutateClause\\\normalsize{Rule Statement:}}
 \[
   \infer[]{P_{p(1)} \vee \cdots \vee P_{p(n)}}{P_{1} \vee \cdots \vee P_{n} \mid p}
 \]
+
+Given the proof \texttt{h} of a clause, a permutation \texttt{p} and the index \texttt{s} of the last
+proposition in the clause, \texttt{permutateClause h, p, s} provides a proof for the same clause, with
+the propositions permutated according to \texttt{p}. This is the first tactic that matches a rule used by
+cvc5.
 
 \subsection*{Resolution\\\normalsize{Rule Statement:}}
 \[
