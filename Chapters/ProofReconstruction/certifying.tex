@@ -331,13 +331,87 @@ of the last propositions in each clause.
 \]
 
 Given a proof \texttt{pf} of a clause and the index \texttt{s} of the last proposition in the clause,
-this tactic produces a proof of the same clause, with all duplicated terms of it removed. This
-tactic will require two new theorems:
+the \textit{factor} tactic produces a proof of the same clause, with all duplicated terms of it removed. We
+will need two new theorems to implement it:
 
 \begin{itemize}
   \item \mintinline{lean}{dupOr {A B : Prop} : A ∨ A ∨ B → A ∨ B}
-  \item \mintinline{lean}{dupOr₂ {A : Prop} : A ∨ A → A}
+  \item \mintinline{lean}{dupOr' {A : Prop} : A ∨ A → A}
 \end{itemize}
+
+Also, in order to implement factor, we will employ a new tactic which was not presented before.
+This tactic, which we have called \texttt{pullToMiddle},
+is a generalization of \texttt{pull}. It allows its user to move a term in position $j$ in some clause to any position
+$i < j$. The implementation of \texttt{pullToMiddle} is very similar to the one for \texttt{pull}, except
+that, instead of grouping and ungrouping prefixes of the clause, we do it on intervals in the middle of the clause.
+The interface of \texttt{pullToMiddle} is also different from the one of \texttt{pull}. While the later
+expects the proposition to be pulled as a parameter, the former expects the indices corresponding
+to the initial and final position of the proposition in the clause.
+
+The pseudocode in Figure~\ref{factorCore} shows the implementation we developed for this tactic.
+First, in line 1, we obtain the clause corresponding to \texttt{pf} using \texttt{inferType},
+in the same way we did in the implementation of \texttt{groupClausePrefix}. Then, in lines 2
+to 17 we do a for loop, iterating through each term in the clause.
+We use the function \texttt{GetLength} to obtain the current length of the clause. We need to
+provide the index of the last proposition to this function, otherwise the length of the clause
+will not be well-defined.
+The goal of each iteration is to remove all other elements of the clause that are equal to
+the $i$-th one (the current one). For that, we do another nested loop in lines 5 to 16,
+iterating through all indices $j$ such that $j > i$. Next, in line 6, we check whether
+the propositions at positions $i$ and $j$ are equal (we use the notation $clause_{i}$ to
+indicate the proposition at position $i$). This comparison is syntactic, that is, we
+only consider equal propositions that have \textit{exactly} the same representation
+as \texttt{Expr}. This is the intended behaviour of this rule. It is designed to
+remove duplications introduced by applications of resolution (which will be syntactically equal).
+If the propositions are different, we simply increment $j$. Otherwise,
+we bring the $j$-th proposition to position $i + 1$ using the tactic \texttt{pullToMiddle}.
+This will allow us to use one of the \texttt{dupOr} theorems. If $i + 1$ is the last
+position in the clause, we apply \texttt{dupOr'}, otherwise we apply \texttt{dupOr}.
+Notice that, since there are potentially other terms to the left of the $i$-th one,
+we need to apply \texttt{congOrLeft} composed with \texttt{dupOr}, in the same way we
+did for \texttt{groupClausePrefix}. The function \texttt{ApplyDupOr} performs this checks
+and applies the correct version of \texttt{dupOr}, producing a new proof term for the clause
+with the duplicate erased. Next, we check if we erased the last proposition in the clause in line 9.
+If this was the case, we have to update the index $s$. Since the number of elements to the left
+of the last one decreased by one, we just have to decrement $s$. Finally, we update $clause$
+according to our modifications by extracting again the type of $pf$.
+
+Notice that the outer loop maintains following invariant: during the $i$-th iteration,
+all propositions on the $i$-th prefix are distinct. Therefore, it is not necessary to
+check propositions with index lesser than $i$.
+
+\begin{figure}[t]
+\begin{algorithmic}[1]
+\Function{FactorCore}{$pf$, $s$}
+  \State $clause \gets $ \Call{InferType}{$pf$}
+  \For{$i \gets 1 $ \textbf{ up to } \Call{GetLength}{$clause$, $s$}}
+    \State $j \gets i + 1$
+    \While{$j < $ \Call{GetLength}{$clause$, $s$}}
+      \If{$clause_{i} = clause_{j}$}
+        \State $pf \gets $ \Call{PullToMiddleCore}{$pf$, $i + 1$, $j$, $s$}
+        \State $pf \gets $ \Call{ApplyDupOr}{$pf$, $i$, $i + 1$}
+        \If{$j = $ \Call{GetLength}{$clause$, $s$} $- 1$}
+          \State $s \gets s - 1$
+        \EndIf
+        \State $clause \gets $ \Call{InferType}{$pf$}
+      \Else
+        \State $j \gets j + 1$
+      \EndIf
+    \EndWhile
+  \EndFor
+  \State \Return $pf$
+\EndFunction
+\end{algorithmic}\label{factorCore}
+\end{figure}
+
+The following snippet shows an application of this tactic:
+
+\begin{minted}{lean}
+  theorem factor1 :
+      A ∨ B ∨ (E ∨ F) ∨ A ∨ B ∨ (E ∨ F) → A ∨ B ∨ (E ∨ F) :=
+    by intro h
+      factor h, 5
+\end{minted}
 
 \subsection*{SumBounds\\\normalsize{Rule Statement:}}
 \[
