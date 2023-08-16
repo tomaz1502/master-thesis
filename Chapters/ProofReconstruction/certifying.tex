@@ -59,7 +59,10 @@ The first tactic we will present does not correspond to a rule from cvc5's proof
 calculus. Instead, it is a custom tactic we created to facilitate the implementation
 of the others.
 
-The operator $\vee$ in Lean is right-associative. Given a natural number \texttt{i} and a proof \texttt{pf}
+The operator $\vee$ in Lean is right-associative. This means that an expression of the form
+$P_{1} \vee P_{2} \vee \cdots \vee P_{n}$ is internally represented as
+$P_{1} \vee (P_{2} \vee (\cdots \vee P_{n}))$.
+Given a natural number \texttt{i} and a proof \texttt{pf}
 of the validity of a clause, \texttt{groupClausePrefix pf, i} proves the same clause, with the
 first \texttt{i} propositions grouped. This tactic employs the following two theorems:
 
@@ -81,8 +84,7 @@ first \texttt{i} propositions grouped. This tactic employs the following two the
 % \texttt{hyp} instantiated to \texttt{orAssoc}, which yields a proof of the correct
 % statement. Therefore, we can change the goal to $P_{1} \vee P_{2} \vee (P_{3} \vee \cdots \vee P_{i}) \vee \cdots \vee P_{n}$ with \texttt{apply (congOrLeft orAssoc)}.
 
-First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. By applying \texttt{orAssoc} instantiating \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee
-P_{n}$, we obtain the term:
+First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. We will instantiate, in \texttt{orAssoc}, the parameter \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee P_{n}$, obtaining the term:
 
 \begin{center}
     $f_{1}: P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
@@ -194,7 +196,7 @@ Then, we use again our function \texttt{groupPrefixCore} in \texttt{pf₁}, grou
   $pf_{2} : ((P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$
 \end{center}
 
-Next, we will define the new term \texttt{pf₃} as \texttt{congOrRight orComm pf₂}. Given the appropriate instantiation for the implicit parameters,
+Next, we will define a new term \texttt{pf₃} as \texttt{congOrRight orComm pf₂}. Given the appropriate instantiation for the implicit parameters,
 this application flips the position of $P_{1} \vee \cdots \vee P_{i - 1}$ and $P_{i}$, while not modifying the suffix $P_{i + 1} \vee \cdots \vee P_{n}$.
 Therefore, \texttt{pf₃} has type $(P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i + 1} \vee \cdots \vee P_{n}$ (we do not need to parenthesize
 $P_{1} \vee \cdots \vee P_{i - 1}$ as $\vee$ is right-associative). Finally we use another tactic we implemented, \texttt{ungroupClausePrefix},
@@ -237,12 +239,13 @@ we can conclude that each one of them will be placed in the right position. Noti
 the last proposition does \textit{not} change during this process, so we can always use \texttt{s} as an argument
 for \texttt{pull}.
 
-\tom{I am wondering whether I put here the code of the core functionality of this tactic}
+\tom{I am wondering whether I put here the code of the core functionality of this tactic, like I did for groupClause}
 
 The following snippet shows an example of usage of this tactic:
 
 \begin{minted}{lean}
-  example : A ∨ B ∨ C ∨ (D ∨ E ∨ F) → (D ∨ E ∨ F) ∨ B ∨ C ∨ A := by
+  theorem perm1 :
+      A ∨ B ∨ C ∨ (D ∨ E ∨ F) → (D ∨ E ∨ F) ∨ B ∨ C ∨ A := by
     intro h
     permutateClause h, [3, 1, 2, 0], 3
 \end{minted}
@@ -286,15 +289,48 @@ the clause:
   $\neg A \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}$
 \end{center}
 
-Now, we can apply one of the \texttt{resolutionSpecialCase} theorems to \texttt{pfP'} and \texttt{pfQ'}.
+Now, we can apply one of the \texttt{resolutionSpecialCase} theorems to \texttt{pfP'} and \texttt{pfQ'}. We decide which theorem
+to apply based on whether or not each clause has other terms apart from the pivot. If both clauses have other terms (i.e., $n > 0$ and
+$m > 0$) we apply \texttt{resolutionSpecialCase1}, instantiating \texttt{B} to $P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}$ and \texttt{C} to $Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}$. If the second clause consists of only the negation of the pivot and the first one has other terms, we apply \texttt{resolutionSpecialCase2}. If the first clause consists of only the pivot and the second one has other terms, we apply \texttt{resolutionSpecialCase3}. If both clauses consists of a single element, we apply \texttt{resolutionSpecialCase4}, In this case, the tactic will produce a proof of \texttt{False}, which is the way we represent the empty clause.
+
+Notice that, if we apply \texttt{resolutionSpecialCase1} and the first clause had more than 1 element
+apart from the pivot, the term we will get is not exactly the required one. Its type will have the
+propositions from the first clause parenthesized, i.e., it will have the following form:
+
+\begin{center}
+  $(P_{1} \vee \cdots \vee P_{n}) \vee Q_{1} \vee \cdots \vee Q_{m}$
+\end{center}
+
+We fix this issue with the tactic \texttt{ungroupClausePrefix}, which was mentioned before.
+
+Since this tactic involves two input clauses, we need to have two parameters corresponding to
+the indices of the last propositions in them. Also, the original rule used by cvc5 has another
+boolean parameter, \textit{pol}. If pol is set to true, then the semantics of the rule match
+exactly the tactic we described. If pol is set to false, the rule expects to find the pivot
+negated in the first clause and not negated in the second. We have implemented a separate
+tactic for this case. The function that implements the core functionality of both tactics is
+the same.
+
+The following snippet shows one example of usage of each tactic. \texttt{R1} corresponds to
+the rule with pol set to true, and \texttt{R2} corresponds to the rule with pol set to false.
+The last parameter of the tactic is a list with two elements, corresponding to the indices
+of the last propositions in each clause.
+
+\begin{minted}{lean}
+  theorem res1 : A ∨ B ∨ C ∨ D → E ∨ ¬ B → A ∨ (C ∨ D) ∨ E := by
+    intros h₁ h₂
+    R1 h₁, h₂, B, [2, 1]
+
+  theorem res2 : ¬ A → B ∨ A ∨ C → B ∨ C := by
+    intros h₁ h₂
+    R2 h₁, h₂, A, [0, 2]
+\end{minted}
+
 
 \subsection*{Factor\\\normalsize{Rule Statement:}}
 \[
   \infer[]{removeDuplicates(P_{1} \vee \cdots \vee P_{n})}{P_{1} \vee \cdots \vee P_{n} \mid -}
 \]
-
-
-% \subsection{Pull}
 
 \subsection*{SumBounds\\\normalsize{Rule Statement:}}
 \[
