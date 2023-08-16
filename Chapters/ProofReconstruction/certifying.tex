@@ -59,9 +59,9 @@ The first tactic we will present does not correspond to a rule from cvc5's proof
 calculus. Instead, it is a custom tactic we created to facilitate the implementation
 of the others.
 
-The operator $\vee$ in Lean is right-associative. Given a natural number $i$ and a proof $h$
-of the validity of a clause, \texttt{groupClausePrefix h, i} proves the same clause, with the
-first $i$ propositions grouped. This tactic employs the following two theorems:
+The operator $\vee$ in Lean is right-associative. Given a natural number \texttt{i} and a proof \texttt{pf}
+of the validity of a clause, \texttt{groupClausePrefix pf, i} proves the same clause, with the
+first \texttt{i} propositions grouped. This tactic employs the following two theorems:
 
 \begin{itemize}
   \item \mintinline{lean}{orAssoc {A B C : Prop} : A ∨ B ∨ C → (A ∨ B) ∨ C}
@@ -102,31 +102,34 @@ with $n - 1$ propositions, in which the $(i - 1)$-th proposition is the clause
 $P_{i - 1} \vee P_{i}$. This means that our original problem can be reduced to
 group the first $i - 1$ terms of this clause.
 With this in mind, we repeat the process of composing \texttt{congOrLeft} with
-\texttt{orAssoc} and apply the result to \texttt{h'}, obtaining
+\texttt{orAssoc} and apply the result to \texttt{pf'}, obtaining
 a new term of type $P_{1} \vee \cdots \vee (P_{i - 2} \vee P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
 We keep repeating this process until the whole prefix is grouped.
 
-The following snippet was taken from the project's source code and shows the
-implementation of the core functionality of this tactic:
 
+\begin{figure}[t]
 \begin{minted}[linenos]{lean}
-def groupPrefixCore (h : Expr) (i : Nat) : MetaM Expr := do
-  let clause  : Expr      ← inferType h
+def groupPrefixCore (pf : Expr) (i : Nat) : MetaM Expr := do
+  let clause  : Expr      ← inferType pf
   let props   : List Expr ← collectPropsInClause clause
   if i > 0 && i < List.length props then
     let lemmas : List Expr ← groupPrefixLemmas props (i - 1)
     let answer : Expr :=
-      List.foldl (fun acc lem => Expr.app lem acc) h lemmas
+      List.foldl (fun acc lem => Expr.app lem acc) pf lemmas
     return answer
   else throwError
     "[groupClausePrefix]: invalid prefix length"
 \end{minted}
+\caption{Implementation of the tactic GroupClausePrefix}\label{groupClause}
+\end{figure}
 
-The parameters \texttt{h} and \texttt{i} of the function \texttt{groupPrefixCore}
+The snippet in Figure~\ref{groupClause} was taken from the project's source code and shows the
+implementation of the core functionality of this tactic.
+The parameters \texttt{pf} and \texttt{i} of the function \texttt{groupPrefixCore}
 represent, respectively, the proof of the validity of the original clause
 and the length of the prefix that should be grouped. In line 2, we obtain
 an \texttt{Expr} corresponding to the original clause by inspecting the type
-of \texttt{h}, with the built-in routine \texttt{inferType}. Then, in line 3,
+of \texttt{pf}, with the built-in routine \texttt{inferType}. Then, in line 3,
 we use the function \texttt{collectPropsInClause} (defined by us) to
 extract a \texttt{List} with each one of the propositions in the clause.
 Next, we check if the prefix length is valid. If it is, we apply the function
@@ -137,7 +140,7 @@ this function also computes the implicit arguments that have to be
 passed to \texttt{congOrLeft} and \texttt{orAssoc}. Lean has a built-in
 functionality to automatically infer some of those arguments, but a significant
 part of them have to be manually constructed. Finally, we use \texttt{foldl}
-in line 7 to apply each one of the lemmas to \texttt{h}, accumulating the results.
+in line 7 to apply each one of the lemmas to \texttt{pf}, accumulating the results.
 
 In order to use \texttt{groupPrefixCore} as a tactic, we also had to implement
 a function of type \texttt{Syntax → TacticM Unit}, which parses the \texttt{Syntax}
@@ -163,11 +166,11 @@ verify that it is, indeed, the one we described:
 
 \subsection*{Pull\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n} \mid i}
+  \infer[]{A \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee P_{n} \mid A}
 \]
 
-Given a proof \texttt{h} of the validity of a clause and an index \texttt{i}, \texttt{pull h, i} produces a proof term for the same clause,
-with the \texttt{i}-th term moved to the first position. This tactic was also created to facilitate the implementation
+Given a proof \texttt{pf} of the validity of a clause and a term $P_{i}$, this tactic should produce a proof term for the same clause,
+with the first instance of $A$ in the clause moved to the first position. This tactic was also created to facilitate the implementation
 of the other tactics and does not exist in cvc5's proof calculus. We will need three new theorems to implement \textit{pull}:
 
 \begin{itemize}
@@ -176,23 +179,23 @@ of the other tactics and does not exist in cvc5's proof calculus. We will need t
   \item \mintinline{lean}{orAssocConv {A B C : Prop} : (A ∨ B) ∨ C → A ∨ B ∨ C}
 \end{itemize}
 
-To build the required proof term, let's first apply our tactic \texttt{groupClausePrefix} at \texttt{h}, grouping the prefix of length \texttt{i - 1}.
+To build the required proof term, let's first search for the term we want to pull in the clause and calculate its index \texttt{i}. Then, we apply our tactic \texttt{groupClausePrefix} at \texttt{pf}, grouping the prefix of length \texttt{i - 1}.
 We cannot use the tactic itself, as we are working on the context of \texttt{MetaM}, but we can invoke directly the function \texttt{groupPrefixCore}
 to produce the required term. We will obtain the following term:
 
 \begin{center}
-  $h_{1} : (P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i} \vee \cdots \vee P_{n}$
+  $pf_{1} : (P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i} \vee \cdots \vee P_{n}$
 \end{center}
 
-Then, we use again our function \texttt{groupPrefixCore} in \texttt{h₁}, grouping the prefix of length 2. This will provide the term:
+Then, we use again our function \texttt{groupPrefixCore} in \texttt{pf₁}, grouping the prefix of length 2. This will provide the term:
 
 \begin{center}
-  $h_{2} : ((P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$
+  $pf_{2} : ((P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$
 \end{center}
 
-Next, we will define the new term \texttt{h₃} as \texttt{congOrRight orComm h₂}. Given the appropriate instantiation for the implicit parameters,
+Next, we will define the new term \texttt{pf₃} as \texttt{congOrRight orComm pf₂}. Given the appropriate instantiation for the implicit parameters,
 this application flips the position of $P_{1} \vee \cdots \vee P_{i - 1}$ and $P_{i}$, while not modifying the suffix $P_{i + 1} \vee \cdots \vee P_{n}$.
-Therefore, \texttt{h₃} has type $(P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i + 1} \vee \cdots \vee P_{n}$ (we do not need to parenthesize
+Therefore, \texttt{pf₃} has type $(P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i + 1} \vee \cdots \vee P_{n}$ (we do not need to parenthesize
 $P_{1} \vee \cdots \vee P_{i - 1}$ as $\vee$ is right-associative). Finally we use another tactic we implemented, \texttt{ungroupClausePrefix},
 to remove the parenthesis around $P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}$, concluding our goal.
 This tactic is very similar to \texttt{groupClausePrefix}. The
@@ -202,29 +205,67 @@ starts with an application of \texttt{orAssocConv}, then it applies \texttt{cong
 One source of ambiguity that we have to take into account here is the representation of the clauses.
 While there is no distinction in Lean between, for instance, the clauses $A \vee B \vee C \vee D \vee E$
 and $A \vee B \vee C \vee (D \vee E)$, this distinction can be made inside the SMT solver. Indeed, if
-we have a term \texttt{h} in Lean of type $A \vee B \vee C \vee D \vee E$ and cvc5 prints the tactic
-application \texttt{pull h, 4}, there is no way to know, inside Lean, if it is expecting to receive
+we have a term \texttt{pf} in Lean of type $A \vee B \vee C \vee D \vee E$ and cvc5 prints the tactic
+application \texttt{pull pf, 4}, there is no way to know, inside Lean, if it is expecting to receive
 a proof of $D \vee A \vee B \vee C \vee E$ or $(D \vee E) \vee A \vee B \vee C$. To address this issue,
 we adapted cvc5 to print an extra parameter to this tactic (and to others that suffered from the same problem),
 which is a natural number corresponding to the index of the last proposition in the clause from the
 point of view of the SMT solver. Therefore, for the example we just described, it would print
-\texttt{pull h, 4, 4} to indicate that it wants a proof for $(D \vee E) \vee A \vee B \vee C$ and
-\texttt{pull h, 4, 5} to indicate that it wants a proof for $E \vee A \vee B \vee C \vee D$.
+\texttt{pull pf, 4, 4} to indicate that it wants a proof for $(D \vee E) \vee A \vee B \vee C$ and
+\texttt{pull pf, 4, 5} to indicate that it wants a proof for $E \vee A \vee B \vee C \vee D$.
 
 \subsection*{PermutateClause\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{P_{p(1)} \vee \cdots \vee P_{p(n)}}{P_{1} \vee \cdots \vee P_{n} \mid p}
+  \infer[]{P_{perm(1)} \vee \cdots \vee P_{perm(n)}}{P_{1} \vee \cdots \vee P_{n} \mid perm, s}
 \]
 
-Given the proof \texttt{h} of a clause, a permutation \texttt{p} and the index \texttt{s} of the last
-proposition in the clause, \texttt{permutateClause h, p, s} provides a proof for the same clause, with
+Given the proof \texttt{pf} of a clause, a permutation \texttt{perm} and the index \texttt{s} of the last
+proposition in the clause, \texttt{permutateClause pf, perm, s} provides a proof for the same clause, with
 the propositions permutated according to \texttt{p}. This is the first tactic that matches a rule used by
 cvc5.
 
+Since we have an working implementation of \texttt{pull}, we can write a tactic matching
+this rule using a relatively straightforward approach. We simply iterate through the permutation in
+reverse order, and, for each index \texttt{i} we go through, we run the \texttt{pull} tactic
+with $P_{perm(i)}$ as the argument. With this strategy, the last term we will bring to the first position is
+$P_{perm(1)}$, therefore, the final clause we will produce will have the correct element in the first position.
+Similarly, the second to last element we will bring to the first
+position is $P_{perm(2)}$. After pulling it, we will bring another term to the first position ($P_{perm(1)}$), which will make $P_{perm(2)}$
+end up in the second position, as required. By extending this reasoning to all the terms in the clause,
+we can conclude that each one of them will be placed in the right position.
+
+The following snippet shows an example of usage of this tactic:
+
+\begin{minted}{lean}
+  example : A ∨ B ∨ C ∨ (D ∨ E ∨ F) → (D ∨ E ∨ F) ∨ B ∨ C ∨ A := by
+    intro h
+    permutateClause h, [3, 1, 2, 0], 3
+\end{minted}
+
+An essential observation is that, while proving the theorem corresponding to this rule appears to be a
+challenging task, the implementation of the tactic was notably compact and uncomplicated, consisting of fewer
+than 60 lines (excluding the source code of \texttt{pull}).
+
+
 \subsection*{Resolution\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{m}, P_{i} = \neg Q_{j} \mid i, j}
+  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A}
 \]
+
+Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ} and a proposition \texttt{A}
+(also known as the \textit{pivot}) such that
+\texttt{A} is present in the first clause and \texttt{¬ A} is present in the second clause, this tactic produces a proof for the clause composed by the concatenation
+of the two, removing the pivot from the first and the negation of the pivot from the second. If there are multiple instances of the pivot in the first clause, it removes
+the first one. Similarly, if there are multiple instances of the negation of the pivot
+in the second clause, it also removes the first one. We will need four new theorems
+to implement the resolution tactic:
+
+\begin{itemize}
+  \item \mintinline{lean}{resolutionSpecialCase1 {A B C : Prop} : A ∨ B → ¬ A ∨ C → B ∨ C}
+  \item \mintinline{lean}{resolutionSpecialCase2 {A B : Prop} : A ∨ B → ¬ A → B}
+  \item \mintinline{lean}{resolutionSpecialCase3 {A C : Prop} : A → ¬ A ∨ C → C}
+  \item \mintinline{lean}{resolutionSpecialCase4 {A : Prop} : A → ¬ A → False}
+\end{itemize}
 
 \subsection*{Factor\\\normalsize{Rule Statement:}}
 \[
@@ -286,3 +327,36 @@ ImpliesElim & blah      & theorem        \\ \bottomrule
 % To solve this problem, we use the theorem \texttt{congOrLeft} setting \texttt{hyp} to the application of \texttt{orAssoc} that we just described.
 % Since the first $i - 2$ propositions are not grouped, we cannot instantiate \texttt{C} to $P_{i - 1} \vee \cdots \vee P_{i - 2}$.
 % Instead, we set \texttt{C} to $P_{i - 2}$, which will yield a proof \texttt{h₂} of $P_{i - 2} \vee P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow P_{i - 2} \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Now we repeat the process applying \texttt{congOrLeft} with \texttt{C} instantiated to $P_{i - 3}$ (if it exists) and \texttt{hyp} to \texttt{h₂}. We keep going until we set \texttt{C} to $P_{1}$. We will then obtain a term of the form \texttt{congOrLeft (congOrLeft \ldots (congOrLeft orAssoc)\ldots)} (with $i - 2$ applications of \texttt{congOrLeft}), which, when applied to \texttt{h}, will prove $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
+
+
+% One detail that has to be considered while implementing this tactic is that the index of the last proposition
+% may change when we pull a term. For instance, the index of the last proposition of the clause
+% $A \vee B \vee (C \vee D) \vee E$ is $4$. If we pull $E$ in this clause, we will get
+% $E \vee A \vee B \vee (C \vee D)$, which has $3$ as this index. If this happens,
+% the new index will always be the original length of the clause minus the length
+% of the second to last proposition in the current clause (since it will become the last proposition).
+% While executing the procedure we described in the last paragraph, we need to always keep track of the
+% current index of the last proposition, as the tactic pull requires it as an argument.
+
+% \begin{figure}[t]
+% % \textbf{Input:} $\psi$, a PL formula\\
+% % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+% \begin{algorithmic}[1]
+% \Function{PermutateClauseCore}{$pf$, $perm$, $s$}
+%   \State $clause \gets $ \Call{InferType}{$pf$}
+%   \State $lenClause \gets $ \Call{getLength}{$clause$}
+%   \For{$i \gets n \Downto 1$}
+%   \If{$perm_{i} = s$}
+%     \State $currentClause \gets$ \Call{InferType}{pf}
+%     \State $lenSecondLast \gets $ \Call{GetLength}{$currentClause_{s - 1}$}
+%     \State $pf \gets$ \Call{PullCore}{$pf$, $perm_{i}$, $s$}
+%     \State $s \gets lenSecondLast - lenClause$
+%   \Else
+%     \State $pf \gets$ \Call{PullCore}{$pf$, $perm_{i}$, $s$}
+%   \EndIf
+%   \EndFor
+%   \State \Return~$pf$
+% \EndFunction
+% \end{algorithmic}
+% \caption{Implementation of the tactic PermutateClause}~\label{permClause}
+% \end{figure}
