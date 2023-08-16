@@ -168,12 +168,11 @@ verify that it is, indeed, the one we described:
 
 \subsection*{Pull\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{A \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee P_{n} \mid A, s}
+  \infer[]{P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n}  \mid i, s}
 \]
 
-Given a proof \texttt{pf} of the validity of a clause, a term $A$ and the index \texttt{s} of the last proposition, this tactic should produce a proof term for the same clause,
-with the first instance of $A$ in the clause moved to the first position. If there is no instance of $A$ in the clause, we throw an error
-to notify the user. This tactic was also created to facilitate the implementation
+Given a proof \texttt{pf} of the validity of a clause and an index \texttt{i} of a proposition to be moved, this tactic should produce a proof term for the same clause,
+with $P_{i}$ moved to the first position. This tactic was also created to facilitate the implementation
 of the other tactics and does not exist in cvc5's proof calculus. We will need three new theorems to implement \textit{pull}:
 
 \begin{itemize}
@@ -182,7 +181,7 @@ of the other tactics and does not exist in cvc5's proof calculus. We will need t
   \item \mintinline{lean}{orAssocConv {A B C : Prop} : (A ∨ B) ∨ C → A ∨ B ∨ C}
 \end{itemize}
 
-To build the required proof term, let's first search for the term we want to pull in the clause and calculate its index \texttt{i}. Then, we apply our tactic \texttt{groupClausePrefix} at \texttt{pf}, grouping the prefix of length \texttt{i - 1}.
+To build the required proof term, let's first apply our tactic \texttt{groupClausePrefix} at \texttt{pf}, grouping the prefix of length \texttt{i - 1}.
 We cannot use the tactic itself, as we are working on the context of \texttt{MetaM}, but we can invoke directly the function \texttt{groupPrefixCore}
 to produce the required term. We will obtain the following term:
 
@@ -230,7 +229,7 @@ cvc5.
 Since we have an working implementation of \texttt{pull}, we can write a tactic matching
 this rule using a relatively straightforward approach. We simply iterate through the permutation in
 reverse order, and, for each index \texttt{i} we go through, we run the \texttt{pull} tactic
-with $P_{perm(i)}$ as the argument. With this strategy, the last term we will bring to the first position is
+with \texttt{i} as the argument. With this strategy, the last term we will bring to the first position is
 $P_{perm(1)}$, therefore, the final clause we will produce will have the correct element in the first position.
 Similarly, the second to last element we will bring to the first
 position is $P_{perm(2)}$. After pulling it, we will bring another term to the first position ($P_{perm(1)}$), which will make $P_{perm(2)}$
@@ -259,6 +258,8 @@ than 60 lines (excluding the source code of \texttt{pull}).
 \[
   \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A, s_{1}, s_{2}}
 \]
+
+\tom{add observation here about syntactic equality, similar to the one in factor}
 
 Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ}, a proposition \texttt{A}
 (also known as the \textit{pivot}) such that
@@ -344,9 +345,9 @@ This tactic, which we have called \texttt{pullToMiddle},
 is a generalization of \texttt{pull}. It allows its user to move a term in position $j$ in some clause to any position
 $i < j$. The implementation of \texttt{pullToMiddle} is very similar to the one for \texttt{pull}, except
 that, instead of grouping and ungrouping prefixes of the clause, we do it on intervals in the middle of the clause.
-The interface of \texttt{pullToMiddle} is also different from the one of \texttt{pull}. While the later
-expects the proposition to be pulled as a parameter, the former expects the indices corresponding
-to the initial and final position of the proposition in the clause.
+% The interface of \texttt{pullToMiddle} is also different from the one of \texttt{pull}. While the later
+% expects the proposition to be pulled as a parameter, the former expects the indices corresponding
+% to the initial and final position of the proposition in the clause.
 
 The pseudocode in Figure~\ref{factorCore} shows the implementation we developed for this tactic.
 First, in line 1, we obtain the clause corresponding to \texttt{pf} using \texttt{inferType},
