@@ -168,10 +168,10 @@ verify that it is, indeed, the one we described:
 
 \subsection*{Pull\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{A \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee P_{n} \mid A}
+  \infer[]{A \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee P_{n} \mid A, s}
 \]
 
-Given a proof \texttt{pf} of the validity of a clause and a term $P_{i}$, this tactic should produce a proof term for the same clause,
+Given a proof \texttt{pf} of the validity of a clause, a term $A$ and the index \texttt{s} of the last proposition, this tactic should produce a proof term for the same clause,
 with the first instance of $A$ in the clause moved to the first position. If there is no instance of $A$ in the clause, we throw an error
 to notify the user. This tactic was also created to facilitate the implementation
 of the other tactics and does not exist in cvc5's proof calculus. We will need three new theorems to implement \textit{pull}:
@@ -257,12 +257,12 @@ than 60 lines (excluding the source code of \texttt{pull}).
 
 \subsection*{Resolution\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A}
+  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A, s_{1}, s_{2}}
 \]
 
-Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ} and a proposition \texttt{A}
+Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ}, a proposition \texttt{A}
 (also known as the \textit{pivot}) such that
-\texttt{A} is an element of the first clause and \texttt{¬ A} is an element of the second clause, this tactic produces a proof for the clause composed by the concatenation
+\texttt{A} is an element of the first clause and \texttt{¬ A} is an element of the second clause and the indices \texttt{s₁} and \texttt{s₂} of the last propositions in each clause, this tactic produces a proof for the clause composed by the concatenation
 of the two, removing the pivot from the first and the negation of the pivot from the second. If there are multiple instances of the pivot in the first clause, it removes
 the first one. Similarly, if there are multiple instances of the negation of the pivot
 in the second clause, it also removes the first one. We will need four new theorems
@@ -303,8 +303,7 @@ propositions from the first clause parenthesized, i.e., it will have the followi
 
 We fix this issue with the tactic \texttt{ungroupClausePrefix}, which was mentioned before.
 
-Since this tactic involves two input clauses, we need to have two parameters corresponding to
-the indices of the last propositions in them. Also, the original rule used by cvc5 has another
+The original rule used by cvc5 has another
 boolean parameter, \textit{pol}. If pol is set to true, then the semantics of the rule match
 exactly the tactic we described. If pol is set to false, the rule expects to find the pivot
 negated in the first clause and not negated in the second. We have implemented a separate
@@ -326,11 +325,19 @@ of the last propositions in each clause.
     R2 h₁, h₂, A, [0, 2]
 \end{minted}
 
-
 \subsection*{Factor\\\normalsize{Rule Statement:}}
 \[
-  \infer[]{removeDuplicates(P_{1} \vee \cdots \vee P_{n})}{P_{1} \vee \cdots \vee P_{n} \mid -}
+  \infer[]{removeDuplicates(P_{1} \vee \cdots \vee P_{n})}{P_{1} \vee \cdots \vee P_{n} \mid s}
 \]
+
+Given a proof \texttt{pf} of a clause and the index \texttt{s} of the last proposition in the clause,
+this tactic produces a proof of the same clause, with all duplicated terms of it removed. This
+tactic will require two new theorems:
+
+\begin{itemize}
+  \item \mintinline{lean}{dupOr {A B : Prop} : A ∨ A ∨ B → A ∨ B}
+  \item \mintinline{lean}{dupOr₂ {A : Prop} : A ∨ A → A}
+\end{itemize}
 
 \subsection*{SumBounds\\\normalsize{Rule Statement:}}
 \[
