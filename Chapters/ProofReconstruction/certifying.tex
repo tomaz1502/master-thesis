@@ -170,7 +170,8 @@ verify that it is, indeed, the one we described:
 \]
 
 Given a proof \texttt{pf} of the validity of a clause and a term $P_{i}$, this tactic should produce a proof term for the same clause,
-with the first instance of $A$ in the clause moved to the first position. This tactic was also created to facilitate the implementation
+with the first instance of $A$ in the clause moved to the first position. If there is no instance of $A$ in the clause, we throw an error
+to notify the user. This tactic was also created to facilitate the implementation
 of the other tactics and does not exist in cvc5's proof calculus. We will need three new theorems to implement \textit{pull}:
 
 \begin{itemize}
@@ -232,7 +233,11 @@ $P_{perm(1)}$, therefore, the final clause we will produce will have the correct
 Similarly, the second to last element we will bring to the first
 position is $P_{perm(2)}$. After pulling it, we will bring another term to the first position ($P_{perm(1)}$), which will make $P_{perm(2)}$
 end up in the second position, as required. By extending this reasoning to all the terms in the clause,
-we can conclude that each one of them will be placed in the right position.
+we can conclude that each one of them will be placed in the right position. Notice that the index \texttt{s} of
+the last proposition does \textit{not} change during this process, so we can always use \texttt{s} as an argument
+for \texttt{pull}.
+
+\tom{I am wondering whether I put here the code of the core functionality of this tactic}
 
 The following snippet shows an example of usage of this tactic:
 
@@ -254,7 +259,7 @@ than 60 lines (excluding the source code of \texttt{pull}).
 
 Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ} and a proposition \texttt{A}
 (also known as the \textit{pivot}) such that
-\texttt{A} is present in the first clause and \texttt{¬ A} is present in the second clause, this tactic produces a proof for the clause composed by the concatenation
+\texttt{A} is an element of the first clause and \texttt{¬ A} is an element of the second clause, this tactic produces a proof for the clause composed by the concatenation
 of the two, removing the pivot from the first and the negation of the pivot from the second. If there are multiple instances of the pivot in the first clause, it removes
 the first one. Similarly, if there are multiple instances of the negation of the pivot
 in the second clause, it also removes the first one. We will need four new theorems
@@ -266,6 +271,22 @@ to implement the resolution tactic:
   \item \mintinline{lean}{resolutionSpecialCase3 {A C : Prop} : A → ¬ A ∨ C → C}
   \item \mintinline{lean}{resolutionSpecialCase4 {A : Prop} : A → ¬ A → False}
 \end{itemize}
+
+First, we apply \texttt{pull} to \texttt{pfP} to bring the first occurence of \texttt{A} to the first position. This will result
+in a proof \texttt{pfP'} of the clause:
+
+\begin{center}
+  $A \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}$
+\end{center}
+
+Next, we do the same at \texttt{pfQ}, bringing the negation of the pivot to the first position. We will obtain a proof \texttt{pfQ'} of
+the clause:
+
+\begin{center}
+  $\neg A \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}$
+\end{center}
+
+Now, we can apply one of the \texttt{resolutionSpecialCase} theorems to \texttt{pfP'} and \texttt{pfQ'}.
 
 \subsection*{Factor\\\normalsize{Rule Statement:}}
 \[
