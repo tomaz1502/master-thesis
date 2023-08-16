@@ -421,10 +421,11 @@ Since it is always possible to find these coefficients for unsatisfiable instanc
 
 \subsection{Example of Application}
 
-Given a program and a formal specification of some property related to the program, it is often the case that we can express the proposition that asserts that the program satisfy the property as an SMT instance. For instance, consider the well known \textit{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned:
+Given a program and a formal specification of some property related to the program, it is often the case that we can express the proposition that asserts the correctness of the program with respect to that property as an SMT instance. For instance, consider the well known \texttt{abs} function, that takes an integer and returns its absolute value. The usual way to implement it is through a branch that checks whether the input variable is positive or negative. In case it is positive, its own value is returned. Otherwise, the value multiplied by $-1$ is returned. This implementation
+is presented in Figure~\ref{originalAbs}.
 
-\begin{figure}[t]
-\begin{algorithmic}[1]\label{originalAbs}
+\begin{figure}
+\begin{algorithmic}[1]
 \Function{abs}{x}
 \If{$x < 0$}
   \State\Return$-x$
@@ -433,20 +434,22 @@ Given a program and a formal specification of some property related to the progr
 \EndIf
 \EndFunction
 \end{algorithmic}
+\caption{Original implementation of the absolute value function}\label{originalAbs}
+\end{figure}
 
+In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes a branchless implementation of the \texttt{abs} function, which is presented in Figure~\ref{branchlessAbs}. The symbol $\bigoplus$ represents the bitwise \textit{xor} operation.
+
+\begin{figure}[t]
 \begin{algorithmic}[1]
 \Function{abs'}{x}
   \State $y \gets x >> 31$
   \State \Return $(x \bigoplus y) - y$
 \EndFunction
-\end{algorithmic}
-\caption{Two implementations of the absolute value function}~\label{branchlessAbs}
+\end{algorithmic}\label{branchlessAbs}
+\caption{Branchless implementation of the absolute value function}
 \end{figure}
 
-In program analysis, it is quite useful to eliminate branches from programs since this action completely removes one possible path that the flow of the program can take, simplifying it's analysis (besides optimizing it's performance). Obviously, this operation must be done with caution to not modify the original behavior of the program. In his book~\cite{hacker_delight}, Henry Warren proposes an alternative implementation for the \textit{abs} function which does not have branches:
-
-
-Where $\bigoplus$ represents the bitwise xor operation. We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input. We present the instance written in SMT-LIB~\cite{smtlib}, a standardized syntax for representing SMT problems:
+We can design an instance of the SMT problem that asserts that both implementations produce the same output, when given the same input. We present the instance written in SMT-Lib~\cite{smtlib}, a standardized syntax for representing SMT problems, in Figure~\ref{smtlib_branchless}.
 
 \begin{figure}[t]
 \begin{minted}[linenos]{smtlib2.py -x}
@@ -461,11 +464,11 @@ Where $\bigoplus$ represents the bitwise xor operation. We can design an instanc
 (assert (distinct result1 result2))
 (check-sat)
 \end{minted}
-\caption{SMT-Lib script for equivalence of absolute functions}
+\caption{SMT-Lib script for equivalence of absolute functions}\label{smtlib_branchless}
 \end{figure}
 
 
-First, we set the combination of theories that will be used in this problem. In our case, we will be using \textit{QF\_BV}, which stands for quantifier free bitvectors. This means that this instance of the problem is not allowed to use quantifiers and is allowed to declare and use variables living in the Bitvector sort, as well as operations over this sort. Bitvectors are fixed-length arrays of bits. They are useful for representing machine integers, as they can simulate their semantics.
+First, in line 1, we set the combination of theories that will be used in this problem. In our case, we will be using \textit{QF\_BV}, which stands for quantifier free bitvectors. This means that this instance of the problem is not allowed to use quantifiers and is allowed to declare and use variables living in the Bitvector sort, as well as operations over this sort. Bitvectors are fixed-length arrays of bits. They are useful for representing machine integers, as they can simulate their semantics.
 
 Next, in lines 2 and 3, we define two constants, both from the sort \textit{BitVec 32} (arrays of 32 bits): \textit{x} and \textit{result1}. The first one represents the input value from the original \textit{abs} function, and the second one, the result produced by that function. We then have to add an assertion in line 4 that binds the variable \textit{result1} to the output of the function \textit{abs} in terms of \textit{x}. We translate the branch from the pseudocode as the \textit{ite} operator, the comparison as the \textit{bvslt} operator and the multiplication by -1 as the \textit{bvneg} operation. In lines 5 to 8 we repeat the process to define \textit{y} and \textit{result2}, which corresponds to the result of the branchless \textit{abs} function. Finally, we assert that \textit{result1} and \textit{result2} must be different in line 9. If this problem is satisfiable, then there is a value for \textit{x} which produces different values in each function. If it is unsatisfiable, then we can be sure that no such value exists, therefore, both functions are equivalent. Note that we are not verifying that the actual code of the functions are equivalent, just an abstraction over it's implementation.
 
