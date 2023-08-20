@@ -7,7 +7,8 @@ We say that a formula is satisfiable if such a function exists, and unsatisfiabl
 this work, we will be focusing on the problem CNF-SAT, an equivalent version of SAT in
 which the input formula always comes in Conjunctive Normal Form, that is, a conjunction
 of disjunctions of literals. From now on, we will use SAT to refer to the CNF-SAT problem. Furthermore, we will write \textit{clause} to refer to each one of the disjunctions in some
-input formula for SAT.\ We will also treat a clause as a set of its composing literals (a literal is either a variable or the negation of a variable) and use set operations over it. For instance, we will write $x \in C$ to state that the literal $x$ is present in clause $C$ and $C \setminus \{x\}$ to refer to the clause $C$ without the literal $x$.
+input formula for SAT.\ We will also treat a clause as a set of its composing literals (a literal is either a variable or the negation of a variable) and use set operations over it. For instance, we will write $x \in C$ to state that the literal $x$ is present in clause $C$ and $C \setminus \{x\}$ to refer to the clause $C$ without the literal $x$. Also, we extend this abstraction to include the
+clause corresponding to the empty set, which can never be satisfied.
 
 
 Satisfiability Modulo Theories (SMT)~\cite[ch. 33]{handbook} is a generalization of SAT.\

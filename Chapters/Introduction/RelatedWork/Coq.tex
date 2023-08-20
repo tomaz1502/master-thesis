@@ -7,7 +7,8 @@ which will be used as input for the plugin. Our tool explores one specific
 proof format of cvc5, therefore, for now, it only supports this solver and is
 less flexible in this aspect than SMTCoq.
 
-The hammer directly follows the certified transformations approach.
+The core of the hammer directly follows the certified transformations approach (although recently, it was
+extended with new features, implemented using certifying transformations~\cite{snipe}).
 It has a set of certified functions representing the transformations
 that are sound in two of the main domains that are available in SMT:\
 Linear Arithmetic and Uninterpreted Functions. The first one is used to
