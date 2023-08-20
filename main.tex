@@ -55,6 +55,8 @@
 %% **** Caso não haja nenhuma lista adicional, os comandos acima podem ser apagados. ****
 %% ===============================================
 
+\DeclareUnicodeCharacter{2243}{$\simeq$}
+\DeclareUnicodeCharacter{2264}{$\mathbb{\le}$}
 \DeclareUnicodeCharacter{2200}{$\mathbb{\forall}$}
 \DeclareUnicodeCharacter{2228}{$\vee$}
 \DeclareUnicodeCharacter{2084}{$_{4}$}
@@ -64,6 +66,7 @@
 \DeclareUnicodeCharacter{208A}{$_{+}$}
 \DeclareUnicodeCharacter{1D62}{$_{i}$}
 \DeclareUnicodeCharacter{208B}{$_{-}$}
+\DeclareUnicodeCharacter{03B1}{$\alpha$}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{definition}{Definition}
@@ -73,45 +76,45 @@
 \newcommand{\yell}[1]{{\color{blue} [#1]}}
 \newcommand{\tom}[1]{\yell{#1 --tom}}
 
-\newglossarystyle{mystyle}{%
-  \glossarystyle{long}%
-  \renewenvironment{theglossary}%
-     {\begin{longtable}{p{3cm}p{\glsdescwidth}}}%
-     {\end{longtable}}%
-}
-
-\newglossary{symbols}{sym}{sbl}{List of Symbols}
-\makeglossaries
-% \newglossaryentry{NegLit}
-% {
-%     name = {$\bm{\overline x}$ },
-%     description={Negation of the literal $x$}
+% \newglossarystyle{mystyle}{%
+%   \glossarystyle{long}%
+%   \renewenvironment{theglossary}%
+%      {\begin{longtable}{p{3cm}p{\glsdescwidth}}}%
+%      {\end{longtable}}%
 % }
-\newglossaryentry{IncVar}
-{
-  name = {$\bm{x \in C}$ },
-  description={Variable $x$ is present in the clause $C$}
-}
-\newglossaryentry{RemVar}
-{
-  name = {$\bm{C \setminus x}$ },
-  description={Clause $C$ without variable $x$}
-}
-\newglossaryentry{FormulaVars}
-{
-  name = {$\bm{\textit{Vars}(\psi)}$ },
-  description={Set of all variables in the formula $\psi$}
-}
-\newglossaryentry{Resolution}
-{
-  name = {\bm{$C_{1} \diamond_{x} C_{2}$} },
-  description={Clause resulting from applying resolution with $C_{1}$ and $C_{2}$ using $x$ as a pivot}
-}
-\newglossaryentry{VarAssign}
-{
-  name = {$\bm{\psi_{\{x \gets val\}}$} },
-  description = {Formula resulting of assigning the variable $x$ to the boolean value $val$ in $\psi$}
-}
+
+% \newglossary{symbols}{sym}{sbl}{List of Symbols}
+% \makeglossaries
+% % \newglossaryentry{NegLit}
+% % {
+% %     name = {$\bm{\overline x}$ },
+% %     description={Negation of the literal $x$}
+% % }
+% \newglossaryentry{IncVar}
+% {
+%   name = {$\bm{x \in C}$ },
+%   description={Variable $x$ is present in the clause $C$}
+% }
+% \newglossaryentry{RemVar}
+% {
+%   name = {$\bm{C \setminus x}$ },
+%   description={Clause $C$ without variable $x$}
+% }
+% \newglossaryentry{FormulaVars}
+% {
+%   name = {$\bm{\textit{Vars}(\psi)}$ },
+%   description={Set of all variables in the formula $\psi$}
+% }
+% \newglossaryentry{Resolution}
+% {
+%   name = {\bm{$C_{1} \diamond_{x} C_{2}$} },
+%   description={Clause resulting from applying resolution with $C_{1}$ and $C_{2}$ using $x$ as a pivot}
+% }
+% \newglossaryentry{VarAssign}
+% {
+%   name = {$\bm{\psi_{\{x \gets val\}}$} },
+%   description = {Formula resulting of assigning the variable $x$ to the boolean value $val$ in $\psi$}
+% }
 
 \begin{document}
 	\ppgccufmg{
@@ -131,27 +134,31 @@
 		keywords={Formal Verification, Lean, SMT}, %% Palavras-chave do abstract
 		% dedicatoria={dedicatoria.tex}, %% Arquivo .tex contendo a dedicatória
 		% agradecimentos={agradecimentos.tex},
-		epigrafe={S\'o quem sonha acordado v\^e o sol nascer.},
-		epigrafeautor={Unknown},
+		epigrafe={The road to wisdom? Well, it's plain
+and simple to express:
+err
+and err
+and err again,
+but less
+and less
+and less.},
+		epigrafeautor={Piet Hein},
 		% listadefiguras={sim}, %% Remova (ou comente) este parâmetro para remover a lista de figuras
 		% listadetabelas={sim}, %% Remova (ou comente) este parâmetro para remover a lista de tabelas
 		% listascustomizadas={\listadealgoritmos} %% Lista customizada (e.g., lista de algoritmos).
 	}
 
-    \printunsrtglossary %[style=mystyle]
+  %   \printunsrtglossary %[style=mystyle]
 
-	\newpage
+	% \newpage
 
 	\tableofcontents
 
 	\chapter{Introduction}
-	  \section{Context}
 	    \input{Chapters/Introduction/Context}
 	  \section{Contributions}
 	    \input{Chapters/Introduction/Contributions}
 	  \section{Related Work}
-	    \subsection{Hammering Towards QED}
-           \label{sec:hammering}
 			\input{Chapters/Introduction/RelatedWork/HammeringTowards}
 	    \subsection{SMTCoq}
            \label{sec:smtcoq}

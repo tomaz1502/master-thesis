@@ -1,9 +1,7 @@
 \label{sec:hammering}
-As previously mentioned, Hammering Towards QED is a project
-that aims to describe all the tools, which the paper calls ``hammers'',
-that were created with the purpose of connecting automatic and interactive
-theorem provers. Furthermore, this document also outlines
-the main components that such tools usually have:
+Systems whose purpose is to connect automatic and interactive
+theorem provers are known as ``hammers''~\cite{hammering}.
+Usually, hammers are composed by the following three components:
 
 \begin{itemize}
   \item The premise selection module: it identifies
@@ -20,48 +18,38 @@ the main components that such tools usually have:
 
 In this dissertation we describe how we implemented a proof reconstruction module
 for Lean users from cvc5 proofs.
-The three main strategies used to reconstruct the proof produced
-by the automatic system inside the interactive described in the paper are as follows:
-
+The two main strategies used to reconstruct the proof produced
+by the automatic system inside the interactive are also well-known:
 The first one is known as the \textit{certified} approach~\cite{snipe}. In this case,
 the hammer defines a datatype to represent
 terms in the language of the ATP and a set of functions to manipulate
 values of those datatypes, representing
-the logical axioms that the solver uses to reason about those terms. Then, a lifting function is defined, that is,
+the inference rules that the solver uses to reason about those terms. Then, a lifting function is defined, that is,
 a function that takes a value of this datatype and outputs an equivalent term in the native
 language of the ITP.\ Finally, the correctness of each function is
 verified with respect to the lifting function, in the sense that, if the input term
 was lifted to a value that is true in the ITP's logic, then the output term will
-also be true. The ATP's proof will be represented as a sequence of applications those
+also be true. The ATP's proof will be represented as a sequence of applications of those
 functions, and their correctness are proved \textit{a priori}. When checking
 a specific proof, the only step that the hammer must perform is to compute the result
 of the application of all the functions in the solver's output, and to check if
 the final term matches with the expected one.
 
-The second approach known as the \textit{certifying} approach~\cite{snipe}. It consists of matching
+The second approach is known as the \textit{certifying} approach~\cite{snipe}. It consists of matching
 each axiom in the ATP's logic into tactics
 defined in the ITP that operate directly over native terms of the system and parsing
 the proof produced by the automatic solver into a sequence of applications
 of those tactics, which are replayed inside the ITP.\
+Those tactics rely on theorems previously proved inside the ITP to simulate the ATP's inference rules.
 In this case, the proof steps are reconstructed and checked in the ITP on the
 fly each time the hammer is invoked. Since there is no theorem stating the
 correctness of them, it is possible that this process fails.
 On the other hand,
 this technique skips computations over embedded terms, which have to be done by the
 certified approach, granting it the potential to have a better
-performance. It also diminishes the complexity of the tool, as there is no need to
+performance~\cite{ringLean}. It also diminishes the complexity of the tool, as there is no need to
 define an intermediate representation inside the ITP.\
-
-The third one is similar to the certifying approach, the only difference being that
-the proof, after parsed into a sequence of applications of tactics, is stored in a separate
-file instead of replayed by the ITP.\ After this, it's possible to run external tools
-that perform postprocessing over this proof to simplify it~\cite{hammer_20, hammer_21}.
-In some cases it's even possible to ignore a large
-portion of the original proof. The proof is then replayed in the ITP, in the same way as the process
-employed by the certifying approach. This technique can be inconvenient for very large proofs,
-as it requires the script to be stored in the filesystem. However,
-it has the advantage over the two previous methods of only requiring access to the ATP
-on the first time that the proof is checked.
 
 In this project we will be using the second approach. We give more details about this
 decision in Chapter~\ref{chap:rcons}. The next two sections describe examples of hammers.
+Both of these works exhibit similarities to our research, therefore, it is useful to reference them here.

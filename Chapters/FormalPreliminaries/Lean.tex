@@ -1,13 +1,14 @@
 %\tom{disclaimer: for now I will just give a minimal definition on Lean's features. Later, if I discover that I need something else in the next chapter I add it here}
 
 Lean is both an Interactive Theorem Prover and a programming
-language. It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic_ref} and explores the well-known correspondence between types and propositions~\cite{ch_correspondence} to implement a system that is both a proof checker and a type checker. This way, the ITP has a kernel with less than 7500 lines\footnote{Information obtained in 25/07/2023} that is powerful enough to recognize a language capable of expressing the theory of dependent types~\cite{dep_type_theory}.
+language. It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic_ref} and explores the well-known correspondence between types and propositions~\cite{ch_correspondence} to implement a system that is both a proof checker and a type checker. This way, the ITP has a kernel with less than 7500 lines\footnote{This information was obtained by inspecting in the day 25/07/2023 the sum of the lines on each file in the folder src/kernel of Lean's repository: \url{https://github.com/leanprover/lean4/}} that is powerful enough to recognize a language capable of expressing the theory of dependent types~\cite{dep_type_theory}. These lines also include a number of optimizations to make the type checking more efficient. Lean also has an impressive mathematical library driven by its growing community, namely, \textit{mathlib}~\cite{mathlib}.
+This library comprises over a million lines of code, formalizing various domains of knowledge from mathematics and theoretical computer science.
 
 \subsection{Lean as a Programming Language}
 
-Lean has all the main features one can expect from a functional programming language. Its features include algebraic datatypes, pattern matching, polymorphism, typeclasses, side effect support using monads and a robust macro system. The following script is a valid Lean program, that defines a new type representing natural numbers, together with a function for adding them:
 
-\begin{minted}{lean}
+\begin{figure}[t]
+\begin{minted}[linenos]{lean}
   inductive Natural where
     | zero : Natural
     | succ : Natural -> Natural
@@ -21,12 +22,20 @@ Lean has all the main features one can expect from a functional programming lang
 
   notation x " + " y => add x y
 \end{minted}
+\caption{Example of Lean code}\label{leanAdd}
+\end{figure}
 
-The keyword \texttt{inductive} is used to introduce a new type, which in this case will be named \texttt{Natural}. After the name, the user must use the keyword \texttt{where}, followed by its constructors and their types. The constructors for the type Natural are \texttt{zero} (which does not take any parameter and returns a Natural) and \texttt{succ} (which takes a Natural and returns another one). This declaration introduces the constructors in the context with the names \texttt{Natural.zero} and \texttt{Natural.succ}. In order to be able to write just ``zero'' and ``succ'' we use the command \texttt{open Natural}.
+Lean has all the main features one can expect from a functional programming language. Its features include algebraic datatypes, pattern matching, polymorphism, typeclasses, side effect support using monads, and a robust macro system~\cite{lean4_ref}.
 
-The next three lines define the sum function. We define new functions using the keyword \texttt{def} followed by its name, the list of parameters and their types, the return type and the body of the function after the symbol ``:=''. In this case, we define the function by pattern matching on the first parameter. If it is \texttt{zero}, we just return the second parameter. If it is \texttt{succ} of some other value \texttt{n'}, we return the \texttt{succ} constructor applied to the result of a recursive call of \texttt{add}, using \texttt{n'} and \texttt{m}.
+The script in Figure~\ref{leanAdd} is a valid Lean program, that defines a new type representing natural numbers, together with a function for adding them.
+The keyword \texttt{inductive} is used to introduce a new type in line 1, which in this case will be named \texttt{Natural}. After the name, the user must use the keyword \texttt{where}, followed by its constructors and their types (lines 2 and 3). The constructors for the type Natural are \texttt{zero} (which does not take any parameter and returns a Natural) and \texttt{succ} (which takes a Natural and returns another one).
+After Lean's kernel parses this statement, it adds the declaration of \texttt{Natural}
+to the context (i.e.\ that set of all declarations visible to the user).
+This constructors are introduced in the context with the names \texttt{Natural.zero} and \texttt{Natural.succ}. In order to be able to write just ``zero'' and ``succ'' we use the command \texttt{open Natural} in line 5.
 
-Lastly, we use the command \texttt{notation} to define a macro for using the add function with the usual infix ``+'' operator.
+Lines 7 to 10 define the sum function. We define new functions using the keyword \texttt{def} followed by its name, the list of parameters and their types, the return type and the body of the function after the symbol ``:=''. In this case, we define the function by pattern matching on the first parameter (line 8). If it is \texttt{zero}, we just return the second parameter, as shown in line 9. If it is \texttt{succ} of some other value \texttt{n'}, we return the \texttt{succ} constructor applied to the result of a recursive call of \texttt{add}, using \texttt{n'} and \texttt{m} (line 10).
+
+Lastly, we use the command \texttt{notation} to define a macro for using the add function with the usual infix ``+'' operator in line 12.
 
 % Another useful feature of Lean is the possibility of asking for a type of a given expression. We do this with the command \texttt{\#check}, followed by the expression we want to consult the type:
 
@@ -45,18 +54,21 @@ In Lean, propositions are represented as elements of the built-in type \texttt{P
 
 The representation of this predicate as a type is possible due to the fact that Lean supports dependent types, that is, types that depend on values of other types. The operator \texttt{=} in this expression is a type constructor that accepts two values of the same type.
 
-Therefore, proving that this statement holds amounts to finding a term with this type. The following snippet shows the construction of such term:
 
-\begin{minted}{lean}
+\begin{figure}[t]
+\begin{minted}[linenos]{lean}
   theorem add_zero : ∀ (n : Natural), (n + zero) = n :=
     fun n =>
       match n with
       | zero    => rfl
       | succ n' => congrArg succ (add_zero n')
 \end{minted}
+\caption{Proof that the addition of any natural number to zero results in itself.}\label{addZero}
+\end{figure}
 
-This structure follows the same pattern as the one for defining functions, the only difference is the change of the keyword \texttt{def} to \texttt{theorem}. After the symbol ``:='' we have essentially a constructive proof of the statement. First, it introduces the variable binded by the $\forall$ symbol in the context, using \texttt{fun n}. Then, it uses pattern match on \texttt{n}. If \texttt{n} is \texttt{zero}, the statement is reduced to \texttt{zero + zero = zero}, which follows directly from the definition of \texttt{add}. The term \texttt{rfl} is a proof that any term is equal to itself. In this case, Lean can match its type with the required one. If \texttt{n} follows the pattern \texttt{succ n'}, then the required type is \texttt{succ n' + zero = succ n'}. By the definition of \texttt{add}, the left-hand side evaluates to \texttt{succ (n' + zero)}.
-Note that the term \texttt{add\_zero n'} has type \texttt{n' + zero = n'}, which is almost the required one, missing only the \texttt{succ} on both sides. This is solved by applying \texttt{congrArg succ} on \texttt{add\_zero n'} (\texttt{congrArg} is a version of Theorem~\ref{cong_theorem} in Lean's library), which produces a term with the correct type.
+Therefore, proving that this statement holds amounts to finding a term with this type. The snippet in Figure~\ref{addZero} shows the construction of such term.
+The structure of this term follows the same pattern as the one for defining functions, the only difference is the change of the keyword \texttt{def} to \texttt{theorem}. After the symbol ``:='' we have essentially a constructive proof of the statement. First, in line 2, it introduces the variable binded by the $\forall$ symbol in the context, using \texttt{fun n}. Then, in lines 3 to 5, it uses pattern match on \texttt{n}. If \texttt{n} is \texttt{zero}, the statement is reduced to \texttt{zero + zero = zero}, which follows directly from the definition of \texttt{add}. The term \texttt{rfl} is a proof that any term is equal to itself. In this case, Lean can match its type with the required one. If \texttt{n} follows the pattern \texttt{succ n'}, then the required type is \texttt{succ n' + zero = succ n'}. By the definition of \texttt{add}, the left-hand side evaluates to \texttt{succ (n' + zero)}.
+Note that the term \texttt{add\_zero n'} has type \texttt{n' + zero = n'}, which is almost the required one, missing only the \texttt{succ} on both sides. This is solved by applying \texttt{congrArg succ} on \texttt{add\_zero n'} (\texttt{congrArg} is a theorem in Lean's library corresponding to the congruence property, which we have shown in Section~\ref{sec:euf}), which produces a term with the correct type.
 
 
 We also present a proof that our addition function is commutative, together with another necessary lemma:
@@ -75,19 +87,22 @@ We also present a proof that our addition function is commutative, together with
       Eq.trans (congrArg succ (add_comm n' m)) (Eq.symm (add_succ m n'))
 \end{minted}
 
-Note that, since we have to make explicit every single logic step, even simple proofs are not easy to write and read. Lean (and most ITPs) provide an alternative for this kind of proof: the usage of tactics. As previously explained, tactics are routines that simulate common proof techniques. While we are building a proof term, Lean's kernel always keep track of a context, containing all declarations in scope and what is the currently expected type for the term we are building (also known as the goal). Tactics operate by manipulating these two structures, without compromising the trusted kernel. In other words, any modification that is made by a tactic must be properly justified and will be checked by Lean's kernel, in the same way it checked that our proof was correct.
+Note that, since we have to make explicit every single logic step, even simple proofs are not easy to write and read. Lean (and most ITPs) provide an alternative for this kind of proof: tactics. As previously explained, tactics are routines that simulate proof techniques. While we are building a proof term, Lean's kernel always keeps track of a context, containing all declarations in scope and what is the currently expected type for the term we are building (also known as the goal). Tactics operate by manipulating these two structures, without compromising the trusted kernel. In other words, any modification that is made by a tactic must be properly justified and will be checked by Lean's kernel, in the same way it checked that our proof was correct.
 
-We present a new version of \texttt{add\_comm} with this new approach:
+We present a new version of \texttt{add\_comm} with this new approach in Figure~\ref{addComm2}.
+The keyword \texttt{by} is used to indicate that the term will not be built explicitly, but instead computed by a sequence of tactics, also known as a tactic block. Given a goal of the form \texttt{∀ (v : t), P(v)}, the tactic \texttt{intros x} will change the goal to \texttt{P(x)} and introduce in the context a variable with name \texttt{x} and type \texttt{t}. It can also be used to introduce multiple variables at one. We use it in line 2, to introduce two naturals, \texttt{n} and \texttt{m}. Next, we use the \texttt{induction} tactic in lines 3 to 5. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form \texttt{P(n, m)}, where \texttt{n} is a natural number, it will produce two new goals: \texttt{P(zero, m)} and \texttt{P(n', m) → P(succ(n'), m)}. Each one of these goals is then completed with the \texttt{rw} tactic. Given a term that represents a proof of an equality \texttt{e₁ ≃ e₂}, the tactic \texttt{rw} rewrites all occurrences of \texttt{e₁} by \texttt{e₂} in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. The tactic \texttt{rw} is implicitly invoking these lemmas for us. Note that this tactic also accepts function names such as \texttt{add} as a parameter. In this case, it rewrites the definition of the function.
 
-\begin{minted}{lean}
+\begin{figure}[t]
+\begin{minted}[linenos]{lean}
   theorem add_comm' : ∀ (n m : Natural), (n + m) = (m + n) := by
     intros n m
     induction n with
     | zero       => rw [add, add_zero]
     | succ n' IH => rw [add, add_succ, IH]
 \end{minted}
+ \caption{Proof of commutativity of addition using tactics.}\label{addComm2}
+\end{figure}
 
-The keyword \texttt{by} is used to indicate that the term will not be build explicitly, but instead computed by a sequence of tactics, also known as a tactic block. Given a goal of the form $\forall (v : t) . P(v)$, the tactic \texttt{intros x} will change the goal to $P(x)$ and introduce in the context a variable with name $x$ and type $t$. It can also be used to introduce multiple variables at one. We use it to introduce two naturals, \texttt{n} and \texttt{m}. Next, we use the \texttt{induction} tactic. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form $P(n, m)$, where $n$ is a natural number, it will produce two new goals: $P(zero, m)$ and $P(n', m) \rightarrow P(succ(n'), m)$. Each one of these goals is then completed with the \texttt{rw} tactic. Given a term that represents a proof of an equality $e_{1} = e_{2}$, the tactic \texttt{rw} rewrites all occurrences of $e_{1}$ by $e_{2}$ in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. Note that this tactic also accepts function names such as \texttt{add} as a parameter. In this case, it rewrites the definition of the function.
 
 \subsubsection{Classical vs. Intuitionistic}
 
@@ -97,7 +112,7 @@ is originally established in terms of constructive logic, therefore, this restri
 of this correspondence by the ITP.\
 
 The logic of the SMT solvers, on the other hand, is classical. This means that it accepts theorems that are impossible to prove
-constructively, such as the law of the excluded middle (i.e., for any proposition \texttt{P}, either \texttt{P} or \texttt{Not P}
+constructively, such as the law of the excluded middle (i.e.\ for any proposition \texttt{P}, either \texttt{P} or \texttt{Not P}
 holds). Indeed, all the proofs that we will translate from cvc5 to Lean are based on double negation elimination, as we will
 always prove that some formula \texttt{P} is true by proving that \texttt{Not P} is unsatisfiable, which is also an implication
 that is not provable constructively.
@@ -110,15 +125,14 @@ any true statement in classical logic. We used this module extensively in the pr
 
 \subsection{Metaprogramming in Lean}\label{sec:metaLean}
 
-Lean has a metaprogramming framework that enable its users to implement new tactics. In our project, we heavily rely on this framework for translating the SMT solver's logical rules, as demonstrated later. We will provide a concise overview of the tactic implementation process in Lean. For a more comprehensive guide, refer to~\cite{metaLean}.
+Lean has a metaprogramming framework that enable its users to implement new tactics. In our project, we heavily rely on this framework for reconstructing the SMT solver's logical rules, as demonstrated later, in Chapter~\ref{chap:rcons}. We will provide a concise overview of the tactic implementation process in Lean. For a more comprehensive guide, refer to~\cite{metaLean}\footnote{waiting for \url{https://leanprover.zulipchat.com/\#narrow/stream/270676-lean4/topic/Citation.20for.20the.20metaprogramming.20book/near/386228681}}.
 
 \subsubsection{Expr}
 
-In Lean, the development of tactics relies on metaprogramming principles. These routines are allowed to access and manipulate terms using the internal representation employed by the compiler, granting them a lot of flexibility. Therefore, to understand how tactics operate it is important to understand how the compiler abstracts the structure of programs.
+In Lean, the development of tactics relies on metaprogramming principles. These routines are allowed to access and manipulate terms using the internal representation employed by the compiler, granting them flexibility. Therefore, to understand how tactics operate it is important to understand how the compiler abstracts the structure of programs.
 
-Terms (both values and types) are internally represented through its abstract syntax tree, which is modeled by the built-in type \texttt{Expr}. The following code shows a simplified version of the declaration of this type, omitting some specific parts that are not important in the context of this work (we also omit such parts in the examples we give):
+Terms (both values and types) are internally represented through the built-in type \texttt{Expr}, which models their abstract syntax tree. The following code shows a simplified version of the declaration of this type, omitting some specific parts that are not important in the context of this work (we also omit such parts in the examples we give):
 
-%\tom{hiding Levels... is it okay? they are not directly needed to understand our tactics and I don't really understand them completely}
 \begin{minted}{lean}
   inductive Expr where
   | bvar    : Nat -> Expr
@@ -131,15 +145,15 @@ Terms (both values and types) are internally represented through its abstract sy
 \end{minted}
 
 %\tom{too similar to the metaprogramming book?}
-This type can be understood as an extension of the abstract syntax tree of terms in Lambda Calculus~\cite{lcIntro}. The language structures that match each one of these constructors are given as follows:
+This type can be understood as an extension of the abstract syntax tree of terms in Lambda Calculus~\cite{lcIntro}, where the constructors \texttt{bvar}, \texttt{app} and \texttt{lam} correspond to the rules for building terms in Lambda Calculus. The language structures that match each one of these constructors are given as follows:
 \begin{itemize}
-  \item \textbf{bvar} (bounded variable): variables bounded by a lambda or a quantifier, such as the second \texttt{n} in \mintinline{lean}{∀ (n : Natural), (n + zero) = n}. The \texttt{Nat} value they take as parameter is a natural number corresponding to their De Bruijn index~\cite{debruijnIndices}.
-  \item \textbf{fvar} (free variable): variables that appear in an expression which are not bound by a binder. There must be a declaration in context assigning a value for them.  The parameter of their constructor (\texttt{FVarId}) is an identifier for their declaration in the context. Unlike bounded variables, it is necessary to have access to the context to derive their type. The tactic \texttt{intros} we described before transforms bound variables into free variables on the goal.
+  \item \textbf{bvar} (bounded variable): variables bounded by a lambda or a quantifier, such as the second \texttt{n} in \mintinline{lean}{∀ (n : Natural), (n + zero) = n}. The \texttt{Nat} value they take as parameter is a natural number corresponding to its De Bruijn index~\cite{debruijnIndices}.
+  \item \textbf{fvar} (free variable): variables that appear in an expression which are not bound by a binder. There must be a declaration in context assigning a value for them.  The parameter of their constructor (\texttt{FVarId}) is an identifier for their declaration in the context. Unlike bound variables, it is necessary to have access to the context to derive their type. The tactic \texttt{intros} we described before transforms bound variables into free variables on the goal.
   \item \textbf{mvar} (metavariable): variables that have a type but were not assigned an expression corresponding to their value yet. Goals that were not closed yet, for instance, are represented as metavariables. The parameter of their constructor (\texttt{MVarId}) is also an identifier for them in the context.
   \item \textbf{const} (constant): A constant value, previously declared. The \texttt{Name} parameter in the constructor is the internal type that represents identifiers. The syntax \texttt{\textasciigrave ident} creates a value of type \texttt{Name} representing the identifier \texttt{ident}. For instance, in the \texttt{Natural} type we introduced, \texttt{zero} is represented as \texttt{const \textasciigrave zero}.
   \item \textbf{app} (function application): Usual function application, in the style of Lambda Calculus. \texttt{succ (succ zero)} is represented as \texttt{app (const \textasciigrave succ) (app (const \textasciigrave succ) (const \textasciigrave zero))}.
-  \item \textbf{lam} (lambda abstraction): Usual lambda abstraction. The parameters represent: the name of the binded variable (used for pretty printing the expression); the type of the binded variable; and the body of the lambda expression.
-  \item \textbf{forallE} (dependent arrow type): Used to represent types of functions. It also can express functions whose return type depend on the value it is given. This kind of type is also known as dependent arrows. The for all operator used before is a syntax sugar for a dependent arrow. For instance, \mintinline{lean}{∀ (n : Natural), (n + zero) = n} is the same as \mintinline{lean}{(n : Natural) -> n + zero = n}. The first parameter of the constructor is the name of the variable in the type of the domain of the function (\texttt{n} in our example), the second is its type (\texttt{Natural} in our example) and the third is the return type of the function (\texttt{n + zero = n}) in our example. The return type can refer to the value in the domain type as \texttt{bvar 0}.
+  \item \textbf{lam} (lambda abstraction): Usual lambda abstraction. The parameters represent: the name of the bound variable (used for pretty printing the expression); the type of the bound variable; and the body of the lambda expression.
+  \item \textbf{forallE} (dependent arrow type): Used to represent types of functions. It also can express functions whose return type depends on the value it is given. This kind of type is also known as dependent arrows. The forall operator used before is syntax sugar for a dependent arrow. For instance, \mintinline{lean}{∀ (n : Natural), (n + zero) = n} is the same as \mintinline{lean}{(n : Natural) -> n + zero = n}. The first parameter of the constructor is the name of the variable in the type of the domain of the function (\texttt{n} in our example), the second is its type (\texttt{Natural} in our example) and the third is the return type of the function (\texttt{n + zero = n}) in our example. The return type can refer to the value in the domain type as \texttt{bvar 0}.
 \end{itemize}
 
 The end goal of a tactic block is to produce an expression that matches the type required by the theorem. Hence, the process of developing tactics is fundamentally based on manipulating expressions.
@@ -155,7 +169,7 @@ Given a type \texttt{$\alpha$}, a value of type \texttt{IO $\alpha$} is a sequen
 filesystem or interacting with the standard input/output, where the last action must always produce a value of type \texttt{$\alpha$}. For instance,
 the function \texttt{IO.FS.readFile} has type \texttt{FilePath → IO String}. Given the path of a file in the system \texttt{fp}, the application \texttt{IO.FS.readFile fp} consists of a single action, which reads all the text in the file and produces a \texttt{String}, containing the whole text. Types with such capabilities are known as \textit{monadic types}. The restriction that the last action must always produce a value with the given underlying type is not particular to \texttt{IO}, it is a requirement for any monadic type
 
-This class of types is also equipped with what is known as \texttt{do}-notation. This is a way of extracting values from multiple values of the same monadic type and combine them. As an example, the following code read the contents of two files and produces the string corresponding to the concatenation of those contents:
+This class of types is also equipped with what is known as \texttt{do}-notation. This is a way of extracting values from multiple values of the same monadic type and combine them. As an example, the following code reads the contents of two files and produces the string corresponding to the concatenation of those contents:
 
 \begin{minted}{lean}
   def readAndConcatenate (fp1 fp2 : FilePath) : IO String := do
@@ -172,13 +186,13 @@ Values in the family of types constructed with \texttt{MetaM} are allowed to ins
 
 \begin{itemize}
   \item \textbf{assign}: it has type \texttt{MVarId → Expr → MetaM Unit} (\texttt{Unit} is a type inhabited by a single value, normally used to indicate that the function does not produce a meaningful value) and it is used to attempt to assign the provided \texttt{Expr} to the metavariable represented by the \texttt{MVarId} received, throwing an error if the kernel indicates that the type of the \texttt{Expr} does not match the required one
-  \item \textbf{inferType}: it has type \texttt{Expr → MetaM Expr} and, given an expression representing an well-typed term, it infers its type, returning the corresponding expression. If the input was ill-typed it throws an error.
+  \item \textbf{inferType}: it has type \texttt{Expr → MetaM Expr} and, given an expression representing a well-typed term, it infers its type, returning the corresponding expression. If the input was ill-typed, it throws an error.
 \end{itemize}
 
 \texttt{TacticM} is an extension of \texttt{MetaM}. This means that any operation that can be done in \texttt{MetaM} can also be done in \texttt{TacticM}. Furthermore, \texttt{TacticM} also grants access to the current goal and to Lean's elaborator, which can compile source code into a value of type \texttt{Expr}. These two side effects enable the implementation of the function \texttt{evalTactic}, which can apply any tactic in the current context. This function is very convenient for using existing tactics in the implementation of new ones.
 
 All tactics are functions of type \texttt{Syntax → TacticM Unit}, where \texttt{Syntax}
-his Lean's builtin type for representing source code. The \texttt{Syntax} received by
+is Lean's builtin type for representing source code. The \texttt{Syntax} received by
 a tactic matches exactly the code used to invoke it, and it is a responsibility of the
 tactic to check if this code follows the pattern that is expected.
 
