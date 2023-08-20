@@ -17,16 +17,16 @@ of our definitions that could potentially serve as a basis to lift
 any theory from MSFOL.\
 %
 The first step is to define a function to map values from the \texttt{term} type
-to the corresponding native value.
+that represents Booleans to the corresponding native value.
 
 While designing this function, we had a
-choice on which type from Lean we would use as a counterpart of \texttt{term}. The two
+choice on which type from Lean we would use as a counterpart of the Boolean terms. The two
 most suitable alternatives were the \texttt{Prop} and \texttt{Bool} types. The former, as
 previously explained, is the type used to model all propositions in the language, while
 the latter is the usual type of booleans inhabited by only two values: \texttt{true} and
 \texttt{false}. The \texttt{Bool} type has the advantage of potentially not requiring the
 \texttt{Classical} module, as it is possible to prove classical statements over them. On
-the other hand, propositions in Lean are generally stated in terms of \texttt{Prop}s.
+the other hand, Lean users write theorems in terms of \texttt{Prop}.
 Given that one of the
 end goals of our project is to serve as part of a Lean hammer, it is more appropriate
 to adopt the most commonly format used. With this in mind, we chose to use \texttt{Prop}.
@@ -42,8 +42,8 @@ represent this information as a function from \texttt{Nat} to
   def Interpretation := Nat -> Prop
 \end{minted}
 
-With this definition, we can define our evaluation function:
 
+\begin{figure}[t]
 \begin{minted}{lean}
   def evalTerm (I : Interpretation) (t : term) : Prop :=
     match t with
@@ -57,7 +57,11 @@ With this definition, we can define our evaluation function:
     | term.top           => True
     | _                  => False
 \end{minted}
+\caption{Evaluation function.}\label{evalTerm1}
+\end{figure}
 
+With this definition, we can define our evaluation function, which is presented in
+Figure~\ref{evalTerm1}.
 This function is matching each pattern for a \texttt{term} with the corresponding built-in operation over \texttt{Prop}, and using recursive calls of itself as arguments. If we find a \texttt{term} that is not in the fragment we are currently supporting we just return \texttt{False}. This could potentially lead to consistency issues if the input formula involved other fragments apart from Boolean. As we are limiting ourselves to this fragment, we will ignore this problem for now.
 
 Notice how the \texttt{Interpretation} type we introduced, as well as the evaluation function, match the notions of interpretation and evaluation introduced in Section~\ref{sec:msfolHere}. Indeed, we can now define what it means for an interpretation to satisfy a \texttt{term} and what it means to be unsatisfiable:
@@ -103,7 +107,7 @@ We have proved some of the theorems used in the boolean fragment\footnote{Our pr
 were straightforward using classical reasoning.
 
 Finally, we can state the theorem from Section~\ref{sec:gen-scripts} as
-\texttt{impliesIn notModusPonens bot}, and prove it using almost\footnote{while the original proof used the most general form of resolution, we have restricted ourselves to prove the specific version of resolution that was applied in this proof.} the same
+\texttt{impliesIn notModusPonens bot}, and prove it using almost\footnote{While the original proof used the most general form of resolution, we have restricted ourselves to prove the specific version of resolution that was applied in this proof.} the same
 (rephrased) rules in the same order, which already achieves the goal
 of checking the proof using Lean's kernel.
 
@@ -126,7 +130,7 @@ theorem modusPonensEqTrue: ∀ {I: Interpretation},
 \end{minted}
 
 Now we can define the theorem corresponding to \texttt{cvc5\_th0} using
-\texttt{Prop}s and prove it by applying \texttt{modusPonensEqTrue} to
+\texttt{Prop} and prove it by applying \texttt{modusPonensEqTrue} to
 the appropriate interpretation:
 
 \begin{minted}{lean}
@@ -136,7 +140,6 @@ theorem modusPonensCorrect: ∀ (P Q: Prop), (modusPonens P Q) = True := by
   intros P Q
   exact @modusPonensEqTrue (fun id => if id == 1000 then P else Q)
 \end{minted}
-
 where the symbol \texttt{@} is used to make explicit all parameters
 in the function after it. Using this interpretation, we indicate
 that the term \texttt{p} in \texttt{modusPonensEmbed}
@@ -211,10 +214,18 @@ to be rewritten as:
 
 We will also use a sigma type for defining the new version of \texttt{evalTerm}.
 %
-Since we are now supporting multiple types, we have to consider what to return
-when the input \texttt{term} is ill-typed. One possibility could be to map these
-terms to \texttt{False}, as we were doing with \texttt{term}s that were not supported
-in the previous version of \texttt{evalTerm}. However, this approach would introduce
+Since we are now supporting multiple types, we have to define what is the behavior
+of the function if the input \texttt{term} is ill-typed.
+We decided to use the \texttt{Option} type to prevent the function from returning
+a meaningful value in this case. The polymorphic \texttt{Option} type is
+used in Lean to
+indicate the possible absence of a value, which is represented by \texttt{none}, one of its
+constructors. The other constructor, \texttt{some}, receives, as a parameter, a single value
+of the type that is used as a parameter to \texttt{Option}.
+The alternative to this approach would be to map ill-typed
+terms to \texttt{False}, as we were doing with terms that were not supported
+in the previous version of \texttt{evalTerm}.
+However, this approach would introduce
 a logical inconsistency that would pose challenges to prove some of the rules.
 For instance, one rule used by cvc5 is the elimination of double negation:
 
@@ -224,23 +235,14 @@ For instance, one rule used by cvc5 is the elimination of double negation:
 \end{minted}
 
 In order to prove it, we have to consider every possible pattern for \texttt{t}.
-If \texttt{t} is not a valid boolean expression, then our evaluation function would
+If \texttt{t} is not a valid Boolean expression, then our evaluation function would
 return \texttt{False} for the term \texttt{not t}, which would then force the
-evaluation of \texttt{not (not t)} to return \texttt{True}. Since the premiss
+evaluation of \texttt{not (not t)} to return \texttt{True}. Since the premise
 is valid in this case, we would have to prove that the conclusion is also valid,
-but the conclusion is not a boolean expression. Therefore, the only way to prove it
-would be to change our predicate \texttt{satisfies} to accept terms that are not booleans.
+but the conclusion is not a Boolean expression.
 
-Instead of following this approach, we decided to change the evaluation function to just not return
-any value if the input term is ill-typed. The polymorphic \texttt{Option} type is used in Lean to
-indicate the possible absence of a value, which is represented by \texttt{none}, one of its
-constructors. The other constructor, \texttt{some}, receives, as a parameter, a single value
-of the type that is used as a parameter to \texttt{Option}.
-%
-The following snippet shows the reformulated version of \texttt{evalTerm}.
-We do not show the complete pattern matching for brevity, but all the other
-patterns are implemented using the same structure:
 
+\begin{figure}[t]
 \begin{minted}{lean}
   def evalTerm (I : Interpretation) (t : term) :
       Option (@Sigma sort interpSort) :=
@@ -255,23 +257,32 @@ patterns are implemented using the same structure:
       | _,_ => none
     | _ => none
 \end{minted}
+\caption{Reformulated evaluation function.}\label{evalTerm2}
+\end{figure}
 
+The snippet in Figure~\ref{evalTerm2} shows the reformulated version of \texttt{evalTerm}.
+We do not show the complete pattern matching for brevity, but all the other
+patterns are implemented using the same structure.
 We have also reformulated our \texttt{satisfies} predicate, in a way that
-it also rejects any term whose evaluation is not a \texttt{Prop}:
+it also rejects any term whose evaluation is not a \texttt{Prop}. This is shown
+in Figure~\ref{satisfiesPred}.
 
+\begin{figure}[t]
 \begin{minted}{lean}
   def satisfies (I : Interpretation) (t : term) : Prop :=
     match evalTerm I t with
     | some ⟨ boolSort, p ⟩ => p = True
     | _ => False
 \end{minted}
+\caption{Reformulated satisfies predicate.}\label{satisfiesPred}
+\end{figure}
 
-The predicate \texttt{impliesIn} did not require any modification. With these
+The predicate \texttt{impliesIn} does not require any modification. With these
 rephrased definitions we could define and prove new versions of
 the theorems regarding the boolean fragment, certifying the validity of the
 cvc5 rules over the reformulated version of our framework.
 
-The next step we took was to try to state and prove theorems corresponding to the
+The next step is to try to state and prove theorems corresponding to the
 axioms from the theory of equality and uninterpreted functions, which
 was presented in Section~\ref{sec:euf}. Consider the \texttt{refl} axiom:
 
