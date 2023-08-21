@@ -157,7 +157,7 @@ Therefore, we have shown how to lift the proofs produced by cvc5 into proofs
 that refer directly to native Lean terms. In order to fully automate this
 process, one has to extend cvc5's module for printing proofs. It would
 have to also print, for a given query, the theorem (and its proof, which is always
-\texttt{notFollowsBot cvc5\_th0}) corresponding to \texttt{modusPonensEqTrue} for that query,
+\texttt{notImpliesInBot cvc5\_th0}) corresponding to \texttt{modusPonensEqTrue} for that query,
 the representation of the query as a Lean term (which in this example was the term \texttt{modusPonens})
 and the theorem that proves that the representation of the query is correct by instantiating the interpretation
 properly (corresponding to \texttt{modusPonensCorrect}).
