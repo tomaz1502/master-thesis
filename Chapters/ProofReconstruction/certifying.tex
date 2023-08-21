@@ -49,9 +49,9 @@ reasoning. Instead of mapping those rules to tactics, we just proved them as the
 Those theorems will not be presented here. For a complete overview of the rules, their statement and whether they were implemented with a tactic or a
 theorem, refer to Table~\ref{tab:rules}.
 
-\subsection{Boolean}
+\section{Boolean}
 
-\subsubsection*{GroupClausePrefix\\Rule Statement:}
+\subsection*{GroupClausePrefix\\Rule Statement:}
 \[
   \infer[]{(P_{1} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}}
     {P_{1} \vee \cdots \vee P_{n} \mid i}
@@ -168,7 +168,7 @@ verify that it is, indeed, the one we described:
 
 \tom{proof term size is $\mathcal{O}(i^{2})$. Maybe say a few words about this?}
 
-\subsubsection*{Pull\\Rule Statement:}
+\subsection*{Pull\\Rule Statement:}
 \[
   \infer[]{P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n}  \mid i, s}
 \]
@@ -218,7 +218,7 @@ point of view of the SMT solver. Therefore, for the example we just described, i
 \texttt{pull pf, 4, 4} to indicate that it wants a proof for $(D \vee E) \vee A \vee B \vee C$ and
 \texttt{pull pf, 4, 5} to indicate that it wants a proof for $E \vee A \vee B \vee C \vee D$.
 
-\subsubsection*{PermutateClause\\Rule Statement:}
+\subsection*{PermutateClause\\Rule Statement:}
 \[
   \infer[]{P_{perm(1)} \vee \cdots \vee P_{perm(n)}}{P_{1} \vee \cdots \vee P_{n} \mid perm, s}
 \]
@@ -256,7 +256,7 @@ challenging task, the implementation of the tactic was notably compact and uncom
 than 60 lines (excluding the source code of \texttt{pull}).
 
 
-\subsubsection*{Resolution\\Rule Statement:}
+\subsection*{Resolution\\Rule Statement:}
 \[
   \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A, s_{1}, s_{2}}
 \]
@@ -328,7 +328,7 @@ of the last propositions in each clause.
     R2 h₁, h₂, A, [0, 2]
 \end{minted}
 
-\subsubsection*{Factor\\Rule Statement:}
+\subsection*{Factor\\Rule Statement:}
 \[
   \infer[]{removeDuplicates(P_{1} \vee \cdots \vee P_{n})}{P_{1} \vee \cdots \vee P_{n} \mid s}
 \]
@@ -414,9 +414,9 @@ The following snippet shows an application of this tactic:
        factor h, 5
 \end{minted}
 
-\subsection{Linear Arithmetic}
+\section{Linear Arithmetic}
 
-\subsubsection*{SumBounds\\Rule Statement:}
+\subsection*{SumBounds\\Rule Statement:}
 \[
   \infer[]{\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}}{\bigwedge_{i = 1}^{n} a_{i} \bowtie_{i} b_{i}}
 \]
@@ -512,7 +512,7 @@ following three theorems, depending on the relation symbol:
 
 where \texttt{Rat.ofInt} is the standard function to cast an integer into a rational.
 
-\subsubsection*{MulPosNeg\\Rule Statement:}
+\subsection*{MulPosNeg\\Rule Statement:}
 % \[
 %   \infer[]{}{}
 % \]

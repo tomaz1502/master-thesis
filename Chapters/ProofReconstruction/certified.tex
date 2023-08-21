@@ -1,7 +1,3 @@
-Given this framework for encoding MSFOL in Lean, we show how to
-modify its architecture so that the validity of the rules can be
-checked by the kernel using the certified transformations approach.
-
 \subsection{The Boolean Fragment}
 
 Initially, we will limit ourselves to the fragment of MSFOL that
@@ -9,24 +5,24 @@ deals with Boolean values\footnote{The Boolean fragment of the
 \emph{Core} theory in SMT-Lib, as defined in
 \url{http://smtlib.cs.uiowa.edu/theories-Core.shtml}}. Once
 we show how to lift this fragment, we will present a generalization
-of our definitions that could potentially serve as a basis to lift
-any theory from MSFOL.\
+of our definitions that is able to lift any theory from MSFOL.
 %
 The first step is to define a function to map values from the \texttt{term} type
 that represents Booleans to the corresponding native value.
 
-While designing this function, we had a
-choice on which type from Lean we would use as a counterpart of the Boolean terms. The two
-most suitable alternatives were the \texttt{Prop} and \texttt{Bool} types. The former, as
+While designing this function, one has a
+choice regarding which type from Lean to use as a counterpart of the Boolean terms. The two
+most suitable alternatives are the \texttt{Prop} and \texttt{Bool} types. The former, as
 previously explained, is the type used to model all propositions in the language, while
 the latter is the usual type of booleans inhabited by only two values: \texttt{true} and
-\texttt{false}. The \texttt{Bool} type has the advantage of potentially not requiring the
-\texttt{Classical} module, as it is possible to prove classical statements over them. On
-the other hand, Lean users write theorems in terms of \texttt{Prop}.
-Given that one of the
-end goals of our project is to serve as part of a Lean hammer, it is more appropriate
-to adopt the most commonly format used. With this in mind, we chose to use \texttt{Prop}.
-
+\texttt{false}. While \texttt{Bool} has a simpler structure and potentially would not
+require the \texttt{Classical} module (since it is possible to prove classical statements over Booleans),
+the extension to other theories will require, necessarily, the usage of \texttt{Prop}. For instance,
+consider the equality operator from MSFOL.\ Its applications will be mapped to applications of an equality operator
+in Lean. If we map MSFOL's Booleans to \texttt{Bool}, we have to map these applications to the
+Boolean equality, which is only defined over certain types. It is not possible
+to apply Boolean equality over functions, for instance. On the other hand, the equality
+defined over \texttt{Prop} is more general, in a way that is possible to apply it to any type.
 
 Note that the term we will evaluate can contain free variables. For those, we will need an auxiliary interpretation function assigning concrete values to them.
 Free variables are
@@ -35,7 +31,7 @@ represent this information as a function from \texttt{Nat} to
 \texttt{Prop}:
 
 \begin{minted}{lean}
-  def Interpretation := Nat -> Prop
+  def Interpretation := Nat → Prop
 \end{minted}
 
 
@@ -47,7 +43,7 @@ represent this information as a function from \texttt{Nat} to
     | term.not     t1    => Not (evalTerm I t1)
     | term.and     t1 t2 => And (evalTerm I t1) (evalTerm I t2)
     | term.or      t1 t2 => Or (evalTerm I t1) (evalTerm I t2)
-    | term.implies t1 t2 => (evalTerm I t1) -> (evalTerm I t2)
+    | term.implies t1 t2 => (evalTerm I t1) → (evalTerm I t2)
     | term.eq      t1 t2 => (evalTerm I t1) = (evalTerm I t2)
     | term.bot           => False
     | term.top           => True
@@ -58,7 +54,7 @@ represent this information as a function from \texttt{Nat} to
 
 With this definition, we can define our evaluation function, which is presented in
 Figure~\ref{evalTerm1}.
-This function is matching each pattern for a \texttt{term} with the corresponding built-in operation over \texttt{Prop}, and using recursive calls of itself as arguments. If we find a \texttt{term} that is not in the fragment we are currently supporting we just return \texttt{False}. This could potentially lead to consistency issues if the input formula involved other fragments apart from Boolean. As we are limiting ourselves to this fragment, we will ignore this problem for now.
+This function is matching each pattern for a \texttt{term} with the corresponding built-in operation over \texttt{Prop}, and using recursive calls of itself as arguments. If we find a \texttt{term} that is not in the fragment we are currently supporting we just return \texttt{False}. This could potentially lead to consistency issues if the input formula involved other fragments apart from Boolean. As we are limiting ourselves to this fragment, we will ignore this problem.
 
 Notice how the \texttt{Interpretation} type we introduced, as well as the evaluation function, match the notions of interpretation and evaluation introduced in Section~\ref{sec:msfolHere}. Indeed, we can now define what it means for an interpretation to satisfy a \texttt{term} and what it means to be unsatisfiable:
 
@@ -81,16 +77,16 @@ relationship in Lean:
 \begin{minted}{lean}
   def impliesIn (t1 t2 : term) : Prop :=
     ∀ (I : Interpretation),
-      satisfies I t1 -> satisfies I t2
+      satisfies I t1 → satisfies I t2
 \end{minted}
 
 Notice that we needed to use the same interpretation for both terms.
 %
-The application \texttt{impliesIn t1 t2} gives a precise meaning to \texttt{thHolds t1 -> thHolds t2} in terms of the logic used by Lean.
+The application \texttt{impliesIn t1 t2} gives a precise meaning to \texttt{thHolds t1 → thHolds t2} in terms of the logic used by Lean.
 
-Since we are interested in proving the unsatisfiability of terms, we will always try to prove a goal of the form \texttt{impliesIn t bot}, for some term \texttt{t}. This would imply that for any interpretation \texttt{I}, we have \texttt{(evalTerm I t = True) -> False}, provided that there is no environment that validates the interpretation of \texttt{bot}. Note that this is equivalent to \texttt{unsatisfiable t}, given our previous definition of \texttt{unsatisfiable}.
-With the above we can rephrase and prove the rules from the deep embedding using
-\texttt{impliesIn}.
+Since we are interested in proving the unsatisfiability of terms, we will always try to prove a goal of the form \texttt{impliesIn t bot}, for some term \texttt{t}. This would imply that for any interpretation \texttt{I}, we have \texttt{(evalTerm I t = True) → False}, provided that there is no environment that validates the interpretation of \texttt{bot}. Note that this is equivalent to \texttt{unsatisfiable t}, given our previous definition of \texttt{unsatisfiable}.
+With the above we can rephrase the rules from the deep embedding using
+\texttt{impliesIn}, making it possible to prove them.
 %
 For instance, the representation of \texttt{notImplies1} show in Section~\ref{sec:gen-scripts} becomes:
 
@@ -99,19 +95,32 @@ For instance, the representation of \texttt{notImplies1} show in Section~\ref{se
       impliesIn (not (implies t1 t2)) t1
 \end{minted}
 
-We have proved some of the theorems used in the boolean fragment\footnote{Our proofs can be found at \url{https://github.com/tomaz1502/signatures/blob/smallCheckers/Cdclt/Lift/Other/PropsExample.lean}.}. Their proofs
-were straightforward using classical reasoning.
+By proving the theorems corresponding to all the rules regarding Boolean terms, one can have a
+complete coverage of proofs produced by cvc5 (regarding the Boolean fragment of MSFOL) in Lean.
+Notice that, while some proofs are straightforward using case analysis (the one for
+\texttt{notImplies1}, for instance),
+some of the proofs can be quite challenging, like the one regarding the general
+case of Resolution. We present proofs for some of the rules at\footnote{\url{https://github.com/tomaz1502/lean-smt/blob/main/Smt/Reconstruction/Certified/BooleanFragment/PropsExample.lean}}.
 
 Finally, we can state the theorem from Section~\ref{sec:gen-scripts} as
-\texttt{impliesIn notModusPonens bot}, and prove it using almost\footnote{While the original proof used the most general form of resolution, we have restricted ourselves to prove the specific version of resolution that was applied in this proof.} the same
-(rephrased) rules in the same order, which already achieves the goal
-of checking the proof using Lean's kernel.
+\texttt{impliesIn notModusPonens bot}, and prove it using the same
+(rephrased) rules in the same order. With all those rules proved,
+one can ask Lean's kernel to verify the proof, achieving the goal
+of checking proofs from cvc5 in Lean. Notice that we have to trust
+that cvc5 correctly printed the \texttt{term} corresponding to
+the conjecture it is trying to prove. However, if there was an error
+in the implementation of the printer that led it to incorrectly
+print a term, it is very likely that the proof printed would not
+correspond to the printed term, which would be indicated by Lean.
+Therefore, the fact that Lean accepted
+one of these proofs is a strong evidence that the term was printed
+correctly.
 
-In order to apply the generated proof in terms native to the ITP, we need
+In order to apply the generated proof in values native to the ITP, we need
 to prove the following auxiliary theorem:
 
 \begin{minted}{lean}
-  theorem notFollowsBot : ∀ {t : term},
+  theorem notImpliesInBot : ∀ {t : term},
     impliesIn (not t) bot → ∀ {I : Interpretation}, evalTerm I t = True
 \end{minted}
 
@@ -122,7 +131,7 @@ to \texttt{True}:
 \begin{minted}{lean}
 theorem modusPonensEqTrue: ∀ {I: Interpretation},
     evalTerm I modusPonensEmbed = True :=
-  notFollowsBot cvc5_th0
+  notImpliesInBot cvc5_th0
 \end{minted}
 
 Now we can define the theorem corresponding to \texttt{cvc5\_th0} using
@@ -146,13 +155,12 @@ match its return value with \texttt{modusPonens P Q}, thus proving the theorem.
 
 Therefore, we have shown how to lift the proofs produced by cvc5 into proofs
 that refer directly to native Lean terms. In order to fully automate this
-process, we would have to extend cvc5's module for printing proofs. It would
+process, one has to extend cvc5's module for printing proofs. It would
 have to also print, for a given query, the theorem (and its proof, which is always
 \texttt{notFollowsBot cvc5\_th0}) corresponding to \texttt{modusPonensEqTrue} for that query,
 the representation of the query as a Lean term (which in this example was the term \texttt{modusPonens})
 and the theorem that proves that the representation of the query is correct by instantiating the interpretation
 properly (corresponding to \texttt{modusPonensCorrect}).
-Since we changed our approach, this extension was not realized.
 
 \subsection{Supporting Other Theories}
 
@@ -161,32 +169,36 @@ as well as the \texttt{Interpretation} type we defined, to be able to return val
 of multiple distinct types. One type safe way to achieve this in a language with
 dependent types is through a \textit{sigma type}. A sigma type is a pair, in which
 the type of the second element depends on the value of the first element. If
-\texttt{T} is a type and \texttt{U} is a constructor with type
-\texttt{T -> Type}, then \texttt{@Sigma T U} is the type
+\texttt{T} is a type and \texttt{U} is a type constructor whose parameter
+is a value of type \texttt{T},
+then \texttt{@Sigma T U} is the type
 of pairs \texttt{⟨t, u⟩} such that \texttt{t} has type \texttt{T} and
 \texttt{u} has type \texttt{U t}. Note that the first parameter of \texttt{Sigma}
 can be inferred from the second, so it is given implicitly.
 
 Let us define a function \texttt{evalSort} that maps the type \texttt{sort}
 (corresponding to MSFOL's sorts in the deep embedding) to native Lean types
-(which are represented by \texttt{Type}):
+(which are represented by \texttt{Type}). Such function is shown in Figure~\ref{impEvalSort}.
+We match the \texttt{arrow} sort with the arrow type used to build the type of
+functions, \texttt{boolSort} with \texttt{Prop} and \texttt{intSort} with \texttt{Int}.
+For giving support for further theories we have to extend this match statement,
+matching the corresponding \texttt{sort} with a suitable type.
+If the end goal is to be a hammer, in addition to choosing a type that shares the
+same properties with the sort, it is crucial to choose a type that is most commonly
+employed by Lean users, since the proofs produced by the ATP will have their
+statements expressed in terms of these types.
 
+\begin{figure}[t]
 \begin{minted}{lean}
-  def evalSort : sort -> Type := fun s =>
+  def evalSort : sort → Type := fun s =>
     match s with
-    | arrow s1 s2 => evalSort s1 -> evalSort s2
+    | arrow s1 s2 => evalSort s1 → evalSort s2
     | boolSort => Prop
     | intSort => Int
     | _ => Prop
 \end{minted}
-
-We have matched the \texttt{arrow} sort with the arrow type used to build the type of
-functions, \texttt{boolSort} with \texttt{Prop} and \texttt{intSort} with \texttt{Int}.
-For giving support for further theories we have to extend this match statement,
-matching the corresponding \texttt{sort} with a suitable type. Since one of the goals
-of the project is to be a hammer, it is crucial to choose, for a given sort,
-a corresponding type that is most commonly employed by Lean users, and also
-has the same properties as the sort.
+\caption{Implementation of evalSort.}\label{impEvalSort}
+\end{figure}
 
 Now we can reformulate the \texttt{Interpretation} type, in a way that
 it supports any type that is also supported by \texttt{evalSort}:
@@ -212,11 +224,11 @@ We will also use a sigma type for defining the new version of \texttt{evalTerm}.
 %
 Since we are now supporting multiple types, we have to define what is the behavior
 of the function if the input \texttt{term} is ill-typed.
-We decided to use the \texttt{Option} type to prevent the function from returning
-a meaningful value in this case. The polymorphic \texttt{Option} type is
-used in Lean to
-indicate the possible absence of a value, which is represented by \texttt{none}, one of its
-constructors. The other constructor, \texttt{some}, receives, as a parameter, a single value
+The most suitable choice is to prevent the function from returning
+a meaningless value, using, for instance, the \texttt{Option} type. The polymorphic
+\texttt{Option} type is used in Lean to indicate the possible absence of a value,
+which is represented by \texttt{none}, one of its constructors. The other
+constructor, \texttt{some}, receives, as a parameter, a single value
 of the type that is used as a parameter to \texttt{Option}.
 The alternative to this approach would be to map ill-typed
 terms to \texttt{False}, as we were doing with terms that were not supported
@@ -256,12 +268,6 @@ but the conclusion is not a Boolean expression.
 \caption{Reformulated evaluation function.}\label{evalTerm2}
 \end{figure}
 
-The snippet in Figure~\ref{evalTerm2} shows the reformulated version of \texttt{evalTerm}.
-We do not show the complete pattern matching for brevity, but all the other
-patterns are implemented using the same structure.
-We have also reformulated our \texttt{satisfies} predicate, in a way that
-it also rejects any term whose evaluation is not a \texttt{Prop}. This is shown
-in Figure~\ref{satisfiesPred}.
 
 \begin{figure}[t]
 \begin{minted}{lean}
@@ -273,22 +279,30 @@ in Figure~\ref{satisfiesPred}.
 \caption{Reformulated satisfies predicate.}\label{satisfiesPred}
 \end{figure}
 
-The predicate \texttt{impliesIn} does not require any modification. With these
-rephrased definitions we could define and prove new versions of
-the theorems regarding the boolean fragment, certifying the validity of the
-cvc5 rules over the reformulated version of our framework.
+The snippet in Figure~\ref{evalTerm2} shows the reformulated version of \texttt{evalTerm}.
+We do not show the complete pattern matching for brevity, but all the other
+patterns are implemented using the same structure.
+We have also reformulated our \texttt{satisfies} predicate, in a way that
+it also rejects any term whose evaluation is not a \texttt{Prop}. This is shown
+in Figure~\ref{satisfiesPred}. The predicate \texttt{impliesIn} does not require
+any modification. With these new definitions, one can prove the corresponding
+rules from any theory supported by cvc5 to enable the reconstruction of
+proofs from that theory in Lean.
+%\tom{it would be nicer to have an example of proof from EUF here, but I think there is no time}
 
-The next step is to try to state and prove theorems corresponding to the
-axioms from the theory of equality and uninterpreted functions, which
-was presented in Section~\ref{sec:euf}. Consider the \texttt{refl} axiom:
+\newpage
+
+\section{Downsides of this approach}\label{sec:downsides}
+
+Consider the \texttt{refl} rule:
 
 \begin{minted}{lean}
   theorem refl : ∀ {I : Interpretation} {t : term}, satisfies I (eq t t)
 \end{minted}
 
-If \texttt{t} is ill-typed, then the statement does not hold. This was not
-a problem before because all previous axioms were implications in which
-the term in the conclusion was a subexpression of the premiss. Therefore,
+If \texttt{t} is ill-typed, then this statement does not hold. This is not
+a problem for the other theorems we have shown since all of them were implications in
+which the term in the conclusion was a subexpression of the premise. Therefore,
 if the conclusion was ill-typed, the premiss was also, necessarily, ill-typed,
 which made the implication true. In the case of \texttt{refl} and of
 any other possible theorems that do not have premisses, we have to restrict it
@@ -300,8 +314,13 @@ This new function is essentially identical to
 \texttt{evalTerm}, except that it only computes the first element of the pair.
 Also, since the sort of a term is independent of the interpretation we use
 to evaluate it, we do not need an interpretation as a parameter in this function.
-Now we can make the statement in the theorem \texttt{refl} true by adding the hypothesis
-\texttt{isSome (inferSort t) = true}, where \texttt{isSome} is:
+Now we can rephrase the statement in the theorem \texttt{refl} to make it true:
+
+\begin{minted}{lean}
+  theorem refl' : ∀ {I : Interpretation} {t : term},
+    isSome (inferSort t) = true → satisfies I (eq t t)
+\end{minted}
+where \texttt{isSome} is:
 
 \begin{minted}{lean}
   def isSome (opt : Option sort) : Bool :=
@@ -316,15 +335,16 @@ If it is, indeed, well-typed (which will always be the case as long
 as there is no bug in the SMT solver), then Lean's kernel can evaluate
 both functions \texttt{inferSort} and \texttt{isSome} and obtain \texttt{true},
 and the proof that the term is well-typed follows by reflexivity. Deriving facts
-from the evaluation of functions is a proof technique known as \textit{proof by reflection}.
+from the evaluation of functions is a proof technique known as \textit{proof by reflection}~\cite{reflProof}.
 This kind of proof transfer the cost of \textit{checking} the proofs to a cost of
 normalizing terms. Unfortunately, as pointed out by~\cite{ringLean}, Lean's evaluator
-is not optimized for performance, therefore, the necessity of proving that certain term are
-well-typed would probably reduce the efficiency of our tool.
+is not optimized for normalizing terms, therefore, the necessity of proving that
+certain term are well-typed would imply in a reduction of the performance of
+tools built using this technique.
 
 Another downside of this approach is the necessity of providing explicit proofs for the most
-general case of all rules. Some of the rules, such as resolution and
-\textit{factor} (which takes as premiss a clause and have as a conclusion the same clause, removing
+general case of all rules. As pointed out before, some of the rules, such as resolution and
+\textit{factor} (which takes as premise a clause and have as a conclusion the same clause, removing
 all formulas that are duplicated) appear to lack any proofs that are not highly challenging to derive.
 This difficulty is also recognized in~\cite[p. 6]{snipe}:
 \begin{quote}
@@ -332,8 +352,8 @@ This difficulty is also recognized in~\cite[p. 6]{snipe}:
   terms of CIC and even for a simple transformation, the proof of soundess is hard (thousands lines of code).''
 \end{quote}
 
-As we will see later, the second approach does not require to build all the proofs \textit{explicitly}.
-For those reasons, we decided to change our approach.
+As we will see in the next chapter, there exist at least one approach that do not require to prove the rules \textit{explicitly}.
+
 
 % According to~\cite[6]{snipe},
 
