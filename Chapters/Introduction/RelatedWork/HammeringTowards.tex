@@ -45,11 +45,14 @@ In this case, the proof steps are reconstructed and checked in the ITP on the
 fly each time the hammer is invoked. Since there is no theorem stating the
 correctness of them, it is possible that this process fails.
 On the other hand,
-this technique skips computations over embedded terms, which have to be done by the
+this technique skips computations over embedded terms which have to be done by the
 certified approach, granting it the potential to have a better
 performance~\cite{ringLean}. It also diminishes the complexity of the tool, as there is no need to
 define an intermediate representation inside the ITP.\
 
-In this project we will be using the second approach. We give more details about this
-decision in Chapter~\ref{chap:rcons}. The next two sections describe examples of hammers.
+We present implementations of the certified and certifying approaches in Lean
+in Chapters~\ref{chap:certified} and~\ref{chap:rcons}, respectively. For reasons
+we will explain in the later chapters, our main focus is on the certifying approach.
+
+The next two sections describe examples of hammers.
 Both of these works exhibit similarities to our research, therefore, it is useful to reference them here.
