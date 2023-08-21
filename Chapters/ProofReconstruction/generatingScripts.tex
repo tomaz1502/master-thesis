@@ -33,7 +33,7 @@ The encoding of this proof into Lean requires representing the terms that appear
 in it, i.e.\ the formulas built with $p$ and $q$, as well as the rules.
 %
 This encoding uses a \emph{deep embedding} of the proof calculus of cvc5 into
-Lean\footnote{The code is available at \url{https://github.com/tomaz1502/signatures/blob/smallCheckers/Cdclt/Lift/Other/PropsExample.lean}}.
+Lean.
 %
 It provides a \texttt{term} type that models terms and formulas from MSFOL. This type has
 a \texttt{const} constructor for defining symbols, parameterized with an
