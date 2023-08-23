@@ -509,10 +509,13 @@ The following snippet shows an application of this tactic:
 
 \begin{minted}{lean}
   theorem factor1 :
-      A ∨ B ∨ (E ∨ F) ∨ A ∨ B ∨ (E ∨ F) → A ∨ B ∨ (E ∨ F) :=
+      A ∨ B ∨ (E ∨ F) ∨ B ∨ A ∨ (E ∨ F) → A ∨ B ∨ (E ∨ F) :=
     by intro h
        factor h, 5
 \end{minted}
+
+Here, the tactic was used to eliminate the second occurrences of \texttt{A}, \texttt{B} and
+\texttt{(E ∨ F)} at the hypothesis \texttt{h}.
 
 \section{Linear Arithmetic Reasoning}
 
