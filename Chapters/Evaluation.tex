@@ -1,15 +1,22 @@
+We refrain from comparing its performance to other similar tools (such as
+SMTCoq and sledgehammer) due to the difficulty of fairly evaluating
+the results. This difficulty comes from the deep differences between the ITPs'
+implementation. Isabelle, for instance, runs on a language that use
+garbage collection, which would heavily impact the efficiency of
+sledgehammer.
 
-We evaluate our tool for proof reconstruction performance and coverage. We use the commit
+We evaluate our tool for proof reconstruction coverage.
+We use the commit
 \tom{insert commit here} of cvc5 to generating Lean proofs from the
 problems in the SMT-Lib benchmark library\footnote{\url{https://smtlib.cs.uiowa.edu/benchmarks.shtml}} whose
-logic we support, with a 600s timeout. The cvc5 solver produced 6102
+logic we support, with a 1800s timeout. The cvc5 solver produced 6102
 proofs. We have only considered proofs whose size is smaller than
 1mb, which is a total of 877 proofs. From our experience, proofs that are
 bigger than this take too much time to be elaborated and reconstructed,
 given the current state of our tool.
 All experiments were run on a server
 equipped with 16 processors Intel(R) Xeon(R) CPU E5-2637 v4 3.50GHz and
-62.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic.
+62.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic, with 8GB of memory for each job.
 
 We have written a Lean script for reconstructing the proofs\footnote{\url{https://github.com/tomaz1502/process_lean_smt/blob/main/Main.lean}}. Using the binary that is produced when the script is compiled, one can reconstruct the proofs without installing Lean.
 It just requires that all the object files from our library (and from its dependencies) are in the same folder as the proof that is being reconstructed.
@@ -26,20 +33,26 @@ failed for the following reasons:
   \item 182 failed due to a mismatch in the application of some function. These could be either an issue in cvc5's printer or an error in the implementation of the tactics.
   \item 125 failed due some tactic exceeding Lean's resources.
   \item 105 failed due cvc5 assuming that Lean's \texttt{Ne} operator is $n$-ary, while it is binary.
-  \item 11 failed since the tactics \texttt{arithMulPos} and \texttt{arithMulNeg} currently do not suppport mixing of integers and rations between its parameters \texttt{l} and \texttt{r}.
+  \item 11 failed since the tactics \texttt{arithMulPos} and \texttt{arithMulNeg} currently do not suppport mixing of integers and rations between its parameters \texttt{l} and \texttt{r}. These errors are solved if cvc5 prints these steps casting all the integers to rationals.
   \item 1 failed due to cvc5 not printing the \texttt{factor} tactic correctly in a specific case.
   \item 22 failed for exceeding the limit of time.
   \item 154 failed for exceeding the limit of memory.
   \item 1 failed for producing a stack overflow.
 \end{itemize}
 
+Therefore, our tool failed in 302 proofs due to performance issues, and
+possibly in some subset of the 182 described in the first bullet due to
+implementation errors. These informations indicate to us that our main
+focus should be on improving the efficiency of our tool. As we will
+show in Chapter~\ref{chap:future}, we have promising ideas to improve
+the performance of the reconstruction process.
 
 
 \begin{table}[t]
-\centering
+% \centering
 \begin{tabular}{ l l l l l l l l l }
 \toprule
-theory & total & valid & invalid & timeout & memout & error  & time\_cpu &  memory \\ \midrule
+Theory & Total & Valid & Invalid & Timeout & Memout & Error  & Time &  Memory \\ \midrule
 QF\_LIA & 236 & 30 & 161 & 0 & 45 & 0 & 68088.8 & 1262055.6 \\ \midrule
 QF\_LRA & 205 & 91 & 110 & 4 & 0 & 0 & 16998.6 & 98538.6 \\ \midrule
 QF\_UF & 300 & 64 & 117 & 9 & 109 & 1 & 51072.6 & 1030329.4 \\ \midrule
@@ -48,6 +61,8 @@ QF\_UFLRA & 31 & 29 & 2 & 0 & 0 & 0 & 1696.0 & 4108.3 \\ \bottomrule
 \end{tabular}
 \caption{Total proof-checking success, fails and time per theory.}\label{bench}
 \end{table}
+
+
 
 \tom{what is the unit in time\_cpu and memory?} \\
 \tom{the numbers on the items sums to 601, but they should sum to 586}
