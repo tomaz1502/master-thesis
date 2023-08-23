@@ -656,14 +656,14 @@ we present two tactics for multiplying an inequality between \texttt{l} and \tex
 by \texttt{m}. The parameter \texttt{id} is used to indicate what is the inequality
 between \texttt{l} and \texttt{r} in question (lesser than, lesser or equal, greater than, or greater or equal). It is necessary since the rule\footnote{Its documentation can be found at \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule14ARITH\_MULT\_POSE}} corresponding to this tactic does not receive the proof of the inequality
 as a premise, instead, it produces an implication from such an inequality to its
-scaled version. The first tactic assumes that \texttt{m} is positive. Its precise
+scaled version. The first tactic, \texttt{arithMulPos}, assumes that \texttt{m} is positive. Its precise
 statement is the following:
 
 \[
 \infer[]{(m > 0 \wedge l \bowtie_{id} r) \rightarrow m \cdot l \bowtie_{id} m \cdot r}{- \mid m, l, r, id}
 \]
 
-The second tactic assumes that \texttt{m} is negative. Its precise statement is the following:
+The second tactic, \texttt{arithMulNeg}, assumes that \texttt{m} is negative. Its precise statement is the following:
 
 \[
 \infer[]{(m < 0 \wedge l \bowtie_{id} r) \rightarrow m \cdot l \bowtie_{inv(id)} m \cdot r}{- \mid m, l, r, id}
@@ -679,6 +679,34 @@ easy to be proved.
 
 \subsection{Tightening bounds}
 
+Given an integer \texttt{i}, a numeric variable \texttt{q} and a proof of a strict inequality
+between \texttt{i} and \texttt{q}, the pair of tactics \texttt{tightLb} and \texttt{tightUb} produce proofs of a tighter relation
+between \texttt{i} and \texttt{q}. More specifically, the following is the precise
+statement of \texttt{tightLb} and \texttt{tightUb}, respectively:
+
+\[
+\infer[]{i \le \lceil q \rceil - 1}{i < q \mid i, q}
+\]
+
+
+\[
+\infer[]{i \ge \lfloor q \rfloor + 1}{i > q \mid i, q}
+\]
+
+Once again, this tactic could be just a theorem, except that cvc5 can apply it either
+with variables from both Real and Int sorts as the parameter \texttt{q}. The logic
+of this tactic consists of checking what is the type of \texttt{q} and applying the
+appropriate theorem.
+
+Unlike the previous theorems, this one was not easy to prove. In fact, when we were
+developing this tactic, the implementation of the \textit{ceil} and \textit{floor}
+functions we were using (from the package \textit{std}) contained errors\footnote{The pull request that fixed the errors is the following: \url{https://github.com/leanprover/std4/pull/80}}. We defined and used our own
+versions of these functions to proved the theorems, and, when the version of
+the library was fixed, we substituted our version by it.
+Our original proofs had over 150 lines each, which was a
+consequence of the fact that there were almost no theorems in mathlib about these
+functions. Once more theorems were added to the library, we could reduce each proof
+to 15 lines.
 
 \section{Equality reasoning}
 
