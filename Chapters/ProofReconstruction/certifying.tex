@@ -520,7 +520,14 @@ challenging task, the implementations of the tactics are not too complicated (th
 in particular, consists of fewer than 60 lines). This goes to show the flexibility we obtain by not requiring
 that all rules are proved before hand.
 
-\section{Linear Arithmetic Reasoning}
+\section{Linear Arithmetic reasoning}
+
+In this section we present three tactics regarding Linear Arithmetic reasoning.
+The first two, \texttt{sumBounds} and \texttt{arithMulPos}/\texttt{arithMulNeg},
+are used to derive false by combining the inequalities in the problem scaled by
+the Farkas' coefficients, as we explained in Section~\ref{sec:liaCert}.
+The third one, \texttt{tightBounds}, is a fact assumed during the process of
+solving formulas involving integers.
 
 \subsection{Summing lists of inequalities}
 
@@ -533,8 +540,9 @@ all terms in the premisses are strict inequalities and $\le$ otherwise. Its prec
   \infer[]{\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}}{\bigwedge_{i = 1}^{n} a_{i} \bowtie_{i} b_{i}}
 \]
 
-\paragraph{Representing Int and Real.} Each one of the variables $a_{i}$ and $b_{i}$ might be represented inside the SMT solver
-with either the \textit{Int} or the \textit{Real} sort. While each pair $a_{i}$ and $b_{i}$ always share the same sort, it is possible that some of these pairs have a sort different from the rest. Before implementing a
+\paragraph{Representing Int and Real.} Each one of the variables $a_{i}$ and $b_{i}$ might
+have sort either \textit{Int} or \textit{Real}.
+While each pair $a_{i}$ and $b_{i}$ always share the same sort, it is possible that some of these pairs have a sort different from the rest. Before implementing a
 tactic corresponding to this rule, we have to choose types in Lean to match
 these two sorts. We have based our decision on the types used by mathlib, as
 individuals formalizing new mathematical statements in this library are one of the main potential users
@@ -552,7 +560,7 @@ to manage in comparison to the one for \texttt{Real}.
 The implementation of this tactic will require 9 variations of the following theorem:
 
 \begin{minted}{lean}
-  sumBounds {α : Type} [LinearOrderedRing α] {a b c d : α} :
+  sumBoundsThm {α : Type} [LinearOrderedRing α] {a b c d : α} :
     a < b → c < d → a + c < b + d
 \end{minted}
 
@@ -561,8 +569,8 @@ they can be either $<$, $\le$ or $=$. The relation symbol in the
 conclusion is adapted accordingly in each theorem. Since the rule accepts mixing of variables
 from Int and Real sort, we need a variation of each one of those 9 theorems for each combination
 of the types of the variables. Instead of stating all the combinations explicitly, which would
-result in a total of 36 theorems and a long branch in the implementation of the core functionality of the tactic,
-we stated only one polymorphic version of each, as indicated by the type parameter \texttt{α} in \texttt{sumBounds}.
+result in a total of 36 theorems and a long branch in the implementation of the tactic,
+we stated only one polymorphic version of each, as indicated by the type parameter \texttt{α} in \texttt{sumBoundsThm}.
 Obviously, the theorem does not hold
 for any \texttt{α} (it cannot even be stated if there is no comparison and addition operators defined over \texttt{α}).
 We solve this issue by adding a restriction, stating that \texttt{α} satisfies the axioms of a
@@ -576,49 +584,71 @@ could find a proof for each theorem.
     let t₂ ← inferType pf₂
     let rel₁ ← getRel t₁
     let rel₂ ← getRel t₂
-    let tp₁ ← getOperandType t₁
-    let tp₂ ← getOperandType t₂
-    let (pf₁, pf₂) ← castHypothesis pf₁ pf₂ rel₁ rel₂ tp₁ tp₂
+    let opType₁ ← getOperandType t₁
+    let opType₂ ← getOperandType t₂
+    let (pf₁', pf₂') ← castHypothesis pf₁ pf₂ rel₁ rel₂ opType₁ opType₂
     let thmName : Name :=
       match rel₁, rel₂ with
-      | `LT.lt , `LT.lt => `sumBounds₁
-      | `LT.lt , `LE.le => `sumBounds₂
+      | `LT.lt , `LT.lt => `sumBoundsThm₁
+      | `LT.lt , `LE.le => `sumBoundsThm₂
       | _      , _      => panic! "[sumBounds]: invalid relation"
-    mkAppM thmName #[pf₂, pf₁]
+    mkAppM thmName #[pf₂', pf₁']
 
   def sumBoundsCore (acc : Expr) (pfs : List Expr) : MetaM Expr :=
     match pfs with
     | [] => return acc
-    | pf :: pfs' => do
+    | pf' :: pfs' => do
       let acc' ← combineBounds acc pf'
       sumBoundsCore acc' pfs'
 \end{minted}
-\caption{Implementation of the SumBounds tactic}
+\caption{Implementation of the \texttt{sumBounds} tactic}\label{sumBoundsTac}
 \end{figure}
 
-To implement this tactic, we apply the theorems for summing bounds in each element
-of the list of proofs received, accumulating the results. We start the accumulator
-with the last
+The idea we employed to develop this tactic is the following: we set the last
+proof in the input as an accumulator. Then, we iterate through the rest of the proofs
+in reverse order. For each proof we go through, we produce a new term, adding the
+inequality represented by this proof with the one in the accumulator. This is done
+through one of the \texttt{sumBoundsThm} theorems. We must do it in reverse order
+because addition is right-associative in Lean by default, and we can preserve
+obtain a term in which all additions are associating to the right by iterating
+in reverse order and always adding the new terms to the left of the inequality
+represented by the accumulator.
 
-After proving the necessary theorems, we can implement the tactic in the following manner:
-we process the proofs received as arguments in reverse order, maintaining a variable \texttt{pf}
-that accumulates the combined result of all the proofs processed so far, which is initialized
-with the last proof in our list. For each proof we go through, we obtain the statement it corresponds to
-with \texttt{inferType} and analyze its relation symbol and the relation symbol associated with the
-current type of \texttt{pf}. With these two informations we decide which of the variants of the theorem
-\texttt{sumBounds} we can apply in this two proofs. Also, we need to check what are the types of the
-variables in these proofs to properly instantiate \texttt{α}. If one of them is \texttt{Rat} and the
-other is \texttt{Int}, we also have to cast the inequality between integers into
-an inequality between the same terms, casted to rationals, since the \texttt{sumBounds} theorems expect all variables to have the same type. This is done using one of the
-following three theorems, depending on the relation symbol:
+
+Figure~\ref{sumBoundsTac} shows our implementation of this idea. The function
+\texttt{sumBoundsCore} is supposed to be invoked with the last proof in the input
+as \texttt{acc} and the rest of them, in reverse order, as \texttt{pfs}.
+If \texttt{pfs} is empty, we just return our accumulator (line 18). Otherwise, we
+invoke our function \texttt{combineBounds} to sum the inequalities represented
+by \texttt{acc} and \texttt{pf'} (line 20) and recursively call \texttt{sumBoundsCore},
+updating the arguments (line 21). The first action performed in function \texttt{combineBounds} is to obtain the inequalities corresponding to \texttt{pf₁} and
+\texttt{pf₂} through \texttt{inferType}. Then, in lines 4 to 7, it inspects their structure and
+obtain their relation symbol (\texttt{rel₁} and \texttt{rel₂}) and the type of their
+operands (\texttt{opType₁} and \texttt{opType₂}). Notice that \texttt{sumBoundsThm}
+expects that all the four variables have the same type. If one of the input proofs
+represents an inequality over integers and the other is over rationals, we
+have to lift the inequality between integers into an inequality between rationals.
+This is done using one of the following theorems, depending on the relation symbol:
 
 \begin{itemize}
-  \item \mintinline{lean}{Int.castEQ : ∀ {a b : Int}, a < b → Rat.ofInt a < Rat.ofInt b}
+  \item \mintinline{lean}{Int.castLT : ∀ {a b : Int}, a < b → Rat.ofInt a < Rat.ofInt b}
   \item \mintinline{lean}{Int.castLE : ∀ {a b : Int}, a ≤ b → Rat.ofInt a ≤ Rat.ofInt b}
-  \item \mintinline{lean}{Int.castLT : ∀ {a b : Int}, a = b → Rat.ofInt a = Rat.ofInt b}
+  \item \mintinline{lean}{Int.castEQ : ∀ {a b : Int}, a = b → Rat.ofInt a = Rat.ofInt b}
 \end{itemize}
-
 where \texttt{Rat.ofInt} is the standard function to cast an integer into a rational.
+The function \texttt{castHypothesis} (line 8) does this analysis and, if necessary,
+applies one of these theorems to \texttt{pf₁} or \texttt{pf₂}.
+Once we have the correct version of the proofs, we can apply one of the versions of
+\texttt{sumBoundsThm}, depending on \texttt{rel₁} and \texttt{rel₂}. The \texttt{match}
+statement in lines 10 to 13 chooses which version to apply. We only show two cases
+for brevity. The backtick is used to transform a literal into a value of the built-in type
+\texttt{Name}, that is employed by Lean to represent identifiers. Finally, in line 14, we apply the
+chosen theorem to \texttt{pf₂'} and \texttt{pf₁'}. We have to invert the order here to compensate the fact that we are using these proofs in reverse order, compared to
+the order they came in the input. The function \texttt{mkAppM} is a built-in function
+from the metaprogramming framework, which tries to infer the implicit arguments for a
+given function application. In this case, it succeeds, since they can be inferred
+from the type of \texttt{pf₁'} and \texttt{pf₂'}.
+
 
 \subsection{MulPosNeg\\Rule Statement:}
 % \[
