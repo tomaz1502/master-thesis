@@ -532,7 +532,7 @@ solving formulas involving integers.
 \subsection{Summing lists of inequalities}
 
 Given a list of $n$ proofs of statements following one of the patterns $a_{i} < b_{i}$, $a_{i} \le b_{i}$ or $a_{i} = b_{i}$,
-the tactic \texttt{sumBounds}
+the tactic \texttt{sumBounds}\footnote{The documentation for the corresponding cvc5 rule can be found at \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule12ARITH\_SUM\_UBE}}
 produces a proof of the inequality $\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}$, where $\bowtie^{*}$ is $<$ if
 all terms in the premisses are strict inequalities and $\le$ otherwise. Its precise statement is the following:
 
@@ -649,16 +649,40 @@ from the metaprogramming framework, which tries to infer the implicit arguments 
 given function application. In this case, it succeeds, since they can be inferred
 from the type of \texttt{pf₁'} and \texttt{pf₂'}.
 
+\subsection{Scaling inequalities}
 
-\subsection{MulPosNeg\\Rule Statement:}
-% \[
-%   \infer[]{}{}
-% \]
+Given the variables \texttt{m}, \texttt{l} and \texttt{r} and an index \texttt{id},
+we present two tactics for multiplying an inequality between \texttt{l} and \texttt{r}
+by \texttt{m}. The parameter \texttt{id} is used to indicate what is the inequality
+between \texttt{l} and \texttt{r} in question (lesser than, lesser or equal, greater than, or greater or equal). It is necessary since the rule\footnote{Its documentation can be found at \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule14ARITH\_MULT\_POSE}} corresponding to this tactic does not receive the proof of the inequality
+as a premise, instead, it produces an implication from such an inequality to its
+scaled version. The first tactic assumes that \texttt{m} is positive. Its precise
+statement is the following:
 
-% \subsection{TightBounds}
+\[
+\infer[]{(m > 0 \wedge l \bowtie_{id} r) \rightarrow m \cdot l \bowtie_{id} m \cdot r}{- \mid m, l, r, id}
+\]
+
+The second tactic assumes that \texttt{m} is negative. Its precise statement is the following:
+
+\[
+\infer[]{(m < 0 \wedge l \bowtie_{id} r) \rightarrow m \cdot l \bowtie_{inv(id)} m \cdot r}{- \mid m, l, r, id}
+\]
+where $\bowtie_{inv(id)}$ is $>$ if $\bowtie_{id}$ is $<$, $\ge$ if $\bowtie_{id}$ is $\le$ and so on.
+
+We could have just proved a theorem for this rule if every variable had the
+same type, but this is not the case. Each one of them (\texttt{m}, \texttt{l} and \texttt{r}) can be either an \texttt{Int} or a \texttt{Rat}. This tactic inspects
+the type of each one of the variables and apply one of the eight corresponding theorems,
+accordingly, in a manner similar to \texttt{sumBounds}. All these theorems are
+easy to be proved.
 
 
-% TODO: put this in an appendix
+\subsection{Tightening bounds}
+
+
+\section{Equality reasoning}
+
+
 \begin{table}[]\label{tab:rules}
 \centering
 \begin{tabular}{ l l l }
