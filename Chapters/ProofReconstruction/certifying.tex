@@ -217,7 +217,7 @@ verify that it is, indeed, the one we described:
 \end{minted}
 % \tom{proof term size is $\mathcal{O}(i^{2})$. Maybe say a few words about this?}
 
-\subsection*{Moving terms inside clauses}
+\subsection{Moving terms inside clauses}
 
 Given a proof \texttt{pf} of the validity of a clause and an index \texttt{i} of a proposition to be moved, the \texttt{pull} tactic should produce a proof term for the same clause,
 with $i$-th term moved to the first position. This tactic also facilitates the implementation
@@ -281,7 +281,7 @@ building block for proofs in Propositional Logic. The other two, \textit{factor}
 \textit{permutateClause}, are used to justify implicit steps that SAT solvers
 perform while solving formulas through resolution.
 
-\subsection*{Reordering clauses}
+\subsection{Reordering clauses}
 
 Given the proof \texttt{pf} of a clause, a permutation \texttt{perm} and the index \texttt{s} of the last
 proposition in the clause, the application \texttt{permutateClause pf, perm, s} provides a proof for the same clause, with
@@ -350,7 +350,7 @@ challenging task, the complete implementation of the tactic was notably compact 
 than 60 lines (excluding the source code of \texttt{pull}).
 
 
-\subsection*{Resolution}
+\subsection{Resolution}
 
 Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ}, a proposition \texttt{A}
 (also known as the \textit{pivot}) such that
@@ -423,7 +423,7 @@ of the last propositions in each clause.
     R2 h₁, h₂, A, [0, 2]
 \end{minted}
 
-\subsection*{Removing duplicates}
+\subsection{Removing duplicates}
 
 Given a proof \texttt{pf} of a clause and the index \texttt{s} of the last proposition in the clause,
 the \textit{factor} tactic produces a proof of the same clause, with all duplicated literals of it removed. The precise statement of this rule is the following:
@@ -519,7 +519,7 @@ Here, the tactic was used to eliminate the second occurrences of \texttt{A}, \te
 
 \section{Linear Arithmetic Reasoning}
 
-\subsection*{Summing Lists of Inequalities\\Rule Statement:}
+\subsection{Summing Lists of Inequalities\\Rule Statement:}
 \[
   \infer[]{\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}}{\bigwedge_{i = 1}^{n} a_{i} \bowtie_{i} b_{i}}
 \]
@@ -615,7 +615,7 @@ following three theorems, depending on the relation symbol:
 
 where \texttt{Rat.ofInt} is the standard function to cast an integer into a rational.
 
-\subsection*{MulPosNeg\\Rule Statement:}
+\subsection{MulPosNeg\\Rule Statement:}
 % \[
 %   \infer[]{}{}
 % \]
