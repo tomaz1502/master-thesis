@@ -1,72 +1,119 @@
-The second approach is based on an idea known as certifying
-transformations, which consists of generating proofs on demand
-and checking them every time the tool is invoked.
+In this chapter we describe our main contribution, which is a module
+for lifting the scripts presented in Section~\ref{sec:gen-scripts} into
+Lean proofs, based on the certifying transformations approach.
 %
 The specific manner in which we applied
 this concept in our context was to develop a set of tactics matching
 the rules present in cvc5's proof calculus.
-A cvc5 proof is now represented by a sequence of applications of those tactics.
-When we ask Lean's kernel to check the proof script, it will execute one by one
-of the tactics. Each one of them will inspect the current context
-and produce a proof term, corresponding to a proof of a specific
+A cvc5 proof is then a sequence of applications of those tactics.
+When we ask Lean's kernel to check the proof script, it will execute the tactics
+one by one. Each one of them inspects the current context
+and produces a proof term corresponding to a proof of a specific
 case of the rule represented by that tactic.
-The checker will then verify the correctness of each proof, closing the original goal if
-all checks were succesful.
+The checker then verifies the correctness of each proof, closing the original goal only
+if all checks were succesful.
 
-Originally, we implemented all of our tactics using various features from
-\texttt{TacticM}.
-In this initial iteration, we built the \texttt{Syntax} representation of a proof for the targeted rule and then invoked \texttt{evalTactic} using this representation.
-However, later on, we identified a potential enhancement (which will be described in Chapter~\ref{chap:future}, as it was not completely executed yet) that led us to reimplement the
-core functionality of all our tactics exclusively within the \texttt{MetaM} monad. This
-second implementation was successfully executed.
-Since the \texttt{MetaM} monad do not have access to Lean's elaborator, we could not represent proofs using
-\texttt{Syntax} anymore. Instead, we had to manually craft the \texttt{Expr} that proved each theorem.
+There are two options for implementing these tactics: the first one is to generate
+a value of type \texttt{Syntax} (that is, a piece of Lean's code) that proves
+the theorem in question and invoke \texttt{evalTactic} using this value;
+the second option is to craft an \texttt{Expr} that corresponds to a value
+of the appropriate type. In general,
+it is simpler to generate \texttt{Syntax}, as the elaborator will fill in
+some details for us, such as the implicit arguments for functions. On the
+other hand, we can skip calls to the elaborator if we produce an \texttt{Expr}
+instead, which will potentially lead to a gain in performance. With this in mind,
+we decided to employ the second option.
+
 
 Another important difference from the certified transformations approach is that we do not use the \texttt{term}
 type anymore. The main reason for mapping MSFOL formulas to this inductive type
-instead of native Lean expressions was the flexibility achieved by this representation.
+instead of native Lean expressions is the flexibility achieved by this representation.
 While it is straightforward to define a function that inspects and manipulates the structure of
 a \texttt{term} by pattern matching, there is no way to do the same for certain Lean types (\texttt{Prop}, for
 instance) without recurring to metaprogramming. As we have shown in Section~\ref{sec:metaLean},
 the metaprogramming context grants us access to the internal representation of any expression
 through the \texttt{Expr} type, which can be inspected and manipulated in the same way
 as \texttt{term}. Since the framework for writing tactics is based on metaprogramming, we
-did not need to rely on the flexibility of the \texttt{term} type anymore. Therefore, we
+do not need to rely on the flexibility of the \texttt{term} type. Therefore, we
 have decided to not use the deep embedding anymore, and translate MSFOL formulas directly
 to Lean expressions.
 
-In the rest of this section we will give an overview of the implementation of each tactic.
-We present their statement with the same format used in cvc5's documentation\footnote{The documentation of cvc5's rules can be found at:
+The snippet in Figure~\ref{notModusPonens2} shows an example of proof in the new format.
+It corresponds to the proof that cvc5 produces to the SMT-Lib query presented
+in Figure~\ref{negModusPonens}. A considerable portion of the rules (including
+every rule regarding CNF transformation) can be easily proved using classical
+reasoning. Instead of mapping such rules to tactics, we just proved them as theorems.
+Those theorems will not be presented here. For a complete overview of the rules, their
+statement and whether they were implemented with a tactic or a
+theorem, refer to Table~\ref{tab:rules}.
+All the rules present in the proof in Figure~\ref{notModusPonens2} were mapped to
+theorems except for resolution (line 8), which was mapped to a tactic that we will
+present.
+
+
+\begin{figure}[t]
+\begin{minted}[linenos]{lean}
+  theorem cvc5_th0 {P Q : Prop} : (Not (P → ((P → Q) → Q))) → False :=
+    fun lean_a0 : (Not (P → ((P → Q) → Q))) => by
+      have lean_s0 : (Not ((P → Q) → Q)) := notImplies2 lean_a0
+      have lean_s1 : (P → Q)             := notImplies1 lean_s0
+      have lean_s2 : (Or (Not P) Q)      := impliesElim lean_s1
+      have lean_s3 : P                   := notImplies1 lean_a0
+      have lean_s4 : Q                   :=
+        by R2 lean_s2, lean_s3, P, [1, 0]
+      have lean_s5 : (Not ((P → Q) → Q)) := notImplies2 lean_a0
+      have lean_s6 : (Not Q)             := notImplies2 lean_s5
+      exact (show False from contradiction lean_s4 lean_s6)
+\end{minted}
+\caption{Proof script using certifying transformations.}\label{notModusPonens2}
+\end{figure}
+
+\paragraph{Representation of clauses.} Internally, clauses are represented by cvc5 as
+a lists of terms. A list of terms can correspond to many distinct
+clauses, depending on how you parenthesize them. Implicitly, cvc5 is using the
+fact that disjunction is associative, which implies that all these clauses
+are equivalent, therefore they do not need to be differentiated inside the calculus.
+When these lists of terms are sent to Lean, we are forced to chose a way to parenthesize
+those terms and build our proofs taking into account this format.
+We chose to parenthesize them in a right-associative way.
+Therefore, if cvc5 is
+representing some clause as the list $[t_{1}, t_{2}, t_{3}, t_{4}]$ we will represent it in Lean as
+\texttt{t₁' ∨ (t₂' ∨ (t₃' ∨ t₄'))}, where \texttt{tᵢ'} is the representation of $t_{i}$.
+Since the built-in operator \texttt{∨} is right-associative, we can omit the
+parenthesis. Throughout the implementation of the tactics, we always assume
+that a clause that is received as premise comes parenthesized in this way,
+and every clause that is proved by a tactic also has this format.
+
+In the rest of this chapter we will give an overview of the implementation of some of the
+tactics. We present their statements with the same format used in cvc5's
+documentation\footnote{The documentation of cvc5's rules can be found at:
   \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html}}, that is,
-for a tactic that has a conclusion $\psi$, premisses $\psi_{1} \cdots \psi_{n}$ and
-parameters $t_{1} \cdots t_{n}$, we will write:
+for a tactic that has a conclusion $\psi$, premisses $\psi_{1}, \cdots, \psi_{n}$ and
+parameters $t_{1}, \cdots, t_{n}$, we write:
 \[
   \infer[]{\psi}{\psi_{1}, \cdots, \psi_{n} \mid t_{1}, \cdots, t_{n}}
 \]
 
-Notice that a large portion of the rules can be trivially proved using classical
-reasoning. Instead of mapping those rules to tactics, we just proved them as theorems.
-Those theorems will not be presented here. For a complete overview of the rules, their statement and whether they were implemented with a tactic or a
-theorem, refer to Table~\ref{tab:rules}.
+\section{Auxiliary Tactics}
 
-\section{Boolean}
+This first class of tactics does not correspond to cvc5's rules. They were implemented
+to facilitate the implementation of the main tactics.
 
-\subsection*{GroupClausePrefix\\Rule Statement:}
+
+
+\subsection{Parenthesizing prefixes of clauses}
+
+Given a number \texttt{i} and a proof \texttt{pf}
+of the validity of a clause, the application \texttt{groupClausePrefix pf, i} proves the same clause, with the
+first $i$ propositions parenthesized. The disjunction of the first $i$ propositions is a single element of the output clause.  The precise statement of this rule
+is the following:
+
 \[
   \infer[]{(P_{1} \vee \cdots \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}}
     {P_{1} \vee \cdots \vee P_{n} \mid i}
 \]
 
-The first tactic we will present does not correspond to a rule from cvc5's proof
-calculus. Instead, it is a custom tactic we created to facilitate the implementation
-of the others.
-
-The operator $\vee$ in Lean is right-associative. This means that an expression of the form
-$P_{1} \vee P_{2} \vee \cdots \vee P_{n}$ is internally represented as
-$P_{1} \vee (P_{2} \vee (\cdots \vee P_{n}))$.
-Given a natural number \texttt{i} and a proof \texttt{pf}
-of the validity of a clause, \texttt{groupClausePrefix pf, i} proves the same clause, with the
-first \texttt{i} propositions grouped. This tactic employs the following two theorems:
+This tactic employs the following two theorems, which were easily proven:
 
 \begin{itemize}
   \item \mintinline{lean}{orAssoc {A B C : Prop} : A ∨ B ∨ C → (A ∨ B) ∨ C}
@@ -86,23 +133,23 @@ first \texttt{i} propositions grouped. This tactic employs the following two the
 % \texttt{hyp} instantiated to \texttt{orAssoc}, which yields a proof of the correct
 % statement. Therefore, we can change the goal to $P_{1} \vee P_{2} \vee (P_{3} \vee \cdots \vee P_{i}) \vee \cdots \vee P_{n}$ with \texttt{apply (congOrLeft orAssoc)}.
 
-First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. We will instantiate, in \texttt{orAssoc}, the parameter \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee P_{n}$, obtaining the term:
+First, let's build a proof term for $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. We instantiate, in \texttt{orAssoc}, the parameter \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee P_{n}$, obtaining the term:
 
 \begin{center}
     $f_{1}: P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
 \end{center}
 
-Then, we apply \texttt{congOrLeft} to $f_{1}$ instantiating \texttt{C} to $P_{i - 2}$, which will produce:
+Then, we apply \texttt{congOrLeft} to $f_{1}$ instantiating \texttt{C} to $P_{i - 2}$, which produces:
 
 \begin{center}
     $f_{2}: P_{i - 2} \vee P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n}   \rightarrow P_{i - 2} \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n} $
 \end{center}
 
-We repeat this process until we get the term $f_{i - 1}$ of type $P_{1} \vee \cdots \vee P_{n} \rightarrow P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Applying $f_{i - 1}$ to our original hypothesis \texttt{h} will yield a term \texttt{h'} with type $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
+We repeat this process until we get the term $f_{i - 1}$ of type $P_{1} \vee \cdots \vee P_{n} \rightarrow P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Applying $f_{i - 1}$ to the original hypothesis \texttt{h} yields a term \texttt{h'} with type $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
 
-A clause is composed by any kind of propositions, including other clauses.
+A clause is composed by any kind of propositions, including disjunctions.
 Therefore, the term $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$ is a new clause
-with $n - 1$ propositions, in which the $(i - 1)$-th proposition is the clause
+with $n - 1$ propositions, in which the $(i - 1)$-th proposition is the disjunction
 $P_{i - 1} \vee P_{i}$. This means that our original problem can be reduced to
 group the first $i - 1$ terms of this clause.
 With this in mind, we repeat the process of composing \texttt{congOrLeft} with
@@ -127,7 +174,7 @@ def groupPrefixCore (pf : Expr) (i : Nat) : MetaM Expr := do
 \caption{Implementation of the tactic GroupClausePrefix}\label{groupClause}
 \end{figure}
 
-The snippet in Figure~\ref{groupClause} was taken from the project's source code and shows the
+The snippet in Figure~\ref{groupClause} and shows the
 implementation of the core functionality of this tactic.
 The parameters \texttt{pf} and \texttt{i} of the function \texttt{groupPrefixCore}
 represent, respectively, the proof of the validity of the original clause
@@ -136,22 +183,25 @@ an \texttt{Expr} corresponding to the original clause by inspecting the type
 of \texttt{pf}, with the built-in routine \texttt{inferType}. Then, in line 3,
 we use the function \texttt{collectPropsInClause} (defined by us) to
 extract a \texttt{List} with each one of the propositions in the clause.
-Next, we check if the prefix length is valid. If it is, we apply the function
+Next, we check if the prefix length is valid. If it is, we apply our function
 \texttt{groupPrefixLemmas} to obtain a list of expressions. Each element in this list
 is a composition of \texttt{congOrLeft} and \texttt{orAssoc} described before.
-Notice that we cannot rely on implicit parameters in the \texttt{Expr} level, so
-this function also computes the implicit arguments that have to be
+One important difficulty in the implementation of this function is that implicit parameters cannot always be automatically computed in the \texttt{Expr} level, so
+this function also computes some of the implicit arguments that have to be
 passed to \texttt{congOrLeft} and \texttt{orAssoc}. Lean has a built-in
-functionality to automatically infer some of those arguments, but a significant
-part of them have to be manually constructed. Finally, we use \texttt{foldl}
+functionality to automatically infer part of those arguments, but a significant
+amount of them have to be manually constructed.
+Finally, we use \texttt{foldl}
 in line 7 to apply each one of the lemmas to \texttt{pf}, accumulating the results.
 
-In order to use \texttt{groupPrefixCore} as a tactic, we also had to implement
+In order to use \texttt{groupPrefixCore} as a tactic, we implement
 a function of type \texttt{Syntax → TacticM Unit}, which parses the \texttt{Syntax}
 to obtain \texttt{pf} and \texttt{i} and use the \texttt{Expr} generated by
 \texttt{groupPrefixCore} to close the current goal.
 
 The following snippet shows an example of usage of this tactic:
+
+\newpage
 
 \begin{minted}{lean}
   theorem group3 : A ∨ B ∨ C ∨ D ∨ E → (A ∨ B ∨ C) ∨ D ∨ E := by
@@ -165,17 +215,21 @@ verify that it is, indeed, the one we described:
 \begin{minted}{lean}
   #print group3 -- fun {A B C D E} h => orAssoc (congOrLeft orAssoc h)
 \end{minted}
+% \tom{proof term size is $\mathcal{O}(i^{2})$. Maybe say a few words about this?}
 
-\tom{proof term size is $\mathcal{O}(i^{2})$. Maybe say a few words about this?}
+\subsection*{Moving terms inside clauses}
 
-\subsection*{Pull\\Rule Statement:}
+Given a proof \texttt{pf} of the validity of a clause and an index \texttt{i} of a proposition to be moved, the \texttt{pull} tactic should produce a proof term for the same clause,
+with $i$-th term moved to the first position. This tactic also facilitates the implementation
+of the other tactics and does not exist in cvc5's proof calculus. The precise
+statement of this rule is the following:
+
 \[
   \infer[]{P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}}{P_{1} \vee \cdots \vee P_{n}  \mid i, s}
 \]
 
-Given a proof \texttt{pf} of the validity of a clause and an index \texttt{i} of a proposition to be moved, this tactic should produce a proof term for the same clause,
-with $P_{i}$ moved to the first position. This tactic was also created to facilitate the implementation
-of the other tactics and does not exist in cvc5's proof calculus. We will need three new theorems to implement \textit{pull}:
+
+We need three theorems to implement \texttt{pull}, which are easy to prove:
 
 \begin{itemize}
   \item \mintinline{lean}{orComm {A B C : Prop} : A ∨ B → B ∨ A}
@@ -183,7 +237,7 @@ of the other tactics and does not exist in cvc5's proof calculus. We will need t
   \item \mintinline{lean}{orAssocConv {A B C : Prop} : (A ∨ B) ∨ C → A ∨ B ∨ C}
 \end{itemize}
 
-To build the required proof term, let's first apply our tactic \texttt{groupClausePrefix} at \texttt{pf}, grouping the prefix of length \texttt{i - 1}.
+To build the required proof term, let's first apply our tactic \texttt{groupClausePrefix} at \texttt{pf}, grouping the prefix of length $i - 1$.
 We cannot use the tactic itself, as we are working on the context of \texttt{MetaM}, but we can invoke directly the function \texttt{groupPrefixCore}
 to produce the required term. We will obtain the following term:
 
@@ -191,7 +245,7 @@ to produce the required term. We will obtain the following term:
   $pf_{1} : (P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i} \vee \cdots \vee P_{n}$
 \end{center}
 
-Then, we use again our function \texttt{groupPrefixCore} in \texttt{pf₁}, grouping the prefix of length 2. This will provide the term:
+Then, we use again our function \texttt{groupPrefixCore} in \texttt{pf₁}, grouping the prefix of length 2. This provides the term:
 
 \begin{center}
   $pf_{2} : ((P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i}) \vee P_{i + 1} \vee \cdots \vee P_{n}$
@@ -202,11 +256,12 @@ this application flips the position of $P_{1} \vee \cdots \vee P_{i - 1}$ and $P
 Therefore, \texttt{pf₃} has type $(P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}) \vee P_{i + 1} \vee \cdots \vee P_{n}$ (we do not need to parenthesize
 $P_{1} \vee \cdots \vee P_{i - 1}$ as $\vee$ is right-associative). Finally we use another tactic we implemented, \texttt{ungroupClausePrefix},
 to remove the parenthesis around $P_{i} \vee P_{1} \vee \cdots \vee P_{i - 1}$, concluding our goal.
-This tactic is very similar to \texttt{groupClausePrefix}. The
+This tactic is similar to \texttt{groupClausePrefix}. The
 difference is that it substitutes the theorem \texttt{orAssoc} by \texttt{orAssocConv} and it applies the theorems in reverse order, i.e.\ it
 starts with an application of \texttt{orAssocConv}, then it applies \texttt{congOrLeft orAssocConv} and so on.
 
-One source of ambiguity that we have to take into account here is the representation of the clauses.
+\paragraph{Disambiguating clauses.} The difference between the representation of
+clauses in cvc5 and in Lean leads to an ambiguity in applications of this tactic.
 While there is no distinction in Lean between, for instance, the clauses $A \vee B \vee C \vee D \vee E$
 and $A \vee B \vee C \vee (D \vee E)$, this distinction can be made inside the SMT solver. Indeed, if
 we have a term \texttt{pf} in Lean of type $A \vee B \vee C \vee D \vee E$ and cvc5 prints the tactic
@@ -218,17 +273,28 @@ point of view of the SMT solver. Therefore, for the example we just described, i
 \texttt{pull pf, 4, 4} to indicate that it wants a proof for $(D \vee E) \vee A \vee B \vee C$ and
 \texttt{pull pf, 4, 5} to indicate that it wants a proof for $E \vee A \vee B \vee C \vee D$.
 
-\subsection*{PermutateClause\\Rule Statement:}
+\section{Boolean reasoning}
+
+We now present the tactics regarding Boolean reasoning. One of them corresponds to
+the resolution rule, which as we have shown in Section~\ref{sec:pcBool}, is the main
+building block for proofs in Propositional Logic. The other two, \textit{factor} and
+\textit{permutateClause}, are used to justify implicit steps that SAT solvers
+perform while solving formulas through resolution.
+
+\subsection*{Reordering clauses}
+
+Given the proof \texttt{pf} of a clause, a permutation \texttt{perm} and the index \texttt{s} of the last
+proposition in the clause, the application \texttt{permutateClause pf, perm, s} provides a proof for the same clause, with
+the propositions permutated according to \texttt{perm}.
+This is the first tactic that matches a rule used by cvc5\footnote{The documentation of this rule can be found at \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule10REORDERINGE}}. The precise statement
+of this rule is the following:
+
 \[
   \infer[]{P_{perm(1)} \vee \cdots \vee P_{perm(n)}}{P_{1} \vee \cdots \vee P_{n} \mid perm, s}
 \]
 
-Given the proof \texttt{pf} of a clause, a permutation \texttt{perm} and the index \texttt{s} of the last
-proposition in the clause, \texttt{permutateClause pf, perm, s} provides a proof for the same clause, with
-the propositions permutated according to \texttt{p}. This is the first tactic that matches a rule used by
-cvc5.
 
-Since we have an working implementation of \texttt{pull}, we can write a tactic matching
+Since we have \texttt{pull}, we can write a tactic matching
 this rule using a relatively straightforward approach. We simply iterate through the permutation in
 reverse order, and, for each index \texttt{i} we go through, we run the \texttt{pull} tactic
 with \texttt{i} as the argument. With this strategy, the last term we will bring to the first position is
@@ -240,7 +306,35 @@ we can conclude that each one of them will be placed in the right position. Noti
 the last proposition does \textit{not} change during this process, so we can always use \texttt{s} as the argument
 required by \texttt{pull}.
 
-\tom{I am wondering whether I put here the code of the core functionality of this tactic, like I did for groupClause}
+\begin{figure}[t]
+\begin{minted}[linenos]{lean}
+  def pullProps (props : List Expr) (acc : Expr) (s : Nat) :
+      MetaM Expr :=
+    match props with
+      | [] => return acc
+      | e::es => do
+          let pulled ← pullCore e acc s
+          pullProps es pulled s
+
+  def permutateClauseCore (pf : Expr) (perm : List Nat)
+      (s : Nat) : MetaM Expr := do
+    let clause : Expr     ← inferType pf
+    let props : List Expr ← collectPropsInClause' clause s
+    let permutatedProps   := permutateList props (List.reverse perm)
+    pullProps permutatedProps pf s
+\end{minted}
+\caption{Implementation of the tactic permutateClause.}\label{permClauseImp}
+\end{figure}
+
+The code in Figure~\ref{permClauseImp} shows our implementation of this tactic.
+The main function is \texttt{permutateClauseCore}. It starts by obtaining a list of
+\texttt{Expr} corresponding to the terms in the clause using \texttt{inferType}
+and \texttt{collectPropsInClause} (lines 11 and 12), in the same manner as
+\texttt{groupPrefixCore}. Next, in line 13, it permutates this list according
+to the reverse of the input permutation. Finally, in line 14, it invokes
+\texttt{pullProps} with the permutated list, \texttt{pf} and \texttt{s}.
+This auxiliary method traverses the input list, applying \texttt{pull} to
+each \texttt{Expr} it encounters, accumulating the result.
 
 The following snippet shows an example of usage of this tactic:
 
@@ -251,25 +345,26 @@ The following snippet shows an example of usage of this tactic:
     permutateClause h, [3, 1, 2, 0], 3
 \end{minted}
 
-An essential observation is that, while proving the theorem corresponding to this rule appears to be a
-challenging task, the implementation of the tactic was notably compact and uncomplicated, consisting of fewer
+\paragraph{Comparison with the certified approach.} An essential observation is that, while proving the theorem that corresponds to this rule appears to be a
+challenging task, the complete implementation of the tactic was notably compact and uncomplicated, consisting of fewer
 than 60 lines (excluding the source code of \texttt{pull}).
 
 
-\subsection*{Resolution\\Rule Statement:}
-\[
-  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A, s_{1}, s_{2}}
-\]
-
-\tom{add observation here about syntactic equality, similar to the one in factor}
+\subsection*{Resolution}
 
 Given two proofs of clauses, \texttt{pfP} and \texttt{pfQ}, a proposition \texttt{A}
 (also known as the \textit{pivot}) such that
 \texttt{A} is an element of the first clause and \texttt{¬ A} is an element of the second clause and the indices \texttt{s₁} and \texttt{s₂} of the last propositions in each clause, this tactic produces a proof for the clause composed by the concatenation
 of the two, removing the pivot from the first and the negation of the pivot from the second. If there are multiple instances of the pivot in the first clause, it removes
 the first one. Similarly, if there are multiple instances of the negation of the pivot
-in the second clause, it also removes the first one. We will need four new theorems
-to implement the resolution tactic:
+in the second clause, it also removes the first one. The precise statement
+is the following:
+
+\[
+  \infer[]{P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n} \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}}{P_{1} \vee \cdots \vee P_{i - 1} \vee A \vee P_{i + 1} \vee \cdots \vee P_{n}, Q_{1} \vee \cdots \vee Q_{j - 1} \vee \neg A \vee Q_{j + 1} \vee \cdots \vee Q_{m}, \mid A, s_{1}, s_{2}}
+\]
+
+We will need four theorems to implement the resolution tactic, which are all easy to prove:
 
 \begin{itemize}
   \item \mintinline{lean}{resolutionSpecialCase1 {A B C : Prop} : A ∨ B → ¬ A ∨ C → B ∨ C}
@@ -292,12 +387,12 @@ the clause:
   $\neg A \vee Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}$
 \end{center}
 
-Now, we can apply one of the \texttt{resolutionSpecialCase} theorems to \texttt{pfP'} and \texttt{pfQ'}. We decide which theorem
+Now, we apply one of the \texttt{resolutionSpecialCase} theorems to \texttt{pfP'} and \texttt{pfQ'}. We decide which theorem
 to apply based on whether or not each clause has other terms apart from the pivot. If both clauses have other terms (i.e. $n > 0$ and
-$m > 0$) we apply \texttt{resolutionSpecialCase1}, instantiating \texttt{B} to $P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}$ and \texttt{C} to $Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}$. If the second clause consists of only the negation of the pivot and the first one has other terms, we apply \texttt{resolutionSpecialCase2}. If the first clause consists of only the pivot and the second one has other terms, we apply \texttt{resolutionSpecialCase3}. If both clauses consists of a single element, we apply \texttt{resolutionSpecialCase4}. In this case, the tactic will produce a proof of \texttt{False}, which is the way we represent the empty clause.
+$m > 0$) we apply \texttt{resolutionSpecialCase1}, instantiating \texttt{B} to $P_{1} \vee \cdots \vee P_{i - 1} \vee P_{i + 1} \vee \cdots \vee P_{n}$ and \texttt{C} to $Q_{1} \vee \cdots \vee Q_{j - 1} \vee Q_{j + 1} \vee \cdots \vee Q_{m}$. If the second clause consists of only the negation of the pivot and the first one has other terms, we apply \texttt{resolutionSpecialCase2}. If the first clause consists of only the pivot and the second one has other terms, we apply \texttt{resolutionSpecialCase3}. If both clauses consist of a single element, we apply \texttt{resolutionSpecialCase4}. In this case, the tactic will produce a proof of \texttt{False}, which is the way we represent the empty clause.
 
 Notice that, if we apply \texttt{resolutionSpecialCase1} and the first clause had more than 1 element
-apart from the pivot, the term we will get is not exactly the required one. Its type will have the
+apart from the pivot, the term we get is not the required one. Its type will have the
 propositions from the first clause parenthesized, i.e.\ it will have the following form:
 
 \begin{center}
@@ -307,7 +402,7 @@ propositions from the first clause parenthesized, i.e.\ it will have the followi
 We fix this issue with the tactic \texttt{ungroupClausePrefix}, which was mentioned before.
 
 The original rule used by cvc5 has another
-boolean parameter, \textit{pol}. If pol is set to true, then the semantics of the rule match
+boolean parameter, \textit{pol}. If pol is set to true, then the semantics of the rule matches
 exactly the tactic we described. If pol is set to false, the rule expects to find the pivot
 negated in the first clause and not negated in the second. We have implemented a separate
 tactic for this case. The function that implements the core functionality of both tactics is
@@ -328,36 +423,41 @@ of the last propositions in each clause.
     R2 h₁, h₂, A, [0, 2]
 \end{minted}
 
-\subsection*{Factor\\Rule Statement:}
+\subsection*{Removing duplicates}
+
+Given a proof \texttt{pf} of a clause and the index \texttt{s} of the last proposition in the clause,
+the \textit{factor} tactic produces a proof of the same clause, with all duplicated literals of it removed. The precise statement of this rule is the following:
+
 \[
   \infer[]{removeDuplicates(P_{1} \vee \cdots \vee P_{n})}{P_{1} \vee \cdots \vee P_{n} \mid s}
 \]
 
-Given a proof \texttt{pf} of a clause and the index \texttt{s} of the last proposition in the clause,
-the \textit{factor} tactic produces a proof of the same clause, with all duplicated terms of it removed. We
-will need two new theorems to implement it:
+We will need two theorems to implement it:
 
 \begin{itemize}
   \item \mintinline{lean}{dupOr {A B : Prop} : A ∨ A ∨ B → A ∨ B}
   \item \mintinline{lean}{dupOr' {A : Prop} : A ∨ A → A}
 \end{itemize}
 
-Also, in order to implement factor, we will employ a new tactic which was not presented before.
-This tactic, which we have called \texttt{pullToMiddle},
-is a generalization of \texttt{pull}. It allows its user to move a term in position $j$ in some clause to any position
-$i < j$. The implementation of \texttt{pullToMiddle} is very similar to the one for \texttt{pull}, except
-that, instead of grouping and ungrouping prefixes of the clause, we do it on intervals in the middle of the clause.
-% The interface of \texttt{pullToMiddle} is also different from the one of \texttt{pull}. While the later
-% expects the proposition to be pulled as a parameter, the former expects the indices corresponding
-% to the initial and final position of the proposition in the clause.
+Also, in order to implement factor, we employ the tactic \texttt{pullToMiddle},
+a generalization of \texttt{pull}. It allows its user to move a term in position $j$ in some clause to any position
+$i < j$. The implementation of \texttt{pullToMiddle} is similar to the one for \texttt{pull}, except
+that instead of grouping and ungrouping prefixes of the clause, it considers intervals in the middle of the clause.
 
-The pseudocode in Figure~\ref{factorCore} shows the implementation we developed for this tactic.
+The idea we employed to develop this tactic is the following: for each literal in the clause, we
+check every other literal to see if it is equal to the current one. If it is, we obtain a new
+clause with the literals that are equal adjacent to each other. We then apply either \texttt{dupOr}
+or \texttt{dupOr'} (depending whether they are on the last positions of the clause), together
+with the appropriate congruence lemmas (like we did for grouping clauses). We repeat this process
+until there are no more duplicates in the clause.
+
+The pseudocode in Figure~\ref{factorCore} shows our implementation of this idea.
 First, in line 1, we obtain the clause corresponding to \texttt{pf} using \texttt{inferType},
 in the same way we did in the implementation of \texttt{groupClausePrefix}. Then, in lines 2
-to 15 we do a for loop, iterating through each term in the clause.
-We use the function \texttt{GetLength} to obtain the current length of the clause. We need to
+to 15 iterate through each term in the clause.
+We use the function $GetLength$ to obtain the current length of the clause. We need to
 provide the index of the last proposition to this function, otherwise the length of the clause
-will not be well-defined.
+will not be well defined.
 The goal of each iteration is to remove all other elements of the clause that are equal to
 the $i$-th one (the current one). For that, we do another nested loop in lines 5 to 14,
 iterating through all indices $j$ such that $j > i$. Next, in line 6, we check whether
@@ -372,7 +472,7 @@ This will allow us to use one of the \texttt{dupOr} theorems. If $i + 1$ is the 
 position in the clause, we apply \texttt{dupOr'}, otherwise we apply \texttt{dupOr}.
 Notice that, since there are potentially other terms to the left of the $i$-th one,
 we need to apply \texttt{congOrLeft} composed with \texttt{dupOr}, in the same way we
-did for \texttt{groupClausePrefix}. The function \texttt{ApplyDupOr} performs this checks
+did for \texttt{groupClausePrefix}. The function $ApplyDupOr$ performs these checks
 and applies the correct version of \texttt{dupOr}, producing a new proof term for the clause
 with the duplicate erased. Since the number of elements to the left
 of the last one necessarily decreased by one, we have to decrement $s$,
@@ -414,9 +514,9 @@ The following snippet shows an application of this tactic:
        factor h, 5
 \end{minted}
 
-\section{Linear Arithmetic}
+\section{Linear Arithmetic Reasoning}
 
-\subsection*{SumBounds\\Rule Statement:}
+\subsection*{Summing Lists of Inequalities\\Rule Statement:}
 \[
   \infer[]{\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}}{\bigwedge_{i = 1}^{n} a_{i} \bowtie_{i} b_{i}}
 \]

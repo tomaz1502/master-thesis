@@ -4,13 +4,15 @@ to the negation of modus ponens, i.e. $\neg (p \rightarrow ((p \rightarrow q) \r
 We present this instance using SMT-Lib~\cite{smtlib}, a standardized syntax for
 representing SMT problems recognized by most SMT solvers:
 
+\begin{figure}[h]
 \begin{minted}{smtlib2.py -x}
   (set-logic QF_UF)
   (declare-const p Bool)
   (declare-const q Bool)
   (assert (not (=> p (=> (=> p q) q))))
 \end{minted}
-
+\caption{SMT-Lib script representing the negation of modus ponens.}\label{negModusPonens}
+\end{figure}
 Feeding cvc5 with this script yields the result ``unsat'', as expected. The proof produced by the solver is shown in Figure~\ref{fig:cvc5-proof} and is an instance of the resolution tree introduced in Section~\ref{sec:pcBool}.
 Each node is a formula that is either the one from the input (\texttt{not (=> p (=> (=> p q) q))}) or was derived by applying some
 rule to other nodes. An edge from some node $u$ to other node $v$ indicates that
