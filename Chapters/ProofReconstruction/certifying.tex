@@ -345,9 +345,6 @@ The following snippet shows an example of usage of this tactic:
     permutateClause h, [3, 1, 2, 0], 3
 \end{minted}
 
-\paragraph{Comparison with the certified approach.} An essential observation is that, while proving the theorem that corresponds to this rule appears to be a
-challenging task, the complete implementation of the tactic was notably compact and uncomplicated, consisting of fewer
-than 60 lines (excluding the source code of \texttt{pull}).
 
 
 \subsection{Resolution}
@@ -517,18 +514,26 @@ The following snippet shows an application of this tactic:
 Here, the tactic was used to eliminate the second occurrences of \texttt{A}, \texttt{B} and
 \texttt{(E ∨ F)} at the hypothesis \texttt{h}.
 
+
+\paragraph{Comparison with the certified approach.} An essential observation is that, while proving the theorems that corresponds to the three rules of Boolean reasoning appears to be a highly
+challenging task, the implementations of the tactics are not too complicated (the implementation of \texttt{permutateClause},
+in particular, consists of fewer than 60 lines). This goes to show the flexibility we obtain by not requiring
+that all rules are proved before hand.
+
 \section{Linear Arithmetic Reasoning}
 
-\subsection{Summing Lists of Inequalities\\Rule Statement:}
+\subsection{Summing lists of inequalities}
+
+Given a list of $n$ proofs of statements following one of the patterns $a_{i} < b_{i}$, $a_{i} \le b_{i}$ or $a_{i} = b_{i}$,
+the tactic \texttt{sumBounds}
+produces a proof of the inequality $\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}$, where $\bowtie^{*}$ is $<$ if
+all terms in the premisses are strict inequalities and $\le$ otherwise. Its precise statement is the following:
+
 \[
   \infer[]{\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}}{\bigwedge_{i = 1}^{n} a_{i} \bowtie_{i} b_{i}}
 \]
 
-Given a list of $n$ proofs of statements following one of the patterns $a_{i} < b_{i}$, $a_{i} \le b_{i}$ or $a_{i} = b_{i}$, this
-tactic produces a proof of the inequality $\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}$, where $\bowtie^{*}$ is $<$ if
-all terms in the premisses are strict inequalities and $\le$ otherwise.
-
-Each one of the variables $a_{i}$ and $b_{i}$ might be represented inside the SMT solver
+\paragraph{Representing Int and Real.} Each one of the variables $a_{i}$ and $b_{i}$ might be represented inside the SMT solver
 with either the \textit{Int} or the \textit{Real} sort. While each pair $a_{i}$ and $b_{i}$ always share the same sort, it is possible that some of these pairs have a sort different from the rest. Before implementing a
 tactic corresponding to this rule, we have to choose types in Lean to match
 these two sorts. We have based our decision on the types used by mathlib, as
