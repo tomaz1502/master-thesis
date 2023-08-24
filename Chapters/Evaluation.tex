@@ -1,28 +1,34 @@
-We refrain from comparing its performance to other similar tools (such as
+We refrain from comparing the performance of our checker with other similar tools (such as
 SMTCoq and Sledgehammer) due to the difficulty of fairly evaluating
 the results. This difficulty comes from the deep differences between the ITPs'
-implementations. Isabelle, for instance, runs on a language that use
+implementations. Isabelle, for instance, runs on a language that uses
 garbage collection, which would heavily impact the efficiency of
-sledgehammer. As we have pointed out in the introduction, currently
+Sledgehammer.
+As we have pointed out in the introduction, currently
 there are no other hammers for Lean, which we could potentially compare
 to our tool.
+Also, there is currently no way to run SMTCoq and Sledgehammer for proof checking
+outside the corresponding ITPs, which also makes the comparison difficult.
 
 We evaluate our tool for proof reconstruction coverage.
-We use the commit
-\tom{insert commit here} of cvc5 to generating Lean proofs from the
+We use the version of cvc5 from\footnote{\url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}
+to generate Lean proofs from the
 problems in the SMT-Lib benchmark library\footnote{\url{https://smtlib.cs.uiowa.edu/benchmarks.shtml}} whose
-logic we support, with a 1800s timeout. The cvc5 solver produced 6102
+logic we support (which are QF\_LIA, QF\_LIRA, QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA), with a 600s timeout\footnote{It is necessary to pass the following flags to cvc to generate the
+proofs: \texttt{--dump-proofs --dag-thresh=0 --proof-granularity=theory-rewrite --proof-format=lean}}.
+The cvc5 solver produced 6102
 proofs. We have only considered proofs whose size is smaller than
 1mb, which is a total of 877 proofs. From our experience, proofs that are
 bigger than this take too much time to be elaborated and reconstructed,
 given the current state of our tool.
 All experiments were run on a server
-equipped with 16 processors Intel(R) Xeon(R) CPU E5-2637 v4 3.50GHz and
-62.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic, with 8GB of memory for each job.
+equipped with 32 processors Intel(R) Xeon(R) CPU E5-2620 v4 2.10GHz and
+125.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic, with 8GB of memory for each job.
 
 We have written a Lean script for reconstructing the proofs\footnote{\url{https://github.com/tomaz1502/process_lean_smt/blob/main/Main.lean}}. Using the binary that is produced when the script is compiled, one can reconstruct the proofs without installing Lean.
 It just requires that all the object files from our library (and from its dependencies) are in the same folder as the proof that is being reconstructed.
 Our experiments were performed using this script.
+Notice that this scripts has to load all the libraries in each run, which heavily impacts its performance.
 
 \section{Analysis}
 
@@ -51,23 +57,18 @@ the performance of the reconstruction process.
 
 
 \begin{table}[t]
-% \centering
-\begin{tabular}{ l l l l l l l l l }
+\centering
+\begin{tabular}{ l l l l l l l }
 \toprule
-Theory & Total & Valid & Invalid & Timeout & Memout & Error  & Time &  Memory \\ \midrule
-QF\_LIA & 236 & 30 & 161 & 0 & 45 & 0 & 68088.8 & 1262055.6 \\ \midrule
-QF\_LRA & 205 & 91 & 110 & 4 & 0 & 0 & 16998.6 & 98538.6 \\ \midrule
-QF\_UF & 300 & 64 & 117 & 9 & 109 & 1 & 51072.6 & 1030329.4 \\ \midrule
-QF\_UFLIA & 106 & 67 & 30 & 9 & 0 & 0 & 56169.0 & 167205.5 \\ \midrule
-QF\_UFLRA & 31 & 29 & 2 & 0 & 0 & 0 & 1696.0 & 4108.3 \\ \bottomrule
+Theory & Total & Valid & Invalid & Timeout & Memout & Error \\ \midrule
+QF\_LIA & 236 & 30 & 161 & 0 & 45 & 0 \\ \midrule
+QF\_LRA & 205 & 91 & 110 & 4 & 0 & 0 \\ \midrule
+QF\_UF & 300 & 64 & 117 & 9 & 109 & 1 \\ \midrule
+QF\_UFLIA & 106 & 67 & 30 & 9 & 0 & 0  \\ \midrule
+QF\_UFLRA & 31 & 29 & 2 & 0 & 0 & 0 \\ \bottomrule
 \end{tabular}
 \caption{Total proof-checking success, fails and time per theory.}\label{bench}
 \end{table}
-
-
-
-\tom{what is the unit in time\_cpu and memory?} \\
-\tom{the numbers on the items sums to 601, but they should sum to 586}
 
 %                  total  unsat  sat  timeout  memout  error  time_cpu    memory
 % benchmark config

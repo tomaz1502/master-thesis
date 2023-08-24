@@ -711,57 +711,9 @@ to 15 lines.
 
 \section{Equality reasoning}
 
-
-
-
-% proof of $P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$, together with \texttt{congOrLeft} to surpass
-% the propositions to the left of $P_{i - 1}$. We need one application of \texttt{congOrLeft}
-% for each proposition to the left of $P_{i - 1}$. For instance, if:
-% \begin{itemize}
-%   \item \textbf{i = 2} our term will be \texttt{orAssoc}
-%   \item \textbf{i = 3} our term will be \texttt{congOrLeft orAssoc}
-%   \item \textbf{i = 4} our term will be \texttt{congOrLeft (congOrLeft orAssoc)}
-% \end{itemize}
-
-
-% The idea is to use \texttt{congOrLeft} to surpass the propositions to the left of $P_{i - 1}$ together with \texttt{orAssoc} instantiating \texttt{A} to $P_{i - 1}$, \texttt{B} to $P_{i}$ and \texttt{C} to $P_{i + 1} \vee \cdots \vee
-% P_{n}$, which will yield a proof of $P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
-
-
-% We cannot directly apply it to $h$ since there are potentially other terms to the left of $P_{i - 1}$.
-% To solve this problem, we use the theorem \texttt{congOrLeft} setting \texttt{hyp} to the application of \texttt{orAssoc} that we just described.
-% Since the first $i - 2$ propositions are not grouped, we cannot instantiate \texttt{C} to $P_{i - 1} \vee \cdots \vee P_{i - 2}$.
-% Instead, we set \texttt{C} to $P_{i - 2}$, which will yield a proof \texttt{h₂} of $P_{i - 2} \vee P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow P_{i - 2} \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$. Now we repeat the process applying \texttt{congOrLeft} with \texttt{C} instantiated to $P_{i - 3}$ (if it exists) and \texttt{hyp} to \texttt{h₂}. We keep going until we set \texttt{C} to $P_{1}$. We will then obtain a term of the form \texttt{congOrLeft (congOrLeft \ldots (congOrLeft orAssoc)\ldots)} (with $i - 2$ applications of \texttt{congOrLeft}), which, when applied to \texttt{h}, will prove $P_{1} \vee \cdots \vee (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$.
-
-
-% One detail that has to be considered while implementing this tactic is that the index of the last proposition
-% may change when we pull a term. For instance, the index of the last proposition of the clause
-% $A \vee B \vee (C \vee D) \vee E$ is $4$. If we pull $E$ in this clause, we will get
-% $E \vee A \vee B \vee (C \vee D)$, which has $3$ as this index. If this happens,
-% the new index will always be the original length of the clause minus the length
-% of the second to last proposition in the current clause (since it will become the last proposition).
-% While executing the procedure we described in the last paragraph, we need to always keep track of the
-% current index of the last proposition, as the tactic pull requires it as an argument.
-
-% \begin{figure}[t]
-% % \textbf{Input:} $\psi$, a PL formula\\
-% % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
-% \begin{algorithmic}[1]
-% \Function{PermutateClauseCore}{$pf$, $perm$, $s$}
-%   \State $clause \gets $ \Call{InferType}{$pf$}
-%   \State $lenClause \gets $ \Call{getLength}{$clause$}
-%   \For{$i \gets n \Downto 1$}
-%   \If{$perm_{i} = s$}
-%     \State $currentClause \gets$ \Call{InferType}{pf}
-%     \State $lenSecondLast \gets $ \Call{GetLength}{$currentClause_{s - 1}$}
-%     \State $pf \gets$ \Call{PullCore}{$pf$, $perm_{i}$, $s$}
-%     \State $s \gets lenSecondLast - lenClause$
-%   \Else
-%     \State $pf \gets$ \Call{PullCore}{$pf$, $perm_{i}$, $s$}
-%   \EndIf
-%   \EndFor
-%   \State \Return~$pf$
-% \EndFunction
-% \end{algorithmic}
-% \caption{Implementation of the tactic PermutateClause}~\label{permClause}
-% \end{figure}
+As we have shown in Section~\ref{pcEUF}, proof certificates for the theory of
+Equality and Uninterpreted functions consist of proof trees, where the inference
+rules are the axioms of equality (reflexivity, symmetry, transitivity and congruence).
+Lean already has built-in theorems corresponding to versions of these axioms that
+refer to the built-in equality operator, which is the one that we are mapping MSFOL equalities to.
+Hence, there was no need to introduce any new theorems or tactics for this theory.
