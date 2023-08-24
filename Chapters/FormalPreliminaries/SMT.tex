@@ -152,8 +152,8 @@ and run the function again. Once more, the checks on lines 2 and 5 will fail, an
 unit resolution to the clauses $y$ and $\neg y$, resulting in the empty clause. Now, when we invoke the function
 recursively again, the check on line 2 will succed, and it will correctly return $false$.
 
-The actual algorithm used by most SMT solvers to solve SAT is a refinement over DPLL, called Conflict Driven Clause Learning (CDCL)~\cite{cdcl}. Its main idea is to modify the DPLL algorithm so that, when it finds a conflict (an empty clause or a clause that only contains false variables), analyze the reason for this conflict, allowing it to derive new clauses and to backtrack many decisions of values of variables at once.
-The DPLL algorithm also obtain information from conflict, but it cannot backtrack many decisions at once.
+The actual algorithm used by most SMT solvers to solve SAT is a refinement over DPLL, called Conflict Driven Clause Learning (CDCL)~\cite{cdcl}. Its main idea is to modify the DPLL algorithm so that, when it finds a conflict (an empty clause or a clause that only contains false variables), it analyzes the reason for this conflict, allowing it to derive new clauses and to backtrack many decisions of values of variables at once.
+The DPLL algorithm also obtain information from a conflict, but it cannot backtrack many decisions at once.
 The new clauses derived from the analysis performed by CDCL can also be inferred via resolution.
 Since our main concern in this work is on proofs, and, as we will show, proofs for unsatisfiability
 of Boolean formulas are given in terms of resolution inferences, this refinement is not relevant

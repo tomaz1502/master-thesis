@@ -334,7 +334,7 @@ as there is no bug in the SMT solver), then Lean's kernel can evaluate
 both functions \texttt{inferSort} and \texttt{isSome} and obtain \texttt{true},
 and the proof that the term is well-typed follows by reflexivity. Deriving facts
 from the evaluation of functions is a proof technique known as \textit{proof by reflection}~\cite{reflProof}.
-This kind of proof transfer the cost of \textit{checking} the proofs to a cost of
+This kind of proof transfers the cost of \textit{checking} the proofs to a cost of
 normalizing terms. Unfortunately, as pointed out by~\cite{ringLean}, Lean's evaluator
 is not optimized for normalizing terms, therefore, the necessity of proving that
 certain term are well-typed would imply in a reduction of the performance of
@@ -343,14 +343,14 @@ tools built using this technique.
 Another downside of this approach is the necessity of providing explicit proofs for the most
 general case of all rules. As pointed out before, some of the rules, such as resolution and
 \textit{factor} (which takes as premise a clause and have as a conclusion the same clause, removing
-all formulas that are duplicated) appear to lack any proofs that are not highly challenging to derive.
+all formulas that are duplicated) appear to require proofs that are highly challenging to derive.
 This difficulty is also recognized in~\cite[p. 6]{snipe}:
 \begin{quote}
   ``Indeed, the former [certified transformations] require we work only with the reified [meaning deeply embedded] syntax of the
   terms of CIC and even for a simple transformation, the proof of soundess is hard (thousands lines of code).''
 \end{quote}
 
-As we will see in the next chapter, there exist at least one approach that do not require to prove the rules \textit{explicitly}.
+As we will see in the next chapter, there exists at least one approach that do not require to prove the rules \textit{explicitly}.
 
 
 % According to~\cite[6]{snipe},

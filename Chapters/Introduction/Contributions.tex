@@ -8,7 +8,7 @@ regarding the reasons we believe it is more appropriate than the other.
 The main motivation of this project is that, despite the fact that Lean is
 emerging as a promising programming language and ITP and being
 widely used by mathematicians in large-scale
-formalizations~\cite{mathlib, scholze}, there is currently no way to
+formalizations~\cite{scholze, mathlib}, there is currently no way to
 interact with SMT solvers from it, even though these systems have been
 central in previous developments of proof automation in ITPs, as we will show in Sections~\ref{sec:smtcoq}
 and~\ref{sec:sledgehammer}. The contribution of the present work
@@ -35,3 +35,9 @@ that aims to implement a tactic in Lean that would perform the complete process,
 starting from a Lean goal, translating it to an SMT query, invoking the solver to try
 to prove it and lifting the proof produced (in case it is found) to Lean's language,
 so that it can be used as a proof for the original goal.
+
+Another contribution of our work is the first checker for cvc5 proofs
+(which are expressed in the theories we support)
+verified by an established ITP.
+Other checkers exist (\cite{carcara}, for instance), but one has to
+trust their source code to verify proofs with them.

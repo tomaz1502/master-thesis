@@ -1,4 +1,4 @@
-A mechanized proof is a proof written in a language recognized by a computer, so that its validity can be checked by a verifier. An important application of these artifacts is formalizing mathematical theories. Indeed, there are well-known examples of successful formalizations. One of them is the mechanization of the proof of a theorem regarding Perfectoid Spaces~\cite{scholze}, done by the fields-medalist mathematician Peter Scholze together with the community of a system called Lean~\cite{lean}. Scholze proved the theorem using pen and paper, but was unsure of the result due to its complexity. With the help of Lean's community, he could translate the theorem and the proof to the language of Lean. Once the rewrite was complete, the system could find errors in the proof, and, after addressing all of them and obtaining confirmation from Lean's checker that the proof was correct, he could be sure of the correctness of the proof.
+A mechanized proof is a proof written in a language recognized by a computer, so that its validity can be checked by a verifier. An important application of these artifacts is formalizing mathematical theories. Indeed, there are well-known examples of successful formalizations~\cite{fourColors, kepler}. One of them is the mechanization of the proof of a theorem regarding Perfectoid Spaces~\cite{scholze}, done by the fields-medalist mathematician Peter Scholze together with the community of a system called Lean~\cite{lean}. Scholze proved the theorem using pen and paper, but was unsure of the result due to its complexity. With the help of Lean's community, he could translate the theorem and the proof to the language of Lean. Once the rewrite was complete, the system could find errors in the proof, and, after addressing all of them and obtaining confirmation from Lean's checker that the proof was correct, he could be sure of the correctness of the proof.
 
 Another application of mechanized proofs is verifying the correctness of mission-critical software. Given a specification of the behavior of some program, the program is said to be correct if it respects its specification for any given input. For instance, one could specify that a sorting routine must always produce the sorted permutation of its input list. In this case, a given sorting routine is said to be correct if it indeed produces the desired permutation, for every list it receives. There are a variety of techniques to obtain correctness evidence for a software. The most common one is the development of tests. Tests are easy to be written and effective to find errors in programs. In fact, this approach is enough for a large amount of problems that are solved by software engineering. However, tests cannot guarantee that a program does not have flaws in general, since the number of valid inputs is almost always exceedingly large, or infinite. This kind of guarantee is extremely important for mission-critical software, that is, systems that have critical responsibilities, such as the control of airplanes or medical equipment. In this context, one promising alternative is to use a mechanized proof of the correctness of the software as an evidence for its safety.
 
@@ -33,7 +33,7 @@ for it, or possibly providing a counter-example otherwise.
 %
 There are a variety of tools that use different
 techniques to automatically reason about logical propositions.
-We will focus on Satisfiability Modulo Theory~\cite[ch. 33]{handbook} solvers, systems
+We will focus on Satisfiability Modulo Theories~\cite[ch. 33]{handbook} solvers, systems
 that determine the satisfiability of formulas written in an
 extended version of First-Order Logic,
 capable of incorporating structures from external domains such as arithmetic,
@@ -51,13 +51,14 @@ the ATP become harder, since the changed system has to be
 verified again.
 
 Another approach to increase the confidence in ATPs is to have them provide a
-proof certificate (i.e.\ a mechanized proof) to support their results, so that it can be independently verified whether
-it indeed proves the theorem in question. This approach has the downside of creating a need
+proof certificate (i.e.\ a mechanized proof) to support the result it found for a particular conjecture.
+One can then independently verify whether this proof certificate indeed proves the theorem in question.
+This approach has the downside of creating a need
 for checking the proof certificate for each theorem proved.
 On the other hand, as long as the proof format does not change, the implementation
 of the solver can be modified without requiring a modification in the checkers. Also,
 verifying the correctness of proof certificates is often much simpler than to verify
-the tool itself.
+the tool itself, or to solve the original problem.
 
 Another important advantage of the second approach is that it allows the ITPs to leverage the automatic proving performed by the ATPs via the proof certificates they produce, since the requirement for accepting a proof, i.e.\ that each step is correct to its internal logic, can be applied to the ATP proof.
 %
@@ -76,10 +77,5 @@ presents a series of benchmarks showing the potential of these
 tools. These benchmarks tipically involve selecting a set
 of theorems proved in the ITP's library and checking how often the
 tool can find a proof for them without human interaction.
-For instance, an experiment with the Isabelle/HOL ITP~\cite{Nipkow2002}, where
-1240 theorems were sent to be proved by the corresponding tool,
-resulted in a success rate of 48\%.
-Those theorems are part of large-scale formalizations of complex algorithms and important mathematical facts,
-such as the Fast Fourier Transform~\cite{fft} and the Fundamental Theorem of Algebra.
 Some experiments demonstrated that there are theorems for which
 the ATP can even find a proof shorter than those found in the ITP's library.

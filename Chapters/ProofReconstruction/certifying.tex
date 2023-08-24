@@ -1,5 +1,5 @@
 In this chapter we describe our main contribution, which is a module
-for lifting the scripts presented in Section~\ref{sec:gen-scripts} into
+for lifting an adaptation of the scripts presented in Section~\ref{sec:gen-scripts} into
 Lean proofs, based on the certifying transformations approach.
 %
 The specific manner in which we applied
@@ -69,22 +69,23 @@ present.
 \end{figure}
 
 \paragraph{Representation of clauses.} Internally, clauses are represented by cvc5 as
-a lists of terms. A list of terms can correspond to many distinct
-clauses, depending on how you parenthesize them. Implicitly, cvc5 is using the
-fact that disjunction is associative, which implies that all these clauses
+lists of terms, while we are representing them as disjunctions in Lean. A list of terms can correspond to many distinct
+disjunctions, depending on how you parenthesize them. Implicitly, cvc5 is using the
+fact that disjunction is associative, which implies that all of them
 are equivalent, therefore they do not need to be differentiated inside the calculus.
 When these lists of terms are sent to Lean, we are forced to chose a way to parenthesize
 those terms and build our proofs taking into account this format.
-We chose to parenthesize them in a right-associative way.
+We chose to parenthesize them in a right-associative way. Since the
+built-in operator \texttt{∨} is right-associative, this is the default
+format applied when the parenthesis are ommited.
 Therefore, if cvc5 is
 representing some clause as the list $[t_{1}, t_{2}, t_{3}, t_{4}]$ we will represent it in Lean as
 \texttt{t₁' ∨ (t₂' ∨ (t₃' ∨ t₄'))}, where \texttt{tᵢ'} is the representation of $t_{i}$.
-Since the built-in operator \texttt{∨} is right-associative, we can omit the
-parenthesis. Throughout the implementation of the tactics, we always assume
+Throughout the implementation of the tactics, we always assume
 that a clause that is received as premise comes parenthesized in this way,
 and every clause that is proved by a tactic also has this format.
 
-In the rest of this chapter we will give an overview of the implementation of some of the
+\medskip~In the rest of this chapter we will give an overview of the implementation of some of the
 tactics. We present their statements with the same format used in cvc5's
 documentation\footnote{The documentation of cvc5's rules can be found at:
   \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html}}, that is,
@@ -171,10 +172,10 @@ def groupPrefixCore (pf : Expr) (i : Nat) : MetaM Expr := do
   else throwError
     "[groupClausePrefix]: invalid prefix length"
 \end{minted}
-\caption{Implementation of the tactic GroupClausePrefix}\label{groupClause}
+\caption{Implementation of \texttt{groupPrefixCore}.}\label{groupClause}
 \end{figure}
 
-The snippet in Figure~\ref{groupClause} and shows the
+The snippet in Figure~\ref{groupClause} shows the
 implementation of the core functionality of this tactic.
 The parameters \texttt{pf} and \texttt{i} of the function \texttt{groupPrefixCore}
 represent, respectively, the proof of the validity of the original clause
@@ -260,7 +261,7 @@ starts with an application of \texttt{orAssocConv}, then it applies \texttt{cong
 
 \paragraph{Disambiguating clauses.} The difference between the representation of
 clauses in cvc5 and in Lean leads to an ambiguity in applications of this tactic.
-While there is no distinction in Lean between, for instance, the clauses $A \vee B \vee C \vee D \vee E$
+While there is no distinction in Lean between, for instance, the terms $A \vee B \vee C \vee D \vee E$
 and $A \vee B \vee C \vee (D \vee E)$, this distinction can be made inside the SMT solver. Indeed, if
 we have a term \texttt{pf} in Lean of type $A \vee B \vee C \vee D \vee E$ and cvc5 prints the tactic
 application \texttt{pull pf, 4}, there is no way to know, inside Lean, if it is expecting to receive
@@ -275,9 +276,9 @@ point of view of the SMT solver. Therefore, for the example we just described, i
 
 We now present the tactics regarding Boolean reasoning. One of them corresponds to
 the resolution rule, which as we have shown in Section~\ref{sec:pcBool}, is the main
-building block for proofs in Propositional Logic. The other two, \textit{factor} and
-\textit{permutateClause}, are used to justify implicit steps that SAT solvers
-perform while solving formulas through resolution.
+building block for proofs in Propositional Logic. The other two, \textit{permutateClause} and
+\textit{factor}, are used to justify implicit steps (reordering of clauses and deleting repeated terms in a clause)
+that SAT solvers perform while solving formulas through resolution.
 
 \subsection{Reordering clauses}
 
@@ -524,12 +525,13 @@ In this section we present three tactics regarding Linear Arithmetic reasoning.
 The first two, \texttt{sumBounds} and \texttt{arithMulPos}/\texttt{arithMulNeg},
 are used to derive false by combining the inequalities in the problem scaled by
 the Farkas' coefficients, as we explained in Section~\ref{sec:liaCert}.
-The third one, \texttt{tightBounds}, is a fact assumed during the process of
-solving formulas involving integers.
+The third one, \texttt{tightBounds}, is the justification for a transformation
+(tightening bounds based on the fact that a variable is an integer)
+performed by solvers of Linear Integer Arithmetic.
 
 \subsection{Summing lists of inequalities}
 
-Given a list of $n$ proofs of statements following one of the patterns $a_{i} < b_{i}$, $a_{i} \le b_{i}$ or $a_{i} = b_{i}$,
+Given a list of $n$ proofs of statements following one of the patterns $a_{i} < b_{i}$, $a_{i} \le b_{i}$ or $a_{i} \simeq b_{i}$,
 the tactic \texttt{sumBounds}\footnote{The documentation for the corresponding cvc5 rule can be found at \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule12ARITH\_SUM\_UBE}}
 produces a proof of the inequality $\sum_{i = 1}^{n} a_{i} \bowtie^{*} \sum_{i = 1}^{n} b_{i}$, where $\bowtie^{*}$ is $<$ if
 all terms in the premisses are strict inequalities and $\le$ otherwise. Its precise statement is the following:
@@ -540,7 +542,7 @@ all terms in the premisses are strict inequalities and $\le$ otherwise. Its prec
 
 \paragraph{Representing Int and Real.} Each one of the variables $a_{i}$ and $b_{i}$ might
 have sort either \textit{Int} or \textit{Real}.
-While each pair $a_{i}$ and $b_{i}$ always share the same sort, it is possible that some of these pairs have a sort different from the rest. Before implementing a
+While each pair $a_{i}$ and $b_{i}$ always shares the same sort, it is possible that some of these pairs have a sort different from the rest. Before implementing a
 tactic corresponding to this rule, we have to choose types in Lean to match
 these two sorts. We have based our decision on the types used by mathlib, as
 individuals formalizing new mathematical statements in this library are one of the main potential users
@@ -549,21 +551,21 @@ For the Real sort, we could either represent it using the type \texttt{Real}, wh
 to represent real numbers, or the type \texttt{Rat}, which was defined in the package \textit{std4}\footnote{std4 is Lean's standard library. It can be accessed at: \url{https://github.com/leanprover/std4}} to
 represent rational numbers and is used by mathlib to formalize a variety of theorems
 that involve this type of number.
-It is not a problem to use rational numbers to represent the Real sort since the rules employed by cvc5 in the theory of linear arithmetic
+It is not a problem to use rational numbers to represent the Real sort here since the rules employed by cvc5 in the theory of linear arithmetic
 do not explore any particular property that is enjoyed by real numbers and not by
 rational numbers.
 We decided to employ the type \texttt{Rat}, as its definition is much simpler and easier
 to manage in comparison to the one for \texttt{Real}.
 
-The implementation of this tactic will require 9 variations of the following theorem:
+The implementation of this tactic requires 9 variations of the following theorem:
 
 \begin{minted}{lean}
   sumBoundsThm {α : Type} [LinearOrderedRing α] {a b c d : α} :
     a < b → c < d → a + c < b + d
 \end{minted}
 
-Each variation will correspond to one combination of the relation symbols in the hypothesis, where
-they can be either $<$, $\le$ or $=$. The relation symbol in the
+Each variation corresponds to one combination of the relation symbols in the hypothesis, where
+they can be either $<$, $\le$ or $\simeq$. The relation symbol in the
 conclusion is adapted accordingly in each theorem. Since the rule accepts mixing of variables
 from Int and Real sort, we need a variation of each one of those 9 theorems for each combination
 of the types of the variables. Instead of stating all the combinations explicitly, which would
@@ -606,9 +608,10 @@ The idea we employed to develop this tactic is the following: we set the last
 proof in the input as an accumulator. Then, we iterate through the rest of the proofs
 in reverse order. For each proof we go through, we produce a new term, adding the
 inequality represented by this proof with the one in the accumulator. This is done
-through one of the \texttt{sumBoundsThm} theorems. We must do it in reverse order
-because addition is right-associative in Lean by default, and we can preserve
-obtain a term in which all additions are associating to the right by iterating
+through one of the \texttt{sumBoundsThm} theorems. Addition is right-associative
+in Lean by default, therefore, the proof term we are producing must prove
+an inequality in which the additions are associating to the right.
+We can obtain such a proof term by iterating
 in reverse order and always adding the new terms to the left of the inequality
 represented by the accumulator.
 
@@ -621,7 +624,7 @@ invoke our function \texttt{combineBounds} to sum the inequalities represented
 by \texttt{acc} and \texttt{pf'} (line 20) and recursively call \texttt{sumBoundsCore},
 updating the arguments (line 21). The first action performed in function \texttt{combineBounds} is to obtain the inequalities corresponding to \texttt{pf₁} and
 \texttt{pf₂} through \texttt{inferType}. Then, in lines 4 to 7, it inspects their structure and
-obtain their relation symbol (\texttt{rel₁} and \texttt{rel₂}) and the type of their
+obtains their relation symbol (\texttt{rel₁} and \texttt{rel₂}) and the type of their
 operands (\texttt{opType₁} and \texttt{opType₂}). Notice that \texttt{sumBoundsThm}
 expects that all the four variables have the same type. If one of the input proofs
 represents an inequality over integers and the other is over rationals, we
