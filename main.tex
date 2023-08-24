@@ -161,7 +161,7 @@ and less.},
 	    \input{Chapters/Introduction/Context}
 	  \section{Contributions}
 	    \input{Chapters/Introduction/Contributions}
-	  \section{Related Work}
+	  \section{Related work}
 			\input{Chapters/Introduction/RelatedWork/HammeringTowards}
 	    \subsection{SMTCoq}
            \label{sec:smtcoq}
@@ -187,6 +187,7 @@ and less.},
 	\chapter{Evaluation}\label{chap:eval}
       \input{Chapters/Evaluation.tex}
 	\chapter{Future Work}\label{chap:future}
+      \input{Chapters/Future.tex}
 
     \appendix
     \chapter{Complete list of theorems and tactics}
@@ -196,7 +197,6 @@ and less.},
 % \renewcommand\theadgape{\Gape[4pt]}
 % \renewcommand\cellgape{\Gape[4pt]}
 
-% \begin{table}[]\label{tab:rules}
 % \centering
 \begin{longtabu} to \textwidth { l l l }
 \toprule
@@ -248,39 +248,35 @@ Name        & Statement & Implementation \\ \midrule
 \texttt{cnfIteNeg2} & \texttt{(ite p q r) ∨ p ∨ ¬ r}      & theorem        \\ \midrule
 \texttt{cnfIteNeg3} & \texttt{(ite p q r) ∨ ¬ q ∨ ¬ r}      & theorem        \\ \midrule
 \texttt{iteIntro} & \makecell[l]{\texttt{ite p ((ite p q r) = q)} \\ \texttt{((ite p q r) = r)}} & theorem        \\ \midrule
-% \texttt{congrIte} & \texttt{p = p' → q = q' → r = r' → ite p q r = ite p' q' r'}      & theorem        \\ \midrule
-% \texttt{congrHAdd} & \texttt{holder}      & theorem        \\ \midrule
-\texttt{eqResolve} & \texttt{P → P = Q → Q}      & theorem        \\ \midrule
-\texttt{dupOr} & \texttt{P ∨ P ∨ Q → P ∨ Q}      & theorem        \\ \midrule
-\texttt{dupOr₂} & \texttt{P ∨ P → P}      & theorem        \\ \midrule
+\texttt{eqResolve} & \texttt{p → p = q → q}      & theorem        \\ \midrule
+\texttt{dupOr} & \texttt{p ∨ p ∨ q → p ∨ q}      & theorem        \\ \midrule
+\texttt{dupOr₂} & \texttt{p ∨ p → p}      & theorem        \\ \midrule
 \texttt{andElim} & \texttt{andN l → l.getD i True}      & tactic        \\ \midrule
 \texttt{notOrElim} & \texttt{¬ (orN l) → ¬ (l.getD i False)}      & tactic        \\ \midrule
 \texttt{notAnd} & \texttt{¬ (andN l) → orN (notList l)} & theorem        \\ \midrule
-\texttt{modusPonens} & \texttt{P → (P → Q) → Q}      & theorem        \\ \midrule
-\texttt{trueIntro} & \texttt{P → P = True}      & theorem        \\ \midrule
-\texttt{trueElim} & \texttt{P = True → P}      & theorem        \\ \midrule
-\texttt{trueElim₂} & \texttt{True = P → P}      & theorem        \\ \midrule
-\texttt{falseIntro} & \texttt{¬ P → P = False}      & theorem        \\ \midrule
-\texttt{falseIntro₂} & \texttt{¬ P → False = P}      & theorem        \\ \midrule
-\texttt{falseElim} & \texttt{P = False → ¬ P}      & theorem        \\ \midrule
-\texttt{falseElim₂} & \texttt{False = P → ¬ P}      & theorem        \\ \midrule
-\texttt{negSymm} & \texttt{¬ (A = B) → ¬ (B = A)}      & theorem        \\ \midrule
+\texttt{modusPonens} & \texttt{p → (p → q) → q}      & theorem        \\ \midrule
+\texttt{trueIntro} & \texttt{p → p = True}      & theorem        \\ \midrule
+\texttt{trueElim} & \texttt{p = True → p}      & theorem        \\ \midrule
+\texttt{trueElim₂} & \texttt{True = p → p}      & theorem        \\ \midrule
+\texttt{falseIntro} & \texttt{¬ p → p = False}      & theorem        \\ \midrule
+\texttt{falseIntro₂} & \texttt{¬ p → False = p}      & theorem        \\ \midrule
+\texttt{falseElim} & \texttt{p = False → ¬ p}      & theorem        \\ \midrule
+\texttt{falseElim₂} & \texttt{False = p → ¬ p}      & theorem        \\ \midrule
+\texttt{negSymm} & \texttt{¬ (a = b) → ¬ (b = a)}      & theorem        \\ \midrule
 \texttt{factor} & \texttt{orN l → orN (removeDuplicates l)}      & tactic        \\ \midrule
 \texttt{liftOrNToImp} & \makecell[l]{\texttt{orN l → andN (take i (notList l))} \\ \texttt{ → orN (drop i l)}}      & tactic        \\ \midrule
 \texttt{liftOrNToNeg} & \texttt{orN l → ¬ (andN l)} & tactic        \\ \midrule
 \texttt{permutateClause} & \texttt{orN l → orN (permutate perm l)}      & tactic        \\ \midrule
 \texttt{pull} & \makecell[l]{\texttt{orN l →} \\ \texttt{l.getD i False ∨ orN (eraseIdx i l)}}      & tactic        \\ \midrule
-% \texttt{pullToMiddle} & \texttt{orN l}      & tactic        \\ \midrule
 \texttt{R1} & \makecell[l]{\texttt{orN l₁ → orN l₂ →} \\ \texttt{orN ((erase p l₁) ++ (erase (¬ p) l₂))}}      & tactic        \\ \midrule
 \texttt{R2} &  \makecell[l]{\texttt{orN l₁ → orN l₂ →} \\ \texttt{orN ((erase (¬ p) l₁) ++ (erase p l₂))}}     & tactic        \\ \midrule
 \texttt{arithMulPos} & \texttt{m > 0 ∧ l < r → m * l < m * r}      & tactic        \\ \midrule
 \texttt{arithMulNeg} & \texttt{m < 0 ∧ l < r → m * l > m * r}      & tactic        \\ \midrule
-% \texttt{sumBounds} & \texttt{holder}      & tactic        \\ \midrule
 \texttt{tightLb} & \texttt{i < q → i ≤ (ceil q) - 1}      & tactic        \\ \midrule
 \texttt{tightUb} & \texttt{i > q → i ≥ (floor q) + 1}      & tactic        \\ \midrule
 \texttt{trichotomy} & \texttt{¬ (a < b) → ¬ (a = b) → a > b}      & tactic        \\
 \bottomrule
-\end{longtabu}
+\end{longtabu}\label{table:allRules}
 % \end{table}
 		%% Referências
 		\bibliographystyle{plain}
