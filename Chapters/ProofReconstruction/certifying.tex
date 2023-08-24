@@ -681,8 +681,8 @@ easy to be proved.
 
 Given an integer \texttt{i}, a numeric variable \texttt{q} and a proof of a strict inequality
 between \texttt{i} and \texttt{q}, the pair of tactics \texttt{tightLb} and \texttt{tightUb} produce proofs of a tighter relation
-between \texttt{i} and \texttt{q}. More specifically, the following is the precise
-statement of \texttt{tightLb} and \texttt{tightUb}, respectively:
+between \texttt{i} and \texttt{q}. More specifically, the following are the precise
+statements of \texttt{tightLb} and \texttt{tightUb}, respectively:
 
 \[
 \infer[]{i \le \lceil q \rceil - 1}{i < q \mid i, q}
@@ -693,7 +693,7 @@ statement of \texttt{tightLb} and \texttt{tightUb}, respectively:
 \infer[]{i \ge \lfloor q \rfloor + 1}{i > q \mid i, q}
 \]
 
-Once again, this tactic could be just a theorem, except that cvc5 can apply it either
+Once again, this tactic could be just a theorem, except that cvc5 can apply it
 with variables from both Real and Int sorts as the parameter \texttt{q}. The logic
 of this tactic consists of checking what is the type of \texttt{q} and applying the
 appropriate theorem.
@@ -711,21 +711,6 @@ to 15 lines.
 \section{Equality reasoning}
 
 
-\begin{table}[]\label{tab:rules}
-\centering
-\begin{tabular}{ l l l }
-\toprule
-Name        & Statement & Implementation \\ \midrule
-NotImplies1 & \texttt{Not (p -> q) -> p}      & theorem        \\ \midrule
-NotImplies2 & blah      & theorem        \\ \midrule
-EquivElim1  & blah      & theorem        \\ \midrule
-EquivElim2  & blah      & theorem        \\ \midrule
-NotEquivElim1  & blah      & theorem        \\ \midrule
-NotEquivElim2  & blah      & theorem        \\ \midrule
-ImpliesElim & blah      & theorem        \\ \bottomrule
-\end{tabular}
-\caption{Rules from cvc5's proof calculus}
-\end{table}
 
 
 % proof of $P_{i - 1} \vee P_{i} \vee \cdots \vee P_{n} \rightarrow (P_{i - 1} \vee P_{i}) \vee \cdots \vee P_{n}$, together with \texttt{congOrLeft} to surpass
