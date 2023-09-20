@@ -16,7 +16,7 @@ is essential to develop this kind of project using Lean.
 
 We use the cvc5 solver because it already has a module for exporting proofs as
 Lean scripts~\cite{Barbosa2022}, using a representation of the SMT terms\footnote{For more details
-about the SMT term language, see SMT-Lib~\cite{smtlib}.} as Lean's native terms.
+about the SMT term language, see SMT-LIB~\cite{smtlib}.} as Lean's native terms.
 Each proof produced by cvc5 consists of a set of logical inferences starting from the
 hypothesis until the goal is inferred. In order to reconstruct such proofs inside of
 Lean, it is necessary to prove the correctness of these inference rules inside the
