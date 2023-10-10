@@ -1,43 +1,46 @@
-We aim to build a system that takes proofs of the unsatisfiability of
+We have built a system that takes proofs of the unsatisfiability of
 SMT queries produced by the SMT solver cvc5~\cite{cvc5} and
-reconstructs them as proofs in the ITP Lean 4~\cite{lean}.
-We present in detail two techniques well-known in the literature for achieving this purpose.
+reconstructs them as proofs in the ITP Lean 4~\cite{lean},
+which has as its primary focus the capacity of reconstructing the largest possible
+range of proofs produced by cvc5.
+We present in detail two techniques well-known in the literature for doing this translation.
 We have effectively executed one of them, and we share our insights
 regarding the reasons we believe it is more appropriate than the other.
+
 
 The main motivation of this project is that, despite the fact that Lean is
 emerging as a promising programming language and ITP and being
 widely used by mathematicians in large-scale
 formalizations~\cite{scholze, mathlib}, there is currently no way to
 interact with SMT solvers from it, even though these systems have been
-central in previous developments of proof automation in ITPs, as we will show in Sections~\ref{sec:smtcoq}
-and~\ref{sec:sledgehammer}. The contribution of the present work
+central in previous developments of proof automation in ITPs, as we will show in Section~\ref{sec:related}. The contribution of the present work
 is essential to develop this kind of project using Lean.
 
-We use the cvc5 solver because it already has a module for exporting proofs as
-Lean scripts~\cite{Barbosa2022}, using a representation of the SMT terms\footnote{For more details
-about the SMT term language, see SMT-LIB~\cite{smtlib}.} as Lean's native terms.
+The cvc5 solver has a module for post-processing its proofs,
+translating and printing them in a format recognized by Lean~\cite{Barbosa2022} (which is the reason why we chose it).
 Each proof produced by cvc5 consists of a set of logical inferences starting from the
 hypothesis until the goal is inferred. In order to reconstruct such proofs inside of
 Lean, it is necessary to prove the correctness of these inference rules inside the
-ITP.\ Our main contribution is to provide a set of tactics and theorems matching the set
-of rules used by the ATP, enabling the verification of the rules through Lean's kernel.
-Furthermore, these tactics and theorems operate over native Lean terms, facilitating the
-process of using this module as part of a system that proves theorems originally stated
-in Lean's language through proofs produced by cvc5.
-
-Note that the goal of the present work is to reconstruct in Lean proofs produced by
-cvc5 for SMT problems. In order to have a full integration between Lean and cvc5 we also
-need a module for translating Lean goals into an equivalent SMT problem.
-However, our project is being used as part of the joint project Lean-SMT\footnote{The
-  code for the project can be found at \url{https://github.com/ufmg-smite/lean-smt}},
-that aims to implement a tactic in Lean that would perform the complete process, that is,
-starting from a Lean goal, translating it to an SMT query, invoking the solver to try
-to prove it and lifting the proof produced (in case it is found) to Lean's language,
-so that it can be used as a proof for the original goal.
+ITP.\
+Our main contribution is to provide a set of tactics and theorems matching the set
+of rules used by the ATP, enabling the verification of the translated proofs through Lean's kernel.
+Furthermore, it is possible to leverage these proofs to discharge the
+responsibility of proving theorems originally stated in Lean to cvc5, which is
+the main use case for our module. There are other modules that need to be implemented
+in order to fully automate this process (which we will describe in Section~\ref{sec:related}), that are out of the scope of the present project.
+However, our project is being used as part of the joint project
+LeanSMT\footnote{The code for the project can be found at \url{https://github.com/ufmg-smite/lean-smt}}, that aims to implement a tactic in Lean
+that would perform this process of discharging proofs. Starting from a Lean goal, the tactic would translate
+it to an SMT query, then invoke the solver to try to prove it and lift the proof produced
+(in case it is found) to Lean's language, so that it can be used as a proof for the original
+goal.
 
 Another contribution of our work is the first checker for cvc5 proofs
 (which are expressed in the theories we support)
 verified by an established ITP.
 Other checkers exist (\cite{carcara}, for instance), but one has to
-trust their source code to verify proofs with them.
+trust their source code to verify proofs with them. While it is necessary
+to trust Lean's kernel to verify proofs with our module, Lean is a tool
+with thousands of users constantly writing proofs in it. Therefore,
+if it had an inconsistency in its kernel, it is very likely that
+an user would have already discovered it.

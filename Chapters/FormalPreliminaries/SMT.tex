@@ -77,7 +77,7 @@ of values to variables in a formula.
 Finally, we define the \textit{evaluation} of a given formula $\psi$ over a $\Sigma$-structure $\mathcal{I}$, denoted by $\llbracket \psi \rrbracket^{\mathcal{I}}$, in the following way:
 \begin{align*}
   \llbracket x \rrbracket^{\mathcal{I}} &:= \mathcal{I}(x) \\
-  \llbracket f(t_{1}, \ldots, t_{n}) \rrbracket^{\mathcal{I}} &:= D_{f}(\llbracket t_{1} \rrbracket^{\mathcal{I}}, \ldots, \llbracket t_{n} \rrbracket^{\mathcal{I}}) \\
+  \llbracket f(t_{1}, \ldots, t_{n}) \rrbracket^{\mathcal{I}} &:= \mathcal{I}(f)(\llbracket t_{1} \rrbracket^{\mathcal{I}}, \ldots, \llbracket t_{n} \rrbracket^{\mathcal{I}}) \\
   \llbracket \bot \rrbracket &:= false^{I} \\
   \llbracket t_{1} \simeq t_{2} \rrbracket^{\mathcal{I}} &:= \llbracket t_{1} \rrbracket^{\mathcal{I}} = \llbracket t_{2} \rrbracket^{\mathcal{I}} \\
   \llbracket \neg \psi \rrbracket^{\mathcal{I}} &:= \llbracket \psi \rrbracket^{\mathcal{I}} = false^{I} \\

@@ -1,20 +1,50 @@
+\begin{figure}[t]
+  \includegraphics[scale=0.15]{img/hammerArch.png}
+  \caption{General Architecture of a Hammer}\label{fig:archHamm}
+\end{figure}
+
 \label{sec:hammering}
-Systems whose purpose is to connect automatic and interactive
-theorem provers are known as ``hammers''~\cite{hammering}.
-Usually, hammers are composed by the following three components:
+
+% The paper Hammering Towards QED~\cite{hammering} describes
+% the most relevant ones and also outlines
+% all the efforts that were already made in order to integrate
+% interactive and automatic theorem provers. The authors employ
+% this information to provide a detailed description of each
+% component that must be implemented in a system establishing
+% a connection between ATPs and ITPs. Furthermore, this work
+% presents a series of benchmarks showing the potential of these
+% tools. These benchmarks tipically involve selecting a set
+% of theorems proved in the ITP's library and checking how often the
+% tool can find a proof for them without human interaction.
+% Some experiments demonstrated that there are theorems for which
+% the ATP can even find a proof shorter than those found in the ITP's library.
+
+Systems whose purpose is to discharge the responsibility of proving theorems stated in
+an interactive theorem prover to an automatic one are known as ``hammers''~\cite{hammering}.
+Given a conjecture $\psi$ to be proven inside an ITP, a hammer will execute the following three steps:
 
 \begin{itemize}
-  \item The premise selection module: it identifies
-        a subset of the facts previously known by the
-        ITP that are likely to be useful for the ATP to
-        prove the given goals.\@
-  \item The translation module: it uses the premisses selected and the original
-        theorem from the ITP to formulate a query in the language of the ATP.\ This query
-        must be equivalent to the original theorem, with all premisses selected
-        added as hypothesis.
-  \item The proof reconstruction module: it lifts the proof produced
-        by the ATP into a proof that is accepted by the ITP.\@
+  \item First, it will inspect the library of theorems already proven inside the ITP
+        and heuristically select the ones that are more relevant to prove $\psi$.
+        Usually, the ATP will not be aware of the existence of these theorems, so it is
+        possible to facilitate the process of searching for a proof by adding them as
+        hypothesis to the problem. The module responsible for this process is known as the
+        \textbf{premise selection module}.\@
+  \item Once the premisses are selected, the hammer will translate $\psi$ into a problem
+        $\psi'$ expressed in a language recognized by the ATP. The problem $\psi'$ must
+        be equivalent to $\psi$, with all the premisses that were selected in the previous step
+        added as hypothesis. This is done by the \textbf{translation module}.\@
+  \item Next, $\psi'$ will be fed to the automatic theorem prover. The solver will then try to
+        verify the correctness of the conjecture or find a counterexample, producing a
+        certificate supporting the result it found.
+        If the ATP could validate the conjecture, then the
+        certificate will be a proof. In this case, the hammer will use the
+        \textbf{proof reconstruction module} to reconstruct this proof inside
+        the interactive theorem prover as a proof for $\psi$.
+
 \end{itemize}
+
+This workflow is summarized in Figure~\ref{fig:archHamm}.
 
 In this dissertation we describe how we implemented a proof reconstruction module
 for Lean users from cvc5 proofs.
@@ -56,3 +86,9 @@ we will explain in the later chapters, our main focus is on the certifying appro
 
 The next two sections describe examples of hammers.
 Both of these works exhibit similarities to our research, therefore, it is useful to reference them here.
+It is important to note that both of these are established hammers, and teams have been working on optimizing their
+performance for years. As we have previously pointed out, the primary objective of our system is to cover the largest
+range of proofs produced by cvc5 as opposed to having the best possible performance.
+Therefore, due to the time constraints of this project, we did not dedicate so much effort to improve the
+efficiency of our module, resulting in a system that is slower than the other hammers. We discuss ideas in
+Section~\ref{chap:future} to improve this aspect of the tool.
