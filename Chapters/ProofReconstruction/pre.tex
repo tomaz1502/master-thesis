@@ -1,8 +1,23 @@
 In this chapter we show how to lift proofs produced by cvc5 into
 proofs of Lean statements via certified transformations.
-First, in Section~\ref{sec:gen-scripts}, we present the format used by
-cvc5 to print its proofs as Lean scripts.
-Then, in Section~\ref{sec:certified_rcons}, we outline the necessary
-steps to lift these scripts into a sequence of certified transformations,
-which will have its validity checked by Lean's kernel\footnote{Our implementation of this lifting can be found at \url{https://github.com/tomaz1502/lean-smt/tree/main/Smt/Reconstruction/Certified}}.
-Lastly, in Section~\ref{sec:downsides}, we present some downsides of this approach.
+First, we introduce our representation of MSFOL terms inside Lean.
+Then, we will show how to state and prove theorems stating relations
+between terms in this representation. We will define theorems matching
+the inference rules used by cvc5, in a way that the solver will be
+capable of expressing its proofs inside of Lean and have their validity
+checked by the kernel.
+
+
+% Then, in Section~\ref{sec:certified_rcons},
+% we show how to prove theorems about terms represented in this way and
+% how to lift these proofs into proofs about native Lean terms.
+% Lastly, in Section~\ref{sec:downsides}, we present some downsides of this
+% approach.
+
+
+% First, in Section~\ref{sec:gen-scripts}, we present the format used by
+% cvc5 to print its proofs as Lean scripts.
+% Then, in Section~\ref{sec:certified_rcons}, we outline the necessary
+% steps to lift these scripts into a sequence of certified transformations,
+% which will have its validity checked by Lean's kernel\footnote{Our implementation of this lifting can be found at \url{https://github.com/tomaz1502/lean-smt/tree/main/Smt/Reconstruction/Certified}}.
+% Lastly, in Section~\ref{sec:downsides}, we present some downsides of this approach.
