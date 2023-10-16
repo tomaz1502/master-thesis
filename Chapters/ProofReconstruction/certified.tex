@@ -1,14 +1,80 @@
+Consider the following snippet. It represents the encoding of the negation of modus ponens
+($\neg (p \rightarrow ((p \rightarrow q) \rightarrow q))$) as an SMT problem using SMT-LIB~\cite{smtlib},
+a standardized syntax for representing SMT problems:
+
+\begin{figure}[h]
+\begin{minted}{smtlib2.py -x}
+  (set-logic QF_UF)
+  (declare-const p Bool)
+  (declare-const q Bool)
+  (assert (not (=> p (=> (=> p q) q))))
+\end{minted}
+\caption{SMT-LIB script representing the negation of modus ponens.}\label{negModusPonens}
+\end{figure}
+
+We will illustrate the process of reconstructing proofs of cvc5 via certified transformations
+in Lean through this example. Feeding this script to cvc5 yields the result ``unsat'', as expected.
+The proof produced by the solver is shown in Figure~\ref{fig:cvc5-proof}\footnote{This was produced with the proof visualizer tool, available at: \url{https://ufmg-smite.github.io/proof-visualizer/}} and is an instance of the resolution tree introduced in Section~\ref{sec:pcBool}.
+Each node is a formula that is either the one from the input (\texttt{not (=> p (=> (=> p q) q))}) or was derived by applying some
+rule to other nodes. An edge from some node $u$ to other node $v$ indicates that
+$u$ was used to derive $v$.
+In addition to the resolution rule (in purple and green), there are also rules for conjunctive normal form transformations (yellow)\footnote{The rules in the figure are in the internal calculus of cvc5, which is documented in \url{https://cvc5.github.io/docs/latest/proofs/proof_rules.html}}. Note that all leaves (in blue) correspond to the input formula.
+
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
+
+\begin{figure}[t!]
+  \centering
+  \scalebox{0.45}{%
+    \includegraphics[scale=0.9]{img/mp_cvc5_proof.png}}
+  \caption{A cvc5 proof for the validity of Modus Ponens.}
+  \label{fig:cvc5-proof}
+\end{figure}
+
+The encoding of this proof into Lean requires representing the terms that appear
+in it, i.e.\ the formulas built with $p$ and $q$, as well as the rules.
+%
+This representation uses a \emph{deep embedding} of the proof calculus of cvc5 into
+Lean,
+which is done via a \texttt{term} type that models terms and formulas from MSFOL.
+The \texttt{const} constructor of this type can be used to define symbols,
+which are parameterized by an identifier (a natural number) and a \texttt{sort}
+(another type for enconding MSFOL sorts).
+%
+For example, in the formula for modus ponens, \texttt{p} and \texttt{q} are
+free variables, which can be treated as constants while defining the problem in Lean.
+The following snippet shows their declaration using the \texttt{term} type:
+
+\begin{minted}{lean}
+  def p: term := const 1 boolSort
+  def q: term := const 2 boolSort
+\end{minted}
+
+The identifiers \texttt{1} and \texttt{2} are arbitrary, with only the
+requirement that they are unique.
+
+With these terms and using the functions \texttt{implies} and
+\texttt{not} defined in the deep embedding corresponding to the MSFOL symbols
+$\rightarrow$ and $\neg$, we encode the formula used in the
+query:
+
+\begin{minted}{lean}
+  def modusPonensEmbed: term := implies p (implies (implies p q) q)
+  def notModusPonensEmbed: term := not modusPonensEmbed
+\end{minted}
+
+
 \subsection{The Boolean fragment}
 
+We will now implement a function that lifts embedded terms to the corresponding
+native Lean terms, so that we can prove facts about them using Lean.
 Initially, we will limit ourselves to the fragment of MSFOL that
 deals with Boolean values\footnote{The Boolean fragment of the
 \emph{Core} theory in SMT-LIB, as defined in
 \url{http://smtlib.cs.uiowa.edu/theories-Core.shtml}}. Once
 we show how to lift this fragment, we will present a generalization
 of our definitions that is able to lift any theory from MSFOL.
-%
-The first step is to define a function to map values from the \texttt{term} type
-that represents Booleans to the corresponding native value.
 
 While designing this function, one has a
 choice regarding which type from Lean to use as a counterpart of the Boolean terms. The two
@@ -31,7 +97,7 @@ represent this information as a function from \texttt{Nat} to
 \texttt{Prop}:
 
 \begin{minted}{lean}
-  def Interpretation := Nat → Prop
+  def Interpretation := Nat -> Prop
 \end{minted}
 
 
@@ -54,7 +120,7 @@ represent this information as a function from \texttt{Nat} to
 
 With this definition, we can define our evaluation function, which is presented in
 Figure~\ref{evalTerm1}.
-This function is matching each pattern for a \texttt{term} with the corresponding built-in operation over \texttt{Prop}, and using recursive calls of itself as arguments. If we find a \texttt{term} that is not in the fragment we are currently supporting we just return \texttt{False}. This could potentially lead to consistency issues if the input formula involved other fragments apart from Boolean. As we are limiting ourselves to this fragment, we will ignore this problem.
+This function is matching each pattern for a \texttt{term} with the corresponding built-in operation over \texttt{Prop}, and using recursive calls of itself as arguments. If we find a \texttt{term} that is not in the fragment we are currently supporting we just return \texttt{False}. This could potentially lead to consistency issues if the input formula involved other fragments apart from Boolean. As we are limiting ourselves to this fragment for now, we will ignore this problem.
 
 Notice how the \texttt{Interpretation} type we introduced, as well as the evaluation function, match the notions of interpretation and evaluation introduced in Section~\ref{sec:msfolHere}. Indeed, we can now define what it means for an interpretation to satisfy a \texttt{term} and what it means to be unsatisfiable:
 
@@ -67,7 +133,7 @@ Notice how the \texttt{Interpretation} type we introduced, as well as the evalua
 
 One important concept we need to define is what it means for a \texttt{term}
 to follow logically from another, which is the primary relationship modeled
-by the axioms presented previously.
+by cvc5's inference rules.
 %
 If, for any fixed interpretation, the evaluation of a given \texttt{term} being true
 implies in the evaluation of another \texttt{term} being true, then we can always
@@ -77,18 +143,15 @@ relationship in Lean:
 \begin{minted}{lean}
   def impliesIn (t1 t2 : term) : Prop :=
     ∀ (I : Interpretation),
-      satisfies I t1 → satisfies I t2
+      satisfies I t1 -> satisfies I t2
 \end{minted}
 
-Notice that we needed to use the same interpretation for both terms.
-%
-The application \texttt{impliesIn t1 t2} gives a precise meaning to \texttt{thHolds t1 → thHolds t2} in terms of the logic used by Lean.
+Since we are interested in proving the unsatisfiability of terms, we will always try to prove a goal of the form \texttt{impliesIn t bot}, for some term \texttt{t}. This would imply that for any interpretation \texttt{I}, we have \texttt{(evalTerm I t = True) -> False}, provided that there is no environment that validates the interpretation of \texttt{bot}. Note that this is equivalent to \texttt{unsatisfiable t}, given our previous definition of \texttt{unsatisfiable}.
 
-Since we are interested in proving the unsatisfiability of terms, we will always try to prove a goal of the form \texttt{impliesIn t bot}, for some term \texttt{t}. This would imply that for any interpretation \texttt{I}, we have \texttt{(evalTerm I t = True) → False}, provided that there is no environment that validates the interpretation of \texttt{bot}. Note that this is equivalent to \texttt{unsatisfiable t}, given our previous definition of \texttt{unsatisfiable}.
-With the above we can rephrase the rules from the deep embedding using
-\texttt{impliesIn}, making it possible to prove them.
+With the above we can state and prove the inference rules employed by cvc5.
 %
-For instance, the representation of \texttt{notImplies1} show in Section~\ref{sec:gen-scripts} becomes:
+For instance, the following snippet shows the statement of the theorem corresponding
+to \texttt{notImplies1}, one of the rules of the proof in~\ref{fig:cvc5-proof}:
 
 \begin{minted}{lean}
   theorem notImplies1 : ∀ {t1 t2 : term},
@@ -100,24 +163,48 @@ complete coverage of proofs produced by cvc5 (regarding the Boolean fragment of 
 Notice that, while some proofs are straightforward using case analysis (the one for
 \texttt{notImplies1}, for instance),
 some of the proofs can be quite challenging, like the one regarding the general
-case of Resolution. We present proofs for some of the rules at\footnote{\url{https://github.com/tomaz1502/lean-smt/blob/main/Smt/Reconstruction/Certified/BooleanFragment/PropsExample.lean}}.
+case of Resolution. We present proofs for some of the rules in a Github repository\footnote{\url{https://github.com/tomaz1502/lean-smt/blob/main/Smt/Reconstruction/Certified/BooleanFragment/PropsExample.lean}}.
 
-Finally, we can state the theorem from Section~\ref{sec:gen-scripts} as
-\texttt{impliesIn notModusPonens bot}, and prove it using the same
-(rephrased) rules in the same order. With all those rules proved,
-one can ask Lean's kernel to verify the proof, achieving the goal
-of checking proofs from cvc5 in Lean. Notice that we have to trust
-that cvc5 correctly printed the \texttt{term} corresponding to
+Finally, the proof from Figure~\ref{fig:cvc5-proof} is encoded as:
+
+\begin{minted}{lean}
+  theorem cvc5_th0 : impliesIn notModusPonensEmbed bot :=
+    fun lean_a0 =>
+      have lean_s0 := notImplies2 lean_a0
+      have lean_s1 := notImplies1 lean_s0
+      have lean_s2 := impliesElim lean_s1
+      have lean_s4 := notImplies1 lean_a0
+      have lean_s6 := R1 (conjunction lean_s2 lean_s4)
+      have lean_s9 := notImplies2 lean_s0
+      contradiction (conjunction lean_s9 lean_s6)
+\end{minted}
+
+This proof shows that the term \texttt{notModusPonens} is equivalent to \texttt{bot}, which is
+the same as to say that it is unsatisfiable. This way, we have encoded the proof found by cvc5
+inside Lean. Also, It is possible to ask Lean's kernel to verify the proof, achieving our
+goal of checking proofs from cvc5 in Lean.
+
+Note that the encoding and printing of the SMT-LIB query as a \texttt{term} is done automatically by cvc5.
+Therefore, we have to trust
+that the solver correctly printed the \texttt{term} corresponding to
 the conjecture it is trying to prove. However, if there was an error
 in the implementation of the printer that led it to incorrectly
 print a term, it is very likely that the proof printed would not
 correspond to the printed term, which would be indicated by Lean.
-Therefore, the fact that Lean accepted
-one of these proofs is a strong evidence that the term was printed
+This means that the fact that Lean accepted
+one of these proofs is a strong evidence that the \texttt{term} was printed
 correctly.
 
-In order to apply the generated proof in values native to the ITP, we need
-to prove the following auxiliary theorem:
+\subsubsection{Lifting the proof to native Lean terms}
+
+Recall that our other goal was to leverage these proofs as a proof reconstruction
+module for a Lean hammer. Until now, everything we have shown can only be used
+to prove theorems stated about terms in the deep embedding, while potential users
+of the hammer will be interested in proving theorems phrased using Lean's native types.
+We will now show how to lift the proof for the unsatisfiability of modus ponens into the
+corresponding one stated with \texttt{Prop}. This method can easily be extended to
+automatically lift any proof produced by cvc5. First, we prove the following
+auxiliary theorem:
 
 \begin{minted}{lean}
   theorem notImpliesInBot : ∀ {t : term},
@@ -130,8 +217,7 @@ to \texttt{True}:
 
 \begin{minted}{lean}
 theorem modusPonensEqTrue: ∀ {I: Interpretation},
-    evalTerm I modusPonensEmbed = True :=
-  notImpliesInBot cvc5_th0
+    evalTerm I modusPonensEmbed = True := notImpliesInBot cvc5_th0
 \end{minted}
 
 Now we can define the theorem corresponding to \texttt{cvc5\_th0} using
@@ -143,13 +229,13 @@ def modusPonens (P Q : Prop) : Prop := P → (P → Q) → Q
 
 theorem modusPonensCorrect: ∀ (P Q: Prop), (modusPonens P Q) = True := by
   intros P Q
-  exact @modusPonensEqTrue (fun id => if id == 1000 then P else Q)
+  exact @modusPonensEqTrue (fun id => if id == 1 then P else Q)
 \end{minted}
 where the symbol \texttt{@} is used to make explicit all parameters
 in the function after it. Using this interpretation, we indicate
 that the term \texttt{p} in \texttt{modusPonensEmbed}
 will be matched with the prop \texttt{P} (since the identifier of \texttt{p}
-is 1000) and the term \texttt{q} will be matched with the prop \texttt{Q}.
+is 1) and the term \texttt{q} will be matched with the prop \texttt{Q}.
 The checker can now compute our evaluation function and
 match its return value with \texttt{modusPonens P Q}, thus proving the theorem.
 
@@ -210,15 +296,17 @@ it supports any type that is also supported by \texttt{evalSort}:
 Given an identifier, an interpretation must return a pair containing its sort
 and its value. Note that, with this modification, the interpretation printed
 by cvc5 would also need to print the sort of each term. For instance,
-the interpretation used in the theorem \texttt{modusPonensCorrect} would have
-to be rewritten as:
+the snippet in Figure~\ref{fig:new_interp} shows how the interpretation
+used in the theorem \texttt{modusPonensCorrect} would have to be rewritten.
 
+\begin{figure}[t]
 \begin{minted}{lean}
   def I : Interpretation := fun id =>
-    if id == 1000 then
-      ⟨ boolSort, P ⟩
+    if id == 1 then ⟨ boolSort, P ⟩
     else ⟨ boolSort, Q ⟩
 \end{minted}
+\caption{Reformulated interpretation used in \texttt{modusPonensCorrect}.}\label{fig:new_interp}
+\end{figure}
 
 We will also use a sigma type for defining the new version of \texttt{evalTerm}.
 %
