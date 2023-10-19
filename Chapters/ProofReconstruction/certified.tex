@@ -376,7 +376,6 @@ in Figure~\ref{satisfiesPred}. The predicate \texttt{impliesIn} does not require
 any modification. With these new definitions, one can prove the corresponding
 rules from any theory supported by cvc5 to enable the reconstruction of
 proofs from that theory in Lean.
-%\tom{it would be nicer to have an example of proof from EUF here, but I think there is no time}
 
 \section{Downsides of this approach}\label{sec:downsides}
 
@@ -404,7 +403,7 @@ Now we can rephrase the statement in the theorem \texttt{refl} to make it true:
 
 \begin{minted}{lean}
   theorem refl' : ∀ {I : Interpretation} {t : term},
-    isSome (inferSort t) = true → satisfies I (eq t t)
+    isSome (inferSort t) = true -> satisfies I (eq t t)
 \end{minted}
 where \texttt{isSome} is:
 
@@ -417,16 +416,28 @@ where \texttt{isSome} is:
 
 The introduction of this hypothesis creates a new requirement for applying
 the theorem in a proof, that is, we have to provide a proof that \texttt{t} is well-typed.
+%
 If it is, indeed, well-typed (which will always be the case as long
 as there is no bug in the SMT solver), then Lean's kernel can evaluate
 both functions \texttt{inferSort} and \texttt{isSome} and obtain \texttt{true},
-and the proof that the term is well-typed follows by reflexivity. Deriving facts
-from the evaluation of functions is a proof technique known as \textit{proof by reflection}~\cite{reflProof}.
-This kind of proof transfers the cost of \textit{checking} the proofs to a cost of
-normalizing terms. Unfortunately, as pointed out by~\cite{ringLean}, Lean's evaluator
-is not optimized for normalizing terms, therefore, the necessity of proving that
-certain term are well-typed would imply in a reduction of the performance of
-tools built using this technique.
+and the proof that the term is well-typed follows by reflexivity.
+%
+Deriving facts through the normalization of terms is a proof technique known as
+\textit{proof by reflection}~\cite{reflProof}.
+%
+This kind of proof exchanges the cost of type checking the proofs into a cost of
+evaluating and matching terms.
+
+Unfortunately, as pointed out by~\cite{ringLean}, Lean's evaluator
+is not optimized for normalizing terms, therefore, an excess of proofs
+of this kind would impact the performance of our tool.
+%
+Any rule employed by cvc5 that has subexpressions in the conclusion that are
+not present in any of the premisses will impose the necessity of a proof
+by reflection of the well-typedness of these subexpressions to be formalized.
+%
+There is a considerable amount of rules with this property in cvc5's calculus,
+therefore, this cost would result in a potential performance slowdown of the tool.
 
 Another downside of this approach is the necessity of providing explicit proofs for the most
 general case of all rules. As pointed out before, some of the rules, such as resolution and
