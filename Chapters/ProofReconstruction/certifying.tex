@@ -607,9 +607,10 @@ The idea we employed to develop this tactic is the following: we set the last
 proof in the input as an accumulator. Then, we iterate through the rest of the proofs
 in reverse order. For each proof we go through, we produce a new term, adding the
 inequality represented by this proof with the one in the accumulator. This is done
-through one of the \texttt{sumBoundsThm} theorems. Addition is right-associative
-in Lean by default, therefore, the proof term we are producing must prove
-an inequality in which the additions are associating to the right.
+through one of the \texttt{sumBoundsThm} theorems. Lean's simplifier always
+moves the parenthesis of the addition notation to the right, therefore,
+the proof term we are producing must prove an inequality in which
+the additions are also associating to the right.
 We can obtain such a proof term by iterating
 in reverse order and always adding the new terms to the left of the inequality
 represented by the accumulator.
