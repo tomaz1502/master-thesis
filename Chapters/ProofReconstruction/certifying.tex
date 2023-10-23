@@ -3,11 +3,11 @@ for lifting an adaptation of the scripts presented in Section~\ref{sec:certified
 Lean proofs, based on the certifying transformations approach.
 %
 The specific manner in which we applied
-this concept in our context was to develop a set of theorems and tactics matching
+this concept in our context was to develop a set of tactics matching
 the rules present in cvc5's proof calculus.
-A cvc5 proof is then a sequence of applications of those theorems and tactics.
-When we ask Lean's kernel to check the proof script, it will execute the tactics
-one by one. Each one of them inspects the current context
+A cvc5 proof is then a sequence of applications of those tactics.
+When we ask Lean's kernel to check the proof script, it will execute them
+one by one. Each one of them inspects the current context and goal
 and produces a proof term corresponding to a proof of a specific
 case of the rule represented by that tactic.
 The checker then verifies the correctness of each proof, closing the original goal only
@@ -24,10 +24,11 @@ other hand, we can skip calls to the elaborator if we produce an \texttt{Expr}
 instead, which will potentially lead to a gain in performance. With this in mind,
 we decided to employ the second option.
 
-
-Another important difference from the certified transformations approach is that we do not use the \texttt{term}
-type anymore. The main reason for mapping MSFOL formulas to this inductive type
-instead of native Lean expressions is the flexibility achieved by this representation.
+Another important difference from the certified transformations approach is that
+we do not use the \texttt{term} type anymore.
+%
+The main reason for mapping MSFOL formulas to this inductive type instead of
+native Lean expressions is the flexibility achieved by this representation.
 While it is straightforward to define a function that inspects and manipulates the structure of
 a \texttt{term} by pattern matching, there is no way to do the same for certain Lean types (\texttt{Prop}, for
 instance) without recurring to metaprogramming. As we have shown in Section~\ref{sec:metaLean},
@@ -99,8 +100,6 @@ parameters $t_{1}, \cdots, t_{n}$, we write:
 
 This first class of tactics does not correspond to cvc5's rules. They were implemented
 to facilitate the implementation of the main tactics.
-
-
 
 \subsection{Parenthesizing prefixes of clauses}
 

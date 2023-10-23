@@ -1,8 +1,32 @@
 %\tom{disclaimer: for now I will just give a minimal definition on Lean's features. Later, if I discover that I need something else in the next chapter I add it here}
 
-Lean is both an Interactive Theorem Prover and a programming
-language. It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic_ref} and explores the well-known correspondence between types and propositions~\cite{ch_correspondence} to implement a system that is both a proof checker and a type checker. This way, the ITP has a kernel with less than 7500 lines\footnote{This information was obtained by inspecting in the day 25/07/2023 the sum of the lines on each file in the folder src/kernel of Lean's repository: \url{https://github.com/leanprover/lean4/}} that is powerful enough to recognize a language capable of expressing the theory of dependent types~\cite{dep_type_theory}. These lines also include a number of optimizations to make the type checking more efficient. Lean also has an impressive mathematical library driven by its growing community, namely, \textit{mathlib}~\cite{mathlib}.
-This library comprises over a million lines of code, formalizing various domains of knowledge from mathematics and theoretical computer science.
+Lean is both an Interactive Theorem Prover and a programming language.
+%
+It is based on the Calculus of Inductive Constructions (CIC)~\cite{cic_ref}
+and explores the well-known correspondence between types and
+propositions~\cite{ch_correspondence} to implement a system that is both a
+proof checker and a type checker.
+%
+In order to obtain extra safety, Lean is capable of exporting proofs that
+were checked by the kernel in a low-level format, which can be verified
+by external checkers\footnote{As documented in:
+\url{https://github.com/leanprover/lean3/blob/master/doc/export_format.md}}.
+%
+Some of these checkers are quite small and can have their source code
+checked by the skeptical user. This is the case for instance of
+\textit{trepplein}\footnote{\url{https://github.com/gebner/trepplein/tree/master}},
+which has just over 2000 lines of code\footnote{This information was obtained by
+inspecting in the day 10/23/2023 the sum of the lines of each file in the folder
+src/main/scala/trepplein of trepplein's repository.}.
+
+
+% This way, the ITP has a kernel with less than 7500 lines\footnote{This information was obtained by inspecting in the day 25/07/2023 the sum of the lines on each file in the folder src/kernel of Lean's repository: \url{https://github.com/leanprover/lean4/}} that is powerful enough to recognize a language capable of expressing the theory of dependent types~\cite{dep_type_theory}.
+%
+Lean also has an impressive mathematical library driven by its growing
+community, namely, \textit{mathlib}~\cite{mathlib}.
+%
+This library comprises over a million lines of code, formalizing various
+domains of knowledge from mathematics and theoretical computer science.
 
 \subsection{Lean as a Programming Language}
 
@@ -117,11 +141,18 @@ holds). Indeed, all the proofs that we will translate from cvc5 to Lean are base
 always prove that some formula \texttt{P} is true by proving that \texttt{Not P} is unsatisfiable, which is also an implication
 that is not provable constructively.
 
-Fortunately, Lean provides a mechanism for defining new axioms. This axioms will be available for the user to prove new theorems
-, which were possibly not provable before, extending the logic framework. Obviously, this must be done with caution, as
-there is nothing to prevent the introduction of axioms that will make the logic inconsistent.
-The \texttt{Classical} module, which is part of Lean's standard library, uses this feature to add the axioms needed to prove
-any true statement in classical logic. We used this module extensively in the present work.
+Fortunately, Lean provides a mechanism for defining new axioms.
+%
+These axioms will be available for the user to prove new theorems, which
+were possibly not provable before, extending the logic framework.
+%
+Obviously, this must be done with caution, as there is nothing to
+prevent the introduction of axioms that will make the logic inconsistent.
+%
+The \texttt{Classical} module, which is part of Lean's prelude, uses
+this feature to add the axioms needed to prove any true statement in classical logic.
+%
+We used this module extensively in the present work.
 
 \subsection{Metaprogramming in Lean}\label{sec:metaLean}
 
