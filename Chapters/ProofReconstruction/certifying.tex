@@ -655,10 +655,21 @@ from the type of \texttt{pf₁'} and \texttt{pf₂'}.
 Given the variables \texttt{m}, \texttt{l} and \texttt{r} and an index \texttt{id},
 we present two tactics for multiplying an inequality between \texttt{l} and \texttt{r}
 by \texttt{m}. The parameter \texttt{id} is used to indicate what is the inequality
-between \texttt{l} and \texttt{r} in question (lesser than, lesser or equal, greater than, or greater or equal). It is necessary since the rule\footnote{Its documentation can be found at \url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule14ARITH\_MULT\_POSE}} corresponding to this tactic does not receive the proof of the inequality
+between \texttt{l} and \texttt{r} in question (lesser than, lesser or equal, greater
+than, or greater or equal).
+%
+The \texttt{m} argument passed to this tactic is precisely the Farkas'
+coefficient calculated by cvc5.
+%
+It is necessary since the rule\footnote{Its documentation can be found at
+\url{https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof\_rules.html\#\_CPPv4N4cvc58internal6PfRule14ARITH\_MULT\_POSE}}
+corresponding to this tactic does not receive the proof of the inequality
 as a premise, instead, it produces an implication from such an inequality to its
-scaled version. The first tactic, \texttt{arithMulPos}, assumes that \texttt{m} is positive. Its precise
-statement is the following:
+scaled version.
+%
+The first tactic, \texttt{arithMulPos}, assumes that \texttt{m} is positive.
+%
+Its precise statement is the following:
 
 \[
 \infer[]{(m > 0 \wedge l \bowtie_{id} r) \rightarrow m \cdot l \bowtie_{id} m \cdot r}{- \mid m, l, r, id}
