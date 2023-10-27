@@ -193,6 +193,11 @@ and less.},
     \appendix
     \chapter{Complete list of theorems and tactics}
 
+    Note: throughout the rules, assume that \texttt{p}, \texttt{q} and \texttt{r}
+    are ranging over \texttt{Prop}, \texttt{l} over \texttt{List Prop}, \texttt{perm}
+    over \texttt{List Nat} and \texttt{a} and \texttt{b} are ranging over either  \texttt{Int}
+    or \texttt{Rat}
+
 % \renewcommand\theadalign{bc}
 % \renewcommand\theadfont{\bfseries}
 % \renewcommand\theadgape{\Gape[4pt]}
@@ -263,7 +268,7 @@ Name        & Statement & Implementation \\ \midrule
 \texttt{falseIntro₂} & \texttt{¬ p → False = p}      & theorem        \\ \midrule
 \texttt{falseElim} & \texttt{p = False → ¬ p}      & theorem        \\ \midrule
 \texttt{falseElim₂} & \texttt{False = p → ¬ p}      & theorem        \\ \midrule
-\texttt{negSymm} & \texttt{¬ (a = b) → ¬ (b = a)}      & theorem        \\ \midrule
+\texttt{negSymm} & \texttt{¬ (p = q) → ¬ (q = p)}      & theorem        \\ \midrule
 \texttt{factor} & \texttt{orN l → orN (removeDuplicates l)}      & tactic        \\ \midrule
 \texttt{liftOrNToImp} & \makecell[l]{\texttt{orN l → andN (take i (notList l))} \\ \texttt{ → orN (drop i l)}}      & tactic        \\ \midrule
 \texttt{liftOrNToNeg} & \texttt{orN l → ¬ (andN l)} & tactic        \\ \midrule
@@ -271,10 +276,10 @@ Name        & Statement & Implementation \\ \midrule
 \texttt{pull} & \makecell[l]{\texttt{orN l →} \\ \texttt{l.getD i False ∨ orN (eraseIdx i l)}}      & tactic        \\ \midrule
 \texttt{R1} & \makecell[l]{\texttt{orN l₁ → orN l₂ →} \\ \texttt{orN ((erase p l₁) ++ (erase (¬ p) l₂))}}      & tactic        \\ \midrule
 \texttt{R2} &  \makecell[l]{\texttt{orN l₁ → orN l₂ →} \\ \texttt{orN ((erase (¬ p) l₁) ++ (erase p l₂))}}     & tactic        \\ \midrule
-\texttt{arithMulPos} & \texttt{m > 0 ∧ l < r → m * l < m * r}      & tactic        \\ \midrule
-\texttt{arithMulNeg} & \texttt{m < 0 ∧ l < r → m * l > m * r}      & tactic        \\ \midrule
-\texttt{tightLb} & \texttt{i < q → i ≤ (ceil q) - 1}      & tactic        \\ \midrule
-\texttt{tightUb} & \texttt{i > q → i ≥ (floor q) + 1}      & tactic        \\ \midrule
+\texttt{arithMulPos} & \texttt{m > 0 ∧ a < b → m * a < m * b}      & tactic        \\ \midrule
+\texttt{arithMulNeg} & \texttt{m < 0 ∧ a < b → m * a > m * b}      & tactic        \\ \midrule
+\texttt{tightLb} & \texttt{a < b → a ≤ (ceil b) - 1}      & tactic        \\ \midrule
+\texttt{tightUb} & \texttt{a > b → a ≥ (floor b) + 1}      & tactic        \\ \midrule
 \texttt{trichotomy} & \texttt{¬ (a < b) → ¬ (a = b) → a > b}      & tactic        \\
 \bottomrule
 \end{longtabu}\label{table:allRules}
