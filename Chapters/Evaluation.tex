@@ -1,78 +1,117 @@
-We refrain from comparing the performance of our checker with other similar tools (such as
-SMTCoq and Sledgehammer) due to the difficulty of fairly evaluating
-the results. This difficulty comes from the deep differences between the ITPs'
-implementations. Isabelle, for instance, runs on a language that uses
-garbage collection, which would heavily impact the efficiency of
-Sledgehammer.
-As we have pointed out in the introduction, currently
-there are no other hammers for Lean, which we could potentially compare
-to our tool.
-Also, there is currently no way to run SMTCoq and Sledgehammer for proof checking
-outside the corresponding ITPs, which also makes the comparison difficult.
+In this chapter we will present the evaluation of our tool.
+%
+The main focus of our experiments is to measure the coverage
+of our proof reconstruction module.
+%
+More concretely, we want to check whether our framework, when
+integrated with cvc5's proof-generation mechanisms, is capable
+of reconstructing the solver's results for any given problem.
+%
+We will investigate whether there are any mismatches between
+the semantics of some inference rule and the corresponding tactics,
+as well as assess cvc5's capability of completely expressing
+its reasoning through proof certificates.
 
-We evaluate our tool for proof reconstruction coverage.
-We use the version of cvc5 from\footnote{\url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}
-to generate Lean proofs from the
-problems in the SMT-LIB benchmark library\footnote{\url{https://smtlib.cs.uiowa.edu/benchmarks.shtml}} whose
-logic we support (which are QF\_LIA, QF\_LIRA, QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA), with a 600s timeout\footnote{It is necessary to pass the following flags to cvc to generate the
-proofs: \texttt{--dump-proofs --dag-thresh=0 --proof-granularity=theory-rewrite --proof-format=lean}}.
-The cvc5 solver produced 6102
-proofs. We have only considered proofs whose size is smaller than
-1mb, which is a total of 877 proofs. From our experience, proofs that are
-bigger than this take too much time to be elaborated and reconstructed,
-given the current state of our tool.
-All experiments were run on a server
-equipped with 32 processors Intel(R) Xeon(R) CPU E5-2620 v4 2.10GHz and
-125.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic, with 8GB of memory for each job.
+In order to evaluate our tool, we used the benchmarks provided
+by the SMT-LIB initiative. The problems are categorized
+by the combination of theories they are expressed in. The combinations
+that we can reconstruct problems are QF\_LIA, QF\_LIRA, QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA.
 
-We have written a Lean script for reconstructing the proofs\footnote{\url{https://github.com/tomaz1502/process_lean_smt/blob/main/Main.lean}}. Using the binary that is produced when the script is compiled, one can reconstruct the proofs without installing Lean.
-It just requires that all the object files from our library (and from its dependencies) are in the same folder as the proof that is being reconstructed.
-Our experiments were performed using this script.
-Notice that this scripts has to load all the libraries in each run, which heavily impacts its performance.
-
-\section{Analysis}
-
-The results we have found are presented in Table~\ref{bench}, separated
-by SMT theory. From a total of 877 proofs, our tool could reconstruct
-successfully 281 of them. The reconstruction of the other 581 proofs
-failed for the following reasons:
-
-\begin{itemize}
-  \item 182 failed due to a mismatch in the application of some function. These could be either an issue in cvc5's printer or an error in the implementation of the tactics.
-  \item 125 failed due some tactic exceeding Lean's resources.
-  \item 105 failed due cvc5 assuming that Lean's \texttt{Ne} operator is $n$-ary, while it is binary.
-  \item 11 failed since the tactics \texttt{arithMulPos} and \texttt{arithMulNeg} currently do not suppport mixing of integers and rations between its parameters \texttt{l} and \texttt{r}. These errors are solved if cvc5 prints these steps casting all the integers to rationals.
-  \item 1 failed due to cvc5 not printing the \texttt{factor} tactic correctly in a specific case.
-  \item 22 failed for exceeding the limit of time.
-  \item 154 failed for exceeding the limit of memory.
-  \item 1 failed for producing a stack overflow.
-\end{itemize}
-
-Therefore, our tool failed in 302 proofs due to performance issues, and
-possibly in some subset of the 182 described in the first bullet due to
-implementation errors. These informations indicate to us that our main
-focus should be on improving the efficiency of our tool. As we will
-show in Chapter~\ref{chap:future}, we have promising ideas to improve
-the performance of the reconstruction process.
+As we have explained before, we do not have as a goal to implement a hammer
+for Lean that would be as effective as SMTCoq or Sledgehammer.
+%
+Considering the time constraints of our project and the fact that
+Lean currently does not have any project that attacks this problem, our goal
+is to determine whether it is possible to perform proof reconstruction
+using cvc5's output in Lean, and how to do it.
+%
+We believe that this is an important first step towards having
+a hammer for Lean that is fast and powerful.
+%
+With this in mind, we will not compare the performance of our tool
+with these established hammers.
 
 
-\begin{table}[t]
-\centering
-\begin{tabular}{ l l l l l l l }
-\toprule
-Theory & Total & Valid & Invalid & Timeout & Memout & Error \\ \midrule
-QF\_LIA & 236 & 30 & 161 & 0 & 45 & 0 \\ \midrule
-QF\_LRA & 205 & 91 & 110 & 4 & 0 & 0 \\ \midrule
-QF\_UF & 300 & 64 & 117 & 9 & 109 & 1 \\ \midrule
-QF\_UFLIA & 106 & 67 & 30 & 9 & 0 & 0  \\ \midrule
-QF\_UFLRA & 31 & 29 & 2 & 0 & 0 & 0 \\ \bottomrule
-\end{tabular}
-\caption{Total proof-checking success, fails and time per theory.}\label{bench}
-\end{table}
+% We refrain from comparing the performance of our checker with other similar tools (such as
+% SMTCoq and Sledgehammer) due to the difficulty of fairly evaluating
+% the results. This difficulty comes from the deep differences between the ITPs'
+% implementations.
+% %
+% Isabelle, for instance, runs on a language that uses
+% garbage collection, which would heavily impact the efficiency of
+% Sledgehammer.
+% %
+% Furthermore, as we have pointed out in the introduction, currently
+% there are no other hammers for Lean, which we could potentially compare
+% to our tool.
+% %
+% Also, there is currently no way to run SMTCoq and Sledgehammer for proof checking
+% outside the corresponding ITPs, which also makes the comparison difficult.
 
-%                  total  unsat  sat  timeout  memout  error  time_cpu    memory
-% benchmark config
-% QF_LRA              205     91  110        4       0      0   16998.6   98538.6
-% QF_UF               300     64  117        9     109      1   51072.6 1030329.4
-% QF_UFLIA            106     67   30        9       0      0   56169.0  167205.5
-% QF_UFLRA             31     29    2        0       0      0    1696.0    4108.3
+% We evaluate our tool for proof reconstruction coverage.
+% %
+% We use the version of cvc5 from\footnote{\url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}
+% to generate Lean proofs from the
+% problems in the SMT-LIB benchmark library\footnote{\url{https://smtlib.cs.uiowa.edu/benchmarks.shtml}} whose
+% logic we support (which are QF\_LIA, QF\_LIRA, QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA), with a 600s timeout\footnote{It is necessary to pass the following flags to cvc to generate the
+% proofs: \texttt{--dump-proofs --dag-thresh=0 --proof-granularity=theory-rewrite --proof-format=lean}}.
+% The cvc5 solver produced 6102
+% proofs. We have only considered proofs whose size is smaller than
+% 1mb, which is a total of 877 proofs. From our experience, proofs that are
+% bigger than this take too much time to be elaborated and reconstructed,
+% given the current state of our tool.
+% All experiments were run on a server
+% equipped with 32 processors Intel(R) Xeon(R) CPU E5-2620 v4 2.10GHz and
+% 125.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic, with 8GB of memory for each job.
+
+% We have written a Lean script for reconstructing the proofs\footnote{\url{https://github.com/tomaz1502/process_lean_smt/blob/main/Main.lean}}. Using the binary that is produced when the script is compiled, one can reconstruct the proofs without installing Lean.
+% It just requires that all the object files from our library (and from its dependencies) are in the same folder as the proof that is being reconstructed.
+% Our experiments were performed using this script.
+% Notice that this scripts has to load all the libraries in each run, which heavily impacts its performance.
+
+% \section{Analysis}
+
+% The results we have found are presented in Table~\ref{bench}, separated
+% by SMT theory. From a total of 877 proofs, our tool could reconstruct
+% successfully 281 of them. The reconstruction of the other 581 proofs
+% failed for the following reasons:
+
+% \begin{itemize}
+%   \item 182 failed due to a mismatch in the application of some function. These could be either an issue in cvc5's printer or an error in the implementation of the tactics.
+%   \item 125 failed due some tactic exceeding Lean's resources.
+%   \item 105 failed due cvc5 assuming that Lean's \texttt{Ne} operator is $n$-ary, while it is binary.
+%   \item 11 failed since the tactics \texttt{arithMulPos} and \texttt{arithMulNeg} currently do not suppport mixing of integers and rations between its parameters \texttt{l} and \texttt{r}. These errors are solved if cvc5 prints these steps casting all the integers to rationals.
+%   \item 1 failed due to cvc5 not printing the \texttt{factor} tactic correctly in a specific case.
+%   \item 22 failed for exceeding the limit of time.
+%   \item 154 failed for exceeding the limit of memory.
+%   \item 1 failed for producing a stack overflow.
+% \end{itemize}
+
+% Therefore, our tool failed in 302 proofs due to performance issues, and
+% possibly in some subset of the 182 described in the first bullet due to
+% implementation errors. These informations indicate to us that our main
+% focus should be on improving the efficiency of our tool. As we will
+% show in Chapter~\ref{chap:future}, we have promising ideas to improve
+% the performance of the reconstruction process.
+
+
+% \begin{table}[t]
+% \centering
+% \begin{tabular}{ l l l l l l l }
+% \toprule
+% Theory & Total & Valid & Invalid & Timeout & Memout & Error \\ \midrule
+% QF\_LIA & 236 & 30 & 161 & 0 & 45 & 0 \\ \midrule
+% QF\_LRA & 205 & 91 & 110 & 4 & 0 & 0 \\ \midrule
+% QF\_UF & 300 & 64 & 117 & 9 & 109 & 1 \\ \midrule
+% QF\_UFLIA & 106 & 67 & 30 & 9 & 0 & 0  \\ \midrule
+% QF\_UFLRA & 31 & 29 & 2 & 0 & 0 & 0 \\ \bottomrule
+% \end{tabular}
+% \caption{Total proof-checking success, fails and time per theory.}\label{bench}
+% \end{table}
+
+% %                  total  unsat  sat  timeout  memout  error  time_cpu    memory
+% % benchmark config
+% % QF_LRA              205     91  110        4       0      0   16998.6   98538.6
+% % QF_UF               300     64  117        9     109      1   51072.6 1030329.4
+% % QF_UFLIA            106     67   30        9       0      0   56169.0  167205.5
+% % QF_UFLRA             31     29    2        0       0      0    1696.0    4108.3
