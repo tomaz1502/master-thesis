@@ -3,19 +3,14 @@ In this chapter we will present the evaluation of our tool.
 The main focus of our experiments is to measure the coverage
 of our proof reconstruction module.
 %
-More concretely, we want to check whether our framework, when
+More concretely, we want to check how often our framework, when
 integrated with cvc5's proof-generation mechanisms, is capable
-of reconstructing the solver's results for any given problem.
+of reconstructing the solver's results.
 %
 We will investigate whether there are any mismatches between
-the semantics of some inference rule and the corresponding tactics,
+the semantics of some inference rule and the corresponding tactic,
 as well as assess cvc5's capability of completely expressing
 its reasoning through proof certificates.
-
-In order to evaluate our tool, we used the benchmarks provided
-by the SMT-LIB initiative. The problems are categorized
-by the combination of theories they are expressed in. The combinations
-that we can reconstruct problems are QF\_LIA, QF\_LIRA, QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA.
 
 As we have explained before, we do not have as a goal to implement a hammer
 for Lean that would be as effective as SMTCoq or Sledgehammer.
@@ -31,6 +26,54 @@ a hammer for Lean that is fast and powerful.
 With this in mind, we will not compare the performance of our tool
 with these established hammers.
 
+\section{Strategy}
+
+In order to evaluate our tool, we used the benchmarks provided
+by the SMT-LIB initiative~\cite{smtlib_initiative}. The problems in this benchmark
+are categorized by the combination of theories they are expressed in.
+Given our support for the theories of Equality and Uninterpreted Functions,
+Linear Integer Arithmetic and Linear Real Arithmetic, we can reconstruct problems
+from the combinations of theories identified in the benchmark by QF\_LIA, QF\_LIRA,
+QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA (QF stands for quantifier free and is used
+to identify problems that do not have quantifiers in their definition).
+%
+For each problem within this set, we ran cvc5\footnote{We used the version of
+  cvc5 from this commit: \url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}
+with a timeout of 600s to determine
+which ones were unsatisfiable and generate a proof in Lean\footnote{It is necessary to pass the following
+  flags to cvc5 to generate the proofs: \texttt{--dump-proofs --dag-thresh=0
+    --proof-granularity=theory-rewrite --proof-format=lean}} for their unsatisfiability,
+resulting in a total of 6102 proofs.
+%
+From our experience, proofs exceeding 1MB are too costly to be checked
+with the current state of our framework, therefore, we have filtered out the proofs
+that surpassed this threshold, which amounted to a total of 877 proofs.
+
+For the purpose of checking these proofs, we have written a Lean script that, given
+a Lean file, loads our framework and checks if all the proofs contained in the file
+are correct\footnote{The script can
+  be found at \url{https://github.com/tomaz1502/process_lean_smt/blob/main/Main.lean}}.
+%
+It does not check whether the theorem in Lean indeed corresponds to the original SMT query.
+%
+As we have explained before, if the translation from the query to the theorem was wrong,
+it is very likely that the translated proof would also be wrong, so the correctness
+of the proof is a strong evidence for the correctness of the translation.
+%
+Using the binary produced when the script is compiled, one can reconstruct the
+proofs without installing Lean.
+%
+It just requires that all the object files from our library (and from its dependencies)
+are in the same folder as the proof that is being reconstructed.
+%
+Notice that this script has to load all the libraries in each run, which heavily impacts
+its performance.
+
+All experiments were run on a server equipped with 32 processors Intel(R) Xeon(R)
+CPU E5-2620 v4 2.10GHz and 125.79 GiB RAM, running Ubuntu 20.04,
+kernel 5.4.0-132-generic, with 8GB of memory for each job.
+
+\section{Analysis}
 
 % We refrain from comparing the performance of our checker with other similar tools (such as
 % SMTCoq and Sledgehammer) due to the difficulty of fairly evaluating
@@ -60,14 +103,7 @@ with these established hammers.
 % 1mb, which is a total of 877 proofs. From our experience, proofs that are
 % bigger than this take too much time to be elaborated and reconstructed,
 % given the current state of our tool.
-% All experiments were run on a server
-% equipped with 32 processors Intel(R) Xeon(R) CPU E5-2620 v4 2.10GHz and
-% 125.79 GiB RAM, running Ubuntu 20.04, kernel 5.4.0-132-generic, with 8GB of memory for each job.
 
-% We have written a Lean script for reconstructing the proofs\footnote{\url{https://github.com/tomaz1502/process_lean_smt/blob/main/Main.lean}}. Using the binary that is produced when the script is compiled, one can reconstruct the proofs without installing Lean.
-% It just requires that all the object files from our library (and from its dependencies) are in the same folder as the proof that is being reconstructed.
-% Our experiments were performed using this script.
-% Notice that this scripts has to load all the libraries in each run, which heavily impacts its performance.
 
 % \section{Analysis}
 
