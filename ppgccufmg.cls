@@ -310,7 +310,7 @@
 	\begingroup
 		\resetaplain
 		\ifx\idiomapt\undefined
-			\chapter*{Acknowledgments}
+			\chapter*{Agradecimentos}
 		\else
 			\chapter*{Agradecimentos}
 		\fi

@@ -1,12 +1,14 @@
 We have built a system that takes proofs of the unsatisfiability of
 SMT queries produced by the SMT solver cvc5~\cite{cvc5} and
 reconstructs them as proofs in the ITP Lean 4~\cite{lean},
-which has as its primary focus the capacity of reconstructing the largest possible
+which has as its main goal the capacity of reconstructing the largest possible
 range of proofs produced by cvc5.
-We present in detail two techniques well-known in the literature for doing this translation.
-We have effectively executed one of them, and we share our insights
-regarding the reasons we believe it is more appropriate than the other.
-
+%
+We present in detail two strategies well-known in the literature for doing this translation.
+%
+We have effectively applied one of them, and we share our insights
+regarding the reasons we believe it is more appropriate than the other
+for our goals.
 
 The main motivation of this project is that, despite the fact that Lean is
 emerging as a promising programming language and ITP and being
@@ -36,11 +38,17 @@ it to an SMT query, then invoke the solver to try to prove it and lift the proof
 goal.
 
 Another contribution of our work is the first checker for cvc5 proofs
-(which are expressed in the theories we support)
-verified by an established ITP.
-Other checkers exist (\cite{carcara}, for instance), but one has to
+(which are expressed in the theories we support) verified by an established ITP.\@
+%
+Other checkers exist (\cite{carcara} and~\cite{lfsc}, for instance), but one has to
 trust their source code to verify proofs with them. While it is necessary
 to trust Lean's kernel to verify proofs with our module, Lean is a tool
 with thousands of users constantly writing proofs in it. Therefore,
 if it had an inconsistency in its kernel, it is very likely that
 an user would have already discovered it.
+%
+While this is an useful feature of our tool, it is important to highlight that
+we did not design it as a proof checker and it lacks optimization for this purpose,
+resulting in a suboptimal performance for this task.
+
+% checking proofs is not its main use case and the tool was not optimized for this.
