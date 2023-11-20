@@ -758,11 +758,11 @@ factor) appears to be a hard task, the implementations of the tactics are
 not too complicated (the complete implementation of \texttt{permutateClause},
 for instance, consists of fewer than 60 lines).
 %
-This also means that we can modify the semantics of some rule without too much effort.
+This also means that we can modify the semantics of a rule without too much effort.
 %
 This flexibility was explored for instance at~\cite{reliable}, where the authors
 incremented an already existing framework of proof reconstruction based on certifying
-transformations to support a novel format of proof certificate produced by a newly
+transformations to support a novel format of proof certificates produced by a newly
 introduced SMT solver.
 
 Moreover, unlike the certified transformations approach, the
@@ -778,7 +778,7 @@ We could not run such experiments since we did not had the time to
 fully implement the certified approach.
 
 Another indicative of the potential of the certifying approach is the
-success of Sledgehammer, the corresponding tool for Isabelle/HOL which is
+success of Sledgehammer, the corresponding tool for Isabelle/HOL, which is
 also based on this technique.
 %
 In~\cite{sledgehammer}, the authors present a benchmark executed with
