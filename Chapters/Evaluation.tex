@@ -1,7 +1,7 @@
-In this chapter we will present the evaluation of our tool.
+In this chapter we will present the evaluation of our set of tactics.
 %
 The main focus of our experiments is to measure the coverage
-of our proof reconstruction module.
+of our proof reconstruction library.
 %
 More concretely, we want to check how often our framework, when
 integrated with cvc5's proof-generation mechanisms, is capable
@@ -37,11 +37,11 @@ from the combinations of theories identified in the benchmark by QF\_LIA, QF\_LI
 QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA (QF stands for quantifier free and is used
 to identify problems that do not have quantifiers in their definition).
 %
-For each problem within this set, we ran cvc5\footnote{We used the version of
-  cvc5 from this commit: \url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}
-with a timeout of 600s to determine
-which ones were unsatisfiable and generate a proof in Lean\footnote{It is necessary to pass the following
-  flags to cvc5 to generate the proofs: \texttt{--dump-proofs --dag-thresh=0
+For each problem within this set, we executed a version of cvc5 that has the experimental feature of printing its proofs as Lean scripts\footnote{We used the version of
+  cvc5 from this commit: \url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}.
+We gave it a timeout of 600s for each problem to determine
+which ones were unsatisfiable and generate a proof\footnote{It is necessary to pass the following
+  flags to cvc5 to generate the proofs as Lean scripts: \texttt{--dump-proofs --dag-thresh=0
     --proof-granularity=theory-rewrite --proof-format=lean}} for their unsatisfiability,
 resulting in a total of 6102 proofs.
 %
@@ -64,10 +64,17 @@ Using the binary produced when our script is compiled, one can reconstruct the
 proofs without installing Lean.
 %
 It just requires that all the object files from our library (and from its dependencies)
-are in the same folder as the proof that is being reconstructed.
+are in the same folder as the binary.
 %
 Notice that this script has to load all the libraries in each run, which heavily impacts
 its performance.
+%
+We emphasize again that our goal with this evaluation is to test the coverage of our
+library and not its performance.
+%
+Writing a tool for proof reconstruction that prioritizes performance requires
+giving more attention to different aspects of the system and is another
+project in itself.
 %
 All experiments were run on a server equipped with 32 processors Intel(R) Xeon(R)
 CPU E5-2620 v4 2.10GHz and 125.79 GiB RAM, running Ubuntu 20.04,
@@ -76,7 +83,7 @@ kernel 5.4.0-132-generic, with 8GB of memory for each job.
 \section{Analysis}
 
 The results we obtained are presented in Table~\ref{results_rcons}, categorized
-by theory combination. From a total of 877 proofs, our tool could reconstruct
+by theory combination. From a total of 876 proofs, our tool could reconstruct
 successfully 281 of them. The reconstruction of the other 596 proofs
 failed for the following reasons (note that some errors occurred in more than one test case):
 
@@ -84,39 +91,39 @@ failed for the following reasons (note that some errors occurred in more than on
 \centering
 \begin{tabular}{ c c c c c c c }
 \toprule
-Theory  & Total & Valid & Invalid & Timeout & Memout & Stack Overflow \\ \midrule
-QF\_UF    & 300   & 64    & 117     & 9       & 109    & 1 \\ \midrule
-QF\_LIA   & 236   & 30    & 161     & 0       & 45     & 0 \\ \midrule
-QF\_LRA   & 205   & 91    & 110     & 4       & 0      & 0 \\ \midrule
-QF\_UFLIA & 106   & 67    & 30      & 9       & 0      & 0  \\ \midrule
-QF\_UFLRA & 31    & 29    & 2       & 0       & 0      & 0 \\ \bottomrule
+Theory  & Total   & Succeeded & Error while checking & Timeout & Memout \\ \midrule
+QF\_UF    & 299   & 64    & 117     & 9       & 109  \\ \midrule
+QF\_LIA   & 236   & 30    & 161     & 0       & 45   \\ \midrule
+QF\_LRA   & 205   & 91    & 110     & 4       & 0    \\ \midrule
+QF\_UFLIA & 106   & 67    & 30      & 9       & 0    \\ \midrule
+QF\_UFLRA & 31    & 29    & 2       & 0       & 0    \\ \bottomrule
 \end{tabular}
 \caption{Result of proof checking per theory.}\label{results_rcons}
 \end{table}
 
-\begin{itemize}
+\begin{enumerate}
   \item 89 failed due to steps asserting equalities between terms of different types, which is allowed in cvc5's calculus but is not allowed in Lean's type system.
   \item 109 failed due to cvc5 assuming that Lean's \texttt{Ne} operator is $n$-ary, while it is binary.
   \item 5 failed because cvc5 was implicitly reordering the operands of an addition or a disjunction.
   \item 22 failed for exceeding the limit of time.
   \item 154 failed for exceeding the limit of memory.
-  \item 125 failed due some tactic exceeding Lean's resources.
-  \item 1 failed for producing a stack overflow.
+  \item 125 failed for exceeding the limit of time or memory stipulated by Lean for the execution of a single tactic.
   \item 11 failed since the tactics \texttt{arithMulPos} and \texttt{arithMulNeg} did not suppport mixing of integers and rations between its parameters \texttt{l} and \texttt{r}.
   \item 28 failed because Lean incorrectly inferred the type of some term in an intermediate congruence step.
   \item 75 failed since Lean can't automatically lift an equality between integers to an equality between rationals, which is implicitly done by cvc5.
-\end{itemize}
+\end{enumerate}
 
-After running the benchmark, we fixed the third to last issue by adapting the tactic to perform the
-appropriate castings if the terms passed as arguments had different types. We also fixed the second to last and the last
-issue by replacing the congruence theorem with a tactic that uses Lean's rewriter to simulate the congruence rule.
+After running the benchmark, we fixed issue 8 by adapting the tactic to perform the
+appropriate castings if the terms passed as arguments had different types. We also
+fixed issues 9 and 10 by replacing the congruence theorem with a tactic that uses
+Lean's rewriter to simulate the congruence rule.
 This change has two advantages: first, since the tactic is executed independently from the type checker, we can skip the process
 of matching the types of the hypothesis with the types expected by the congruence theorem, which will
 eliminate the need for type inferences that were previously done incorrectly; second, Lean's rewriter
 can automatically lift an equality between integers into an equality between rationals if needed, solving
 the last problem. This is needed, for instance, if we have an hypothesis \mintinline{lean}{(0 : Int) = b}
-and cvc5 wants to use it to prove \mintinline{lean}{a + b = a + 0}, where \texttt{a} is a rational. All these
-fixes were tested and are working properly.
+and cvc5 wants to use it to prove \mintinline{lean}{a + b = a + 0}, where \texttt{a}
+is a rational. All these fixes were tested and are working properly.
 
 The results of the benchmark point out that, despite its performance issues, our tool can
 cover most of the reasoning performed by cvc5. Within the issues indicated by our set of
