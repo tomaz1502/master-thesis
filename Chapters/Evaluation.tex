@@ -37,6 +37,12 @@ from the combinations of theories identified in the benchmark by QF\_LIA, QF\_LI
 QF\_LRA, QF\_UF, QF\_UFLIA, QF\_UFLRA (QF stands for quantifier free and is used
 to identify problems that do not have quantifiers in their definition).
 %
+Ideally, we would be able to reconstruct any proof for a query
+in this set of theories.
+%
+SMTCoq and Sledgehammer would be able to reconstruct proofs in the
+same theories and in the theory of Bitvectors.
+%
 For each problem within this set, we executed a version of cvc5 that has the experimental feature of printing its proofs as Lean scripts\footnote{We used the version of
   cvc5 from this commit: \url{https://github.com/HanielB/cvc5/tree/b2340f42639733a0ef9523aee2b68f0bf062a5a7}}.
 We gave it a timeout of 600s for each problem to determine
@@ -47,7 +53,7 @@ resulting in a total of 6102 proofs.
 %
 From our experience, proofs exceeding 1MB are too costly to be checked
 with the current state of our framework, therefore, we have filtered out the proofs
-that surpassed this threshold, which amounted to a total of 877 proofs.
+that surpassed this threshold, which amounted to a total of 876 proofs.
 
 For the purpose of checking these proofs, we have written a Lean script that, given
 a Lean file, loads our framework and checks if all the proofs contained in the file
@@ -113,17 +119,28 @@ QF\_UFLRA & 31    & 29    & 2       & 0       & 0    \\ \bottomrule
   \item 75 failed since Lean can't automatically lift an equality between integers to an equality between rationals, which is implicitly done by cvc5.
 \end{enumerate}
 
-After running the benchmark, we fixed issue 8 by adapting the tactic to perform the
+After running the benchmark, we fixed issue 7 by adapting the tactic to perform the
 appropriate castings if the terms passed as arguments had different types. We also
-fixed issues 9 and 10 by replacing the congruence theorem with a tactic that uses
+fixed issues 8 and 9 by replacing the congruence theorem with a tactic that uses
 Lean's rewriter to simulate the congruence rule.
-This change has two advantages: first, since the tactic is executed independently from the type checker, we can skip the process
+This change has two advantages: first, since the rewrite is
+capable of coercing the types when needed, we can skip the process
 of matching the types of the hypothesis with the types expected by the congruence theorem, which will
 eliminate the need for type inferences that were previously done incorrectly; second, Lean's rewriter
 can automatically lift an equality between integers into an equality between rationals if needed, solving
 the last problem. This is needed, for instance, if we have an hypothesis \mintinline{lean}{(0 : Int) = b}
 and cvc5 wants to use it to prove \mintinline{lean}{a + b = a + 0}, where \texttt{a}
 is a rational. All these fixes were tested and are working properly.
+
+Issue 1 should be fixed inside cvc5's proof printing module, by adding the appropriate type coercions
+each time an ill-typed equality is built.
+%
+Issue 2 can be fixed either in Lean, through the introduction of an n-ary inequality operator,
+or in cvc5, by transforming the n-ary inequality into a conjunction of multiple inequalities.
+%
+Issue 3 should also be fixed inside cvc5. It is necessary to add intermediary steps to reorder the
+additions and disjunctions before using them. Disjunctions can be reordered using our \texttt{permutateClause}
+tactic and additions can be reordered using mathlib's \texttt{linarith} tactic.
 
 The results of the benchmark point out that, despite its performance issues, our tool can
 cover most of the reasoning performed by cvc5. Within the issues indicated by our set of
