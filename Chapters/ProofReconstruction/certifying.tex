@@ -60,6 +60,7 @@ present.
 
 
 \begin{figure}[t]
+\caption{Proof script using certifying transformations.}\label{notModusPonens2}
 \begin{minted}[linenos]{lean}
   theorem cvc5_th0 {P Q : Prop} : (Not (P → ((P → Q) → Q))) → False :=
     fun lean_a0 : (Not (P → ((P → Q) → Q))) => by
@@ -73,7 +74,7 @@ present.
       have lean_s6 : (Not Q)             := notImplies2 lean_s5
       exact (show False from contradiction lean_s4 lean_s6)
 \end{minted}
-\caption{Proof script using certifying transformations.}\label{notModusPonens2}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 \paragraph{Representation of clauses.} Internally, clauses are represented by cvc5 as
@@ -166,6 +167,7 @@ We keep repeating this process until the whole prefix is grouped.
 
 
 \begin{figure}[t]
+\caption{Implementation of \texttt{groupPrefixCore}.}\label{groupClause}
 \begin{minted}[linenos]{lean}
 def groupPrefixCore (pf : Expr) (i : Nat) : MetaM Expr := do
   let clause  : Expr      ← inferType pf
@@ -178,7 +180,7 @@ def groupPrefixCore (pf : Expr) (i : Nat) : MetaM Expr := do
   else throwError
     "[groupClausePrefix]: invalid prefix length"
 \end{minted}
-\caption{Implementation of \texttt{groupPrefixCore}.}\label{groupClause}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 The snippet in Figure~\ref{groupClause} shows the
@@ -316,6 +318,7 @@ the last proposition does \textit{not} change during this process, so we can alw
 required by \texttt{pull}.
 
 \begin{figure}[t]
+\caption{Implementation of the tactic permutateClause.}\label{permClauseImp}
 \begin{minted}[linenos]{lean}
   def pullProps (props : List Expr) (acc : Expr) (s : Nat) :
       MetaM Expr :=
@@ -332,7 +335,7 @@ required by \texttt{pull}.
     let permutatedProps   := permutateList props (List.reverse perm)
     pullProps permutatedProps pf s
 \end{minted}
-\caption{Implementation of the tactic permutateClause.}\label{permClauseImp}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 The code in Figure~\ref{permClauseImp} shows our implementation of this tactic.
@@ -583,6 +586,7 @@ We solve this issue by adding a restriction, stating that \texttt{α} satisfies 
 could find a proof for each theorem.
 
 \begin{figure}[t]
+\caption{Implementation of the \texttt{sumBounds} tactic}\label{sumBoundsTac}
 \begin{minted}[linenos]{lean}
   def combineBounds (pf₁ pf₂ : Expr) : MetaM Expr := do
     let t₁ ← inferType pf₁
@@ -606,7 +610,7 @@ could find a proof for each theorem.
       let acc' ← combineBounds acc pf'
       sumBoundsCore acc' pfs'
 \end{minted}
-\caption{Implementation of the \texttt{sumBounds} tactic}\label{sumBoundsTac}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 The idea we employed to develop this tactic is the following: we set the last

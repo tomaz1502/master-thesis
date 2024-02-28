@@ -32,6 +32,7 @@ domains of knowledge from mathematics and theoretical computer science.
 
 
 \begin{figure}[t]
+\caption{Example of Lean code}\label{leanAdd}
 \begin{minted}[linenos]{lean}
   inductive Natural where
     | zero : Natural
@@ -46,7 +47,7 @@ domains of knowledge from mathematics and theoretical computer science.
 
   notation x " + " y => add x y
 \end{minted}
-\caption{Example of Lean code}\label{leanAdd}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Lean has all the main features one can expect from a functional programming language. Its features include algebraic datatypes, pattern matching, polymorphism, typeclasses, side effect support using monads, and a robust macro system~\cite{lean4_ref}.
@@ -80,6 +81,7 @@ The representation of this predicate as a type is possible due to the fact that 
 
 
 \begin{figure}[t]
+\caption{Proof that the addition of any natural number to zero results in itself.}\label{addZero}
 \begin{minted}[linenos]{lean}
   theorem add_zero : ∀ (n : Natural), (n + zero) = n :=
     fun n =>
@@ -87,7 +89,7 @@ The representation of this predicate as a type is possible due to the fact that 
       | zero    => rfl
       | succ n' => congrArg succ (add_zero n')
 \end{minted}
-\caption{Proof that the addition of any natural number to zero results in itself.}\label{addZero}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Therefore, proving that this statement holds amounts to finding a term with this type. The snippet in Figure~\ref{addZero} shows the construction of such term.
@@ -117,6 +119,7 @@ We present a new version of \texttt{add\_comm} with this new approach in Figure~
 The keyword \texttt{by} is used to indicate that the term will not be built explicitly, but instead computed by a sequence of tactics, also known as a tactic block. Given a goal of the form \texttt{∀ (v : t), P(v)}, the tactic \texttt{intros x} will change the goal to \texttt{P(x)} and introduce in the context a variable with name \texttt{x} and type \texttt{t}. It can also be used to introduce multiple variables at one. We use it in line 2, to introduce two naturals, \texttt{n} and \texttt{m}. Next, we use the \texttt{induction} tactic in lines 3 to 5. This is a very general tactic that can apply the induction principle on any inductive type. Since our goal is of the form \texttt{P(n, m)}, where \texttt{n} is a natural number, it will produce two new goals: \texttt{P(zero, m)} and \texttt{P(n', m) → P(succ(n'), m)}. Each one of these goals is then completed with the \texttt{rw} tactic. Given a term that represents a proof of an equality \texttt{e₁ ≃ e₂}, the tactic \texttt{rw} rewrites all occurrences of \texttt{e₁} by \texttt{e₂} in the goal. With this, we can avoid the usage of transitivity, symmetry and congruence lemmas that were needed on the other version of this proof. The tactic \texttt{rw} is implicitly invoking these lemmas for us. Note that this tactic also accepts function names such as \texttt{add} as a parameter. In this case, it rewrites the definition of the function.
 
 \begin{figure}[t]
+ \caption{Proof of commutativity of addition using tactics.}\label{addComm2}
 \begin{minted}[linenos]{lean}
   theorem add_comm' : ∀ (n m : Natural), (n + m) = (m + n) := by
     intros n m
@@ -124,7 +127,7 @@ The keyword \texttt{by} is used to indicate that the term will not be built expl
     | zero       => rw [add, add_zero]
     | succ n' IH => rw [add, add_succ, IH]
 \end{minted}
- \caption{Proof of commutativity of addition using tactics.}\label{addComm2}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 

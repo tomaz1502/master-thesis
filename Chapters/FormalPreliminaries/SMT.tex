@@ -121,8 +121,7 @@ Let $x$ be a literal. Let $C_{1}$ and $C_{2}$ be two clauses such that $x \in C_
 More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more restricted version of resolution in which $C_{1} = \{x\}$ or $C_{2} = \{\neg x\}$. Notice that the clause that is inferred from the unit resolution theorem is equal to one of the clauses in the premisses, with one less literal. The general idea of the DPLL algorithm is to explore this fact to generate smaller clauses, while this is possible. Once all possible unit resolutions are performed, the algorithm makes a decision, assigning a boolean value to a variable. This action can potentially create more clauses suitable for unit resolution, which will be then explored. If this decision does not lead to the conclusion that the original formula is satisfiable, the procedure backtracks and assigns the other boolean value to the variable. If this decision also does not lead to a positive conclusion, then the original formula is unsatisfiable.
 
 \begin{figure}[t]
-% \textbf{Input:} $\psi$, a PL formula\\
-% \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
+\caption{DPLL Algorithm}~\label{dpllAlgo}
 \begin{algorithmic}[1]
 \Function{SolvePL}{$\psi$}
 \If{$\exists C \in \psi .\, C = \{\} \vee C = \{\bot\}$}
@@ -139,7 +138,7 @@ More specifically, it is based on \textit{Unit Resolution} (UR), that is, a more
 \State \Return~\Call{SolvePL}{$\psi_{\{x \gets \top\}}$} $\vee$ \Call{SolvePL}{$\psi_{\{x \gets \bot\}}$}
 \EndFunction
 \end{algorithmic}
-\caption{DPLL Algorithm}~\label{dpllAlgo}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Figure~\ref{dpllAlgo} shows an algorithm for DPLL.\ The procedure \textit{SolvePL} works as follows: first, in lines 2 to 7, it checks if the formula can be evaluated to \textit{true} or \textit{false}. In case it is not possible, the procedure finds as many variables in which it can apply Unit Resolution as possible, using the routine \textit{findClauses}, and invokes itself recursively with each new application found, as shown in lines 8 to 10. By the resolution theorem, the formula that will be used as a parameter in the recursive call is satisfiable if and only if the one that was received as input is also satisfiable, therefore, this step is sound. Once there are no more possibilities, it chooses an arbitrary variable and makes two recursive calls in line 13: one assigning this variable to \textit{true} and the other one to \textit{false}. Since these are the only two possibilities for that variable, the input formula is satisfiable if and only if one of the recursive calls returned \textit{true}. The algorithm uses this information to correctly return the disjunction between the two return values.
@@ -192,6 +191,7 @@ particular execution of the algorithm is the following:
 Assuming that we have a decision procedure for a given theory (or a combination of them), we can use it to extend the CDCL algorithm for checking the satisfiability of MSFOL formulas involving that theory. In this section we will study the CDCL(T)~\cite{cdcl_t} framework, a method for doing this extension over CDCL.\
 
 \begin{figure}[t]
+\caption{CDCL(T) Algorithm}~\label{cdclTAlgo}
 % \textbf{Input:} $\psi$, a formula in MSFOL over a theory  $\mathcal{T}$ \\
 % \textbf{Output:} \textit{true} or \textit{false}, depending whether $\psi$ is satisfiable
 \begin{algorithmic}[1]
@@ -209,9 +209,9 @@ Assuming that we have a decision procedure for a given theory (or a combination 
 \State \Return \textit{false}
 \EndFunction
 \end{algorithmic}
-\caption{CDCL(T) Algorithm}~\label{cdclTAlgo}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
-
+    
 Consider a formula $\psi$ over a theory $\mathcal{T}$ in MSFOL.\ Let's assume we have a solver for this theory (that is, a method for deciding
 whether a given conjunctive set of propositions in $\mathcal{T}$ is consistent or not). We do not need the theory solver to handle disjunctions
 between propositions since the CDCL(T) algorithm will leverage a SAT solver to handle this part of the analysis.
@@ -264,6 +264,7 @@ Let $S$ be the set of equalities that are assumed and $e$ be the one that we wan
 \MakeRobust{\Call}
 
 \begin{figure}[t]
+\caption{Merge with Congruence}~\label{merge_cong}
 \begin{algorithmic}[1]
   \Procedure{MergeCong}{$v_{1}$, $v_{2}$}
   \If{$\neg$ \Call{SameClasses}{$v_{1}$, $v_{2}$}}
@@ -279,7 +280,7 @@ Let $S$ be the set of equalities that are assumed and $e$ be the one that we wan
   \EndIf
   \EndProcedure
 \end{algorithmic}
-\caption{Merge with Congruence}~\label{merge_cong}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 \begin{figure}[h]
@@ -304,6 +305,7 @@ Notice that, when we process an equality $t_{1} \simeq t_{2}$, we also have to p
 This method has an auxiliary procedure for checking whether two vertices are congruent given the current state. Figure~\ref{cong_cond} shows an implementation of this method, which essentially just checks the premise of the congruence property.
 
 \begin{figure}[t]
+\caption{Check Congruence Condition}~\label{cong_cond}
 \begin{algorithmic}[1]
   \Function{IsCongruent}{$v_{1}$, $v_{2}$}
   \If{$\lambda(v_{1}) \neq \lambda(v_{2})$ or $\delta(v_{1}) \neq \delta(v_{2})$}
@@ -317,7 +319,7 @@ This method has an auxiliary procedure for checking whether two vertices are con
   \State\Return $true$
   \EndFunction
 \end{algorithmic}
-\caption{Check Congruence Condition}~\label{cong_cond}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 
@@ -373,6 +375,7 @@ $
 \end{center}
 
 \begin{figure}[t]
+\caption{Change value of non-basic variable and update all basic variables}
 \begin{algorithmic}[1]
   \Procedure{Update}{$v_{i}$, $val$}
   \For{$v_{j} \in \mathcal{B}$}
@@ -381,7 +384,7 @@ $
     \State $\beta(v_{i}) \gets val$
   \EndProcedure
 \end{algorithmic}
-\caption{Change value of non-basic variable and update all basic variables}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Now, our problem is reduced to finding a vector $x$ that satisfies $Ax = 0$ and respects all restrictions in $\phi'$, which are all of the form $v_{i} \bowtie b_{i}$, where $v_{i}$ is one of the variables and $b_{i}$ is a constant. We will assume that there is no strict inequalities in $\phi'$ for brevity. For an extension of the method presented here for strict inequalities, consult~\cite{simplex_dpllt}. Notice that in this case we can represent the restrictions in $\phi'$ as two sequences of coefficients $l_{i}$ and $r_{i}$, representing a sequence of restrictions of the form $l_{i} \le v_{i} \le r_{i}$, as long as we allow $l_{i}$ to be $-\infty$ in case there is no lower restriction on $v_{i}$ and $r_{i}$ to be $+\infty$ in case there is no upper restriction on $v_{i}$.
@@ -395,6 +398,7 @@ For each restriction in $\phi'$ of the form $v_{i} \le b_{i}$ we will run the pr
 \algnewcommand{\EndIIf}{\unskip\ \algorithmicend\ \algorithmicif}
 
 \begin{figure}[t]
+\caption{Assert inequalities}\label{assertIneq}
 \begin{algorithmic}[1]
   \Function{AssertLower}{$v_{i}$, $b_{i}$}
   \IIf{$b_{i} \le l_{i}$} \Return $true$ \EndIIf
@@ -417,13 +421,14 @@ For each restriction in $\phi'$ of the form $v_{i} \le b_{i}$ we will run the pr
   \State \Return~$true$
   \EndFunction
 \end{algorithmic}
-\caption{Assert inequalities}\label{assertIneq}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Both functions return $false$ if and only if the current restriction is incompatible with the previous ones, otherwise they correctly update the bounds on the variable on the restriction, and also update its value in case it is a non-basic variable (remember that we keep the invariant that non-basic variables respect their bounds). If the current restriction is $v_{i} \le b_{i}$, we first have to check if the current limit on $v_{i}$ already satisfies this restriction, which is done in line 2 of the function \textit{AssertUpper} and simply return $true$ if this is the case. Otherwise, we compare the current lower bound on $v_{i}$ with $b_{i}$ and immediately return $false$ if it is not, since in this case it would be impossible to find a valid value for $v_{i}$. Finally, if none of these conditions held, we update the limit $u_{i}$ accordingly in line 8 and update the value of $v_{i}$ and of all basic variables in line 10, if it is necessary. The procedure \textit{AssertLower} is symmetrical.
 
 
 \begin{figure}[t]
+\caption{Update and pivot basic with non-basic variable}
 \begin{algorithmic}[1]
   \Procedure{PivotAndUpdate}{$v_{i}$, $v_{j}$, $val$}
     \State $\delta \gets \frac{val - \beta(v_{i})}{a_{ij}}$
@@ -436,12 +441,13 @@ Both functions return $false$ if and only if the current restriction is incompat
     \State $\mathcal{N} \gets (\mathcal{N} \setminus \{v_{j}\}) \cup \{v_{i}\}$
   \EndProcedure
 \end{algorithmic}
-\caption{Update and pivot basic with non-basic variable}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Lastly, if it was possible to run the assertion procedures on all the inequalities from the input without any of them returning \textit{false}, we run the procedure \textit{Check} presented in Figure~\ref{check_lra}. The goal of this function is to manipulate the values of the non-basic variables until all variables respect their restrictions, or report that it is impossible, and, therefore, the original formula is unsatisfiable. The first step it takes, in line 2 is to select a variable $v_{i} \in \mathcal{B}$ that is violating its bounds. If there is no such variable then all restrictions are satisfied, and it can just return \textit{true}, as is done in line 4. If $\beta(v_{i}) < l_{i}$, then we must find a non-basic variable $v_{j}$ such that we can modify it without violating its restrictions in a way that the value of $v_{i}$ will increase. If $a_{ij}$ is positive, increasing $v_{j}$ will also increase $v_{i}$, therefore, in order to use $v_{j}$ we need $\beta(v_{j}) < u_{j}$. Similarly, if $a_{ij}$ is negative, we would need $\beta(v_{j}) > l_{j}$. If there is no suitable variable, then it's impossible increase the value of $v_{i}$, therefore the problem is unsatisfiable. This condition is checked on lines 9 and 16. Otherwise, we can find such $v_{j}$. In this case, we set the value of $v_{j}$ to the appropriate limit and make $v_{i}$ a non-basic variable and $v_{j}$ a non-basic variable with the procedure \textit{PivotAndUpdate} in lines 12 and 19. After this, we repeat the process until all restrictions were satisfied. The case where $\beta(v_{i}) > u_{i}$ is symmetrical. In~\cite{simplex_dpllt}, the authors prove that this method always terminates and returns \textit{true} if and only if the original problem was satisfiable.
 
 \begin{figure}[t]
+\caption{Check if it's possible to satisfy all restrictions}\label{check_lra}
 \begin{algorithmic}[1]
   \Function{Check}{\null}
     \State Let $v_{i}$ be the basic variable that violates a restriction with the smallest index.
@@ -467,7 +473,7 @@ Lastly, if it was possible to run the assertion procedures on all the inequaliti
   \EndFunction
 
 \end{algorithmic}
-\caption{Check if it's possible to satisfy all restrictions}\label{check_lra}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 \subsubsection{Certificates for Linear Arithmetic}\label{sec:liaCert}

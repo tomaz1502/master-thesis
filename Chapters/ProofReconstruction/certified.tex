@@ -3,13 +3,14 @@ Consider the following snippet. It represents the encoding of the negation of mo
 a standardized syntax for representing SMT problems:
 
 \begin{figure}[h]
+\caption{SMT-LIB script representing the negation of modus ponens.}\label{negModusPonens}
 \begin{minted}{smtlib2.py -x}
   (set-logic QF_UF)
   (declare-const p Bool)
   (declare-const q Bool)
   (assert (not (=> p (=> (=> p q) q))))
 \end{minted}
-\caption{SMT-LIB script representing the negation of modus ponens.}\label{negModusPonens}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 The unsatisfability of this formula entails that its negation (modus ponens) is true for any values of $p$ and $q$.
@@ -31,10 +32,10 @@ In addition to the resolution rule (in purple and green), there are also rules f
 
 \begin{figure}[t!]
   \centering
+  \caption{A cvc5 proof for the validity of Modus Ponens.}~\label{fig:cvc5-proof}
   \scalebox{0.45}{%
     \includegraphics[scale=0.9]{img/mp_cvc5_proof.png}}
-  \caption{A cvc5 proof for the validity of Modus Ponens.}
-  \label{fig:cvc5-proof}
+  \caption*{Font: \url{https://cvc5.github.io/docs/latest/proofs/proof_rules.html}}
 \end{figure}
 
 The encoding of this proof into Lean requires representing the terms that appear
@@ -107,6 +108,7 @@ represent this information as a function from \texttt{Nat} to
 
 
 \begin{figure}[t]
+\caption{Evaluation function.}\label{evalTerm1}
 \begin{minted}{lean}
   def evalTerm (I : Interpretation) (t : term) : Prop :=
     match t with
@@ -120,7 +122,7 @@ represent this information as a function from \texttt{Nat} to
     | term.top           => True
     | _                  => False
 \end{minted}
-\caption{Evaluation function.}\label{evalTerm1}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 With this definition, we can define our evaluation function, which is presented in
@@ -280,6 +282,7 @@ employed by Lean users, since the proofs produced by the ATP will have their
 statements expressed in terms of these types.
 
 \begin{figure}[t]
+\caption{Implementation of evalSort.}\label{impEvalSort}
 \begin{minted}{lean}
   def evalSort : sort → Type := fun s =>
     match s with
@@ -288,7 +291,7 @@ statements expressed in terms of these types.
     | intSort => Int
     | _ => Prop
 \end{minted}
-\caption{Implementation of evalSort.}\label{impEvalSort}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 Now we can reformulate the \texttt{Interpretation} type, in a way that
@@ -305,12 +308,13 @@ the snippet in Figure~\ref{fig:new_interp} shows how the interpretation
 used in the theorem \texttt{modusPonensCorrect} would have to be rewritten.
 
 \begin{figure}[t]
+\caption{Reformulated interpretation used in \texttt{modusPonensCorrect}.}\label{fig:new_interp}
 \begin{minted}{lean}
   def I : Interpretation := fun id =>
     if id == 1 then ⟨ boolSort, P ⟩
     else ⟨ boolSort, Q ⟩
 \end{minted}
-\caption{Reformulated interpretation used in \texttt{modusPonensCorrect}.}\label{fig:new_interp}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 We will also use a sigma type for defining the new version of \texttt{evalTerm}.
@@ -344,6 +348,7 @@ but the conclusion is not a Boolean expression.
 
 
 \begin{figure}[t]
+\caption{Reformulated evaluation function.}\label{evalTerm2}
 \begin{minted}{lean}
   def evalTerm (I : Interpretation) (t : term) :
       Option (@Sigma sort interpSort) :=
@@ -358,18 +363,19 @@ but the conclusion is not a Boolean expression.
       | _,_ => none
     | _ => none
 \end{minted}
-\caption{Reformulated evaluation function.}\label{evalTerm2}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 
 \begin{figure}[t]
+\caption{Reformulated satisfies predicate.}\label{satisfiesPred}
 \begin{minted}{lean}
   def satisfies (I : Interpretation) (t : term) : Prop :=
     match evalTerm I t with
     | some ⟨ boolSort, p ⟩ => p = True
     | _ => False
 \end{minted}
-\caption{Reformulated satisfies predicate.}\label{satisfiesPred}
+\caption*{Font: Elaborated by the author.}
 \end{figure}
 
 The snippet in Figure~\ref{evalTerm2} shows the reformulated version of \texttt{evalTerm}.

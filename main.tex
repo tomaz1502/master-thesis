@@ -1,12 +1,6 @@
 \documentclass[
 	msc,
 	english
-%% Para dissertações de mestrado, OU
-%	mscproposta, %% Para propostas de dissertação de mestrado, OU
-%	phd, %% Para teses de doutorado, OU
-%	phdproposta, %% Para propostas de tese de doutorado
-%	portugues %% Para documentos em português, OU
-%	english %% Para documentos em inglês
 ]{ppgccufmg}
 
 %\usepackage[brazil]{babel} %% se o documento for em português, OU
@@ -24,9 +18,9 @@
 ]{hyperref}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{minted}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{minted}
 \usepackage[toc]{glossaries}
 \usepackage{glossaries-extra}
 \usepackage{bm}
@@ -42,6 +36,8 @@
 \usepackage{appendix}
 \usepackage{longtable, tabu}
 \usepackage{makecell}
+\usepackage[font=small,skip=5pt]{caption}
+
 % \usepackage{cite}
 %% Exemplo de lista customizada ==================
 %% Para criar uma lista customizada (como Lista de Algoritmos, Lista de Exemplos) que ficará juntamente com as Lista de Figuras e Lista de Tabelas, execute os 3 comandos abaixo substituindo "algoritmos" pelo tipo de lista que estará criando. Para adicionar a lista ao documento, deverá passar o seguinte parâmetro no comando \ppgccufmg:
@@ -122,15 +118,15 @@
 
 \begin{document}
 	\ppgccufmg{
-		autor={Tomaz Mascarenhas}, %% Autor(a)
+		autor={Tomaz Gomes Mascarenhas}, %% Autor(a)
 		titulopt={Demonstrando teoremas em Lean por meio da reconstrução de demonstra\c{c}\~oes em SMT},
 		tituloen={Proving Lean theorems via reconstructed SMT proofs}, %% Título em inglês
 		cidade={Belo Horizonte},
 		ano={2023},
 		versaopt={Final},
 		versaoen={Final}, %% Palavra que acompanhará 'Version' na folha de rosto em inglẽs
-		orientador={Haniel Barbosa}, %% Para masculino
-		% fichacatalografica={fichacatalografica.pdf},
+		orientador={Haniel Moreira Barbosa}, %% Para masculino
+		fichacatalografica={catalog.pdf},
 		folhadeaprovacao={folhadeaprovacao.pdf},
 		resumo={resumo.tex}, %% Resumo em português
 		palavraschave={Verifica\c{c}\~ao Formal, Lean, SMT},
@@ -189,6 +185,10 @@ and less.},
       \input{Chapters/Evaluation.tex}
 	\chapter{Future Work}\label{chap:future}
       \input{Chapters/Future.tex}
+
+		%% Referências
+		\bibliographystyle{plain}
+		\bibliography{referencias}
 
     \appendix
     \chapter{Complete list of theorems and tactics}
@@ -284,8 +284,5 @@ Name        & Statement & Implementation \\ \midrule
 \bottomrule
 \end{longtabu}\label{table:allRules}
 % \end{table}
-		%% Referências
-		\bibliographystyle{plain}
-		\bibliography{referencias}
 
 \end{document}
